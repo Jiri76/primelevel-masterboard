@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Masterboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* Copied verbatim from Renewals -- same tokens, not just similar
+     colors, per explicit instruction. Every PrimeLevel tool shares this
+     exact palette. */
+  :root {
+    --navy: #1E2633;
+    --white: #F9F9FA;
+    --gold: #B29B68;
+    --input-bg: #2A3441;
+    --placeholder: #8A93A3;
+    --border: #3A4453;
+    --green: #4CAF7D;
+    --orange: #D9A441;
+    --red: #E45858;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100%;
+  }
+  .container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  h1 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 32px;
+    margin: 0 0 40px;
+    text-align: center;
+  }
+
+  /* Layout: tiles on the left, holdings in the center. Stacks on
+     narrow screens instead of squeezing side by side. */
+  .board {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  @media (max-width: 640px) {
+    .board { flex-direction: column; }
+  }
+
+  /* Link tiles -- same card language as Renewals' item rows (input-bg,
+     border, 10px radius), stacked vertically, each just a plain link
+     out to its own existing tool. Modular: one <a class="tile"> per
+     entry in the TILES array below, add more there, nothing else to
+     touch. */
+  .tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 0 0 200px;
+  }
+  .tile {
+    display: block;
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+  .tile:hover {
+    border-color: var(--white);
+  }
+
+  /* Investment cards -- white fill per spec (not the navy card language
+     used elsewhere), same 10px radius as everything else on the page.
+     Grid so new holdings wrap naturally instead of needing manual
+     layout math -- modular: one card per entry in HOLDINGS, add more
+     there, nothing else to touch. */
+  .holdings {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .holding-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    transition: transform 0.1s ease;
+  }
+  .holding-card:hover {
+    transform: scale(1.02);
+  }
+  .holding-card:active {
+    transform: scale(0.98);
+  }
+  .holding-ticker {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+  .holding-name {
+    color: var(--navy);
+    opacity: 0.6;
+    font-size: 13px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .holding-price {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .holding-placeholder-note {
+    color: var(--placeholder);
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .empty-state {
+    color: var(--placeholder);
+    font-size: 15px;
+    text-align: center;
+    padding: 40px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Masterboard</h1>
+
+    <div class="board">
+      <div class="tiles" id="tiles"></div>
+      <div class="holdings" id="holdings"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ---- Link tiles -- add more tools here, nothing else to touch. ----
+    // TODO: Insider Edge's real URL is a placeholder ("#") until confirmed.
+    const TILES = [
+      { label: 'Insider Edge', href: '#' },
+      { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
+    ];
+
+    // ---- Holdings -- placeholder data only. Live pricing (a real
+    // market-data API) and persisted share counts are the next real
+    // decision, not built yet. ----
+    const HOLDINGS = [
+      { ticker: 'AAPL', name: 'Apple Inc.', price: 0, shares: 0 },
+      { ticker: 'MSFT', name: 'Microsoft Corp.', price: 0, shares: 0 },
+      { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 0, shares: 0 },
+    ];
+
+    const tilesEl = document.getElementById('tiles');
+    const holdingsEl = document.getElementById('holdings');
+
+    function buildTile({ label, href }) {
+      const a = document.createElement('a');
+      a.className = 'tile';
+      a.href = href;
+      a.textContent = label;
+      return a;
+    }
+
+    function buildHoldingCard(holding) {
+      const card = document.createElement('button');
+      card.className = 'holding-card';
+
+      const ticker = document.createElement('div');
+      ticker.className = 'holding-ticker';
+      ticker.textContent = holding.ticker;
+
+      const name = document.createElement('div');
+      name.className = 'holding-name';
+      name.textContent = holding.name;
+
+      const price = document.createElement('div');
+      price.className = 'holding-price';
+      price.textContent = holding.price ? `$${holding.price.toFixed(2)}` : '—';
+
+      const note = document.createElement('div');
+      note.className = 'holding-placeholder-note';
+      note.textContent = 'placeholder — live price not wired yet';
+
+      card.append(ticker, name, price, note);
+      card.addEventListener('click', () => {
+        // TODO: open detail view, edit shares, recalc position value.
+        alert(`${holding.ticker} detail view -- not built yet.`);
+      });
+      return card;
+    }
+
+    TILES.forEach((t) => tilesEl.append(buildTile(t)));
+    HOLDINGS.forEach((h) => holdingsEl.append(buildHoldingCard(h)));
+  </script>
+</body>
+</html>
