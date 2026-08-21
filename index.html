@@ -52,10 +52,12 @@
   /* Link tiles -- same card language as Renewals' item rows (input-bg,
      border, 10px radius), stacked vertically, each just a plain link
      out to its own existing tool. Pinned to the left edge of the
-     viewport independently of .container, so they stay put no matter
-     how the centered title/cards resize. Modular: one <a class="tile">
-     per entry in the TILES array below, add more there, nothing else
-     to touch. */
+     viewport (left never changes), independent of .container so it
+     doesn't move when the centered title/cards resize. `top` starts
+     at a sensible fallback for first paint, then JS measures the real
+     top of the first holding card and overwrites it -- see
+     alignTilesToCards() below -- so "Insider Edge" lands on the exact
+     same horizontal line as the AAPL card, not a guessed pixel value. */
   .tiles {
     position: fixed;
     top: 48px;
@@ -92,7 +94,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, 200px);
     justify-content: center;
-    gap: 16px;
+    gap: 32px;
   }
   .holding-card {
     background: var(--white);
@@ -210,6 +212,23 @@
 
     TILES.forEach((t) => tilesEl.append(buildTile(t)));
     HOLDINGS.forEach((h) => holdingsEl.append(buildHoldingCard(h)));
+
+    // ---- Vertically align the tiles column with the cards row. ----
+    // Left stays fixed (40px, untouched) -- only `top` moves, and it's
+    // measured from the real rendered position of the holdings row,
+    // not a guessed pixel value, so "Insider Edge" always lands on the
+    // exact same horizontal line as the first card even if the title
+    // wraps, the font hasn't loaded yet, or HOLDINGS grows to a second
+    // row on a narrow screen.
+    function alignTilesToCards() {
+      if (!holdingsEl.firstElementChild) return;
+      const cardsTop = holdingsEl.firstElementChild.getBoundingClientRect().top;
+      tilesEl.style.top = `${Math.round(cardsTop)}px`;
+    }
+    document.fonts.ready.then(alignTilesToCards);
+    window.addEventListener('resize', alignTilesToCards);
+    window.addEventListener('load', alignTilesToCards);
+    alignTilesToCards();
   </script>
 </body>
 </html>
