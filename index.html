@@ -30,16 +30,20 @@
     font-family: 'Montserrat', sans-serif;
     min-height: 100%;
   }
+  /* Left-anchored, not centered on the page -- the title stays visually
+     centered (text-align:center below), but the tiles/cards row now
+     starts near the real left edge of the screen instead of floating
+     in the middle of a wide viewport. */
   .container {
     max-width: 1040px;
-    margin: 0 auto;
-    padding: 48px 20px 80px;
+    margin: 0;
+    padding: 48px 20px 80px 40px;
   }
   h1 {
     color: var(--gold);
     font-weight: 700;
     font-size: 32px;
-    margin: 0 0 40px;
+    margin: 0 0 64px;
     text-align: center;
   }
 
