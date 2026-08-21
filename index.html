@@ -30,44 +30,40 @@
     font-family: 'Montserrat', sans-serif;
     min-height: 100%;
   }
-  /* Left-anchored, not centered on the page -- the title stays visually
-     centered (text-align:center below), but the tiles/cards row now
-     starts near the real left edge of the screen instead of floating
-     in the middle of a wide viewport. */
+  /* Title + holdings are genuinely centered on the full page (this is
+     a real page-width container, margin:0 auto). The tiles are pulled
+     OUT of this flow entirely (see .tiles below, position:fixed) so
+     the two can be independently positioned: tiles pinned to the left
+     edge of the viewport, title/cards centered on the whole screen --
+     these are no longer the same box, on purpose. */
   .container {
     max-width: 1040px;
-    margin: 0;
-    padding: 48px 20px 80px 40px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
   }
   h1 {
     color: var(--gold);
     font-weight: 700;
-    font-size: 32px;
-    margin: 0 0 64px;
+    font-size: 52px;
+    margin: 0 0 96px;
     text-align: center;
-  }
-
-  /* Layout: tiles on the left, holdings in the center. Stacks on
-     narrow screens instead of squeezing side by side. */
-  .board {
-    display: flex;
-    gap: 32px;
-    align-items: flex-start;
-  }
-  @media (max-width: 640px) {
-    .board { flex-direction: column; }
   }
 
   /* Link tiles -- same card language as Renewals' item rows (input-bg,
      border, 10px radius), stacked vertically, each just a plain link
-     out to its own existing tool. Modular: one <a class="tile"> per
-     entry in the TILES array below, add more there, nothing else to
-     touch. */
+     out to its own existing tool. Pinned to the left edge of the
+     viewport independently of .container, so they stay put no matter
+     how the centered title/cards resize. Modular: one <a class="tile">
+     per entry in the TILES array below, add more there, nothing else
+     to touch. */
   .tiles {
+    position: fixed;
+    top: 48px;
+    left: 40px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    flex: 0 0 200px;
+    width: 200px;
   }
   .tile {
     display: block;
@@ -87,13 +83,15 @@
 
   /* Investment cards -- white fill per spec (not the navy card language
      used elsewhere), same 10px radius as everything else on the page.
-     Grid so new holdings wrap naturally instead of needing manual
-     layout math -- modular: one card per entry in HOLDINGS, add more
+     Fixed-width tracks + justify-content:center (not auto-fill/1fr,
+     which would stretch to fill the whole centered container) so the
+     cards read as a centered cluster of their natural size, however
+     many there are. Modular: one card per entry in HOLDINGS, add more
      there, nothing else to touch. */
   .holdings {
-    flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, 200px);
+    justify-content: center;
     gap: 16px;
   }
   .holding-card {
@@ -147,13 +145,11 @@
 </style>
 </head>
 <body>
+  <div class="tiles" id="tiles"></div>
+
   <div class="container">
     <h1>Masterboard</h1>
-
-    <div class="board">
-      <div class="tiles" id="tiles"></div>
-      <div class="holdings" id="holdings"></div>
-    </div>
+    <div class="holdings" id="holdings"></div>
   </div>
 
   <script type="module">
