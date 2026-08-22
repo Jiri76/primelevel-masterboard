@@ -64,15 +64,21 @@
     left: 40px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 15px;
     width: 200px;
   }
+  /* Fixed 50px height via flex-centering rather than padding, so the
+     height is an exact pixel value regardless of font metrics -- not
+     a side-effect of top/bottom padding that happens to add up close
+     to 50px. */
   .tile {
-    display: block;
+    display: flex;
+    align-items: center;
+    height: 50px;
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
-    padding: 16px 18px;
+    padding: 0 18px;
     color: var(--white);
     font-weight: 700;
     font-size: 15px;
