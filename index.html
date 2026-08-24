@@ -143,13 +143,31 @@
     font-size: 15px;
     text-align: center;
   }
+  /* Real bug found and fixed: previously, a file the browser couldn't
+     actually render (most commonly a HEIC photo straight from an
+     iPhone -- Chrome/Firefox/Edge can't display that format in an
+     <img> at all, only Safari on Mac can) failed completely silently.
+     The picker would let you choose it, then nothing happened, no
+     explanation. Same red/13px language as Renewals' .date-error, for
+     consistency across the whole PrimeLevel family. */
+  .image-placeholder-error {
+    display: none;
+    color: var(--red);
+    font-size: 13px;
+    text-align: center;
+    padding: 0 30px;
+  }
+  .image-placeholder-error.visible {
+    display: block;
+  }
   .image-placeholder img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: none;
   }
-  .image-placeholder.has-image .image-placeholder-label {
+  .image-placeholder.has-image .image-placeholder-label,
+  .image-placeholder.has-image .image-placeholder-error {
     display: none;
   }
   .image-placeholder.has-image img {
@@ -164,6 +182,7 @@
     <h1>Masterboard</h1>
     <div class="image-placeholder" id="imagePlaceholder">
       <span class="image-placeholder-label">Click to select a picture</span>
+      <span class="image-placeholder-error" id="imagePlaceholderError"></span>
       <img id="imagePreview" alt="" />
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
@@ -207,13 +226,30 @@
     const imagePlaceholder = document.getElementById('imagePlaceholder');
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
+    const imagePlaceholderError = document.getElementById('imagePlaceholderError');
 
     imagePlaceholder.addEventListener('click', () => imageInput.click());
     imageInput.addEventListener('change', () => {
       const file = imageInput.files[0];
       if (!file) return;
-      imagePreview.src = URL.createObjectURL(file);
-      imagePlaceholder.classList.add('has-image');
+      imagePlaceholderError.textContent = '';
+      imagePlaceholderError.classList.remove('visible');
+      const objectUrl = URL.createObjectURL(file);
+      // Real bug fixed: previously nothing checked whether the browser
+      // could actually RENDER the chosen file -- a HEIC photo (the
+      // default format on modern iPhones) would get picked with no
+      // error, then just never appear, no explanation given. onload/
+      // onerror now give honest feedback either way.
+      imagePreview.onload = () => {
+        imagePlaceholder.classList.add('has-image');
+      };
+      imagePreview.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        imagePlaceholder.classList.remove('has-image');
+        imagePlaceholderError.textContent = `Couldn't display "${file.name}" — this browser can't render that image format (common with iPhone photos saved as HEIC). Try a JPG or PNG instead.`;
+        imagePlaceholderError.classList.add('visible');
+      };
+      imagePreview.src = objectUrl;
     });
 
     // ---- Vertically align the tiles column with the picture. ----
