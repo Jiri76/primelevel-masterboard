@@ -99,10 +99,15 @@
     font-weight: 700;
     font-size: 20px;
     text-decoration: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.1s ease;
   }
+  /* scale(1.015) on hover -- identical value and mechanism to Renewals'
+     .item.row-hovered pop (see that file's own hover-percentage notes),
+     per explicit request that these two match exactly, not just be
+     "similar." */
   .tile:hover {
     border-color: var(--white);
+    transform: scale(1.015);
   }
 
   /* Placeholder for the (not-yet-built) main picture -- 800x500 (width
