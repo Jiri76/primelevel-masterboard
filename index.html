@@ -185,12 +185,26 @@
     object-fit: cover;
     display: none;
   }
-  .image-placeholder.has-image .image-placeholder-label,
-  .image-placeholder.has-image .image-placeholder-error {
+  .image-placeholder.has-image .image-placeholder-label {
     display: none;
   }
   .image-placeholder.has-image img {
     display: block;
+  }
+  /* A picture that displayed fine locally but failed to SAVE is a
+     different situation from a file that can't be shown at all -- the
+     error still needs to be real and visible (never fail silently),
+     but shouldn't force the picture itself to hide. Shown as a bar
+     overlaid at the bottom of the still-visible picture instead of
+     the centered message used for the pre-image empty state. */
+  .image-placeholder.save-failed .image-placeholder-error {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 14px 20px;
+    background: rgba(30, 38, 51, 0.9);
   }
 </style>
 </head>
@@ -208,6 +222,30 @@
   </div>
 
   <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // Same Supabase project Renewals already uses -- same URL/key,
+    // confirmed via get_publishable_keys, not guessed/copied blind.
+    const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    // A dedicated public bucket, one fixed object key ('hero', no
+    // extension -- Content-Type is set explicitly on upload, so the
+    // browser renders it correctly regardless of the original file's
+    // format, and the URL never needs to change). Every new upload
+    // overwrites this same object (upsert:true) -- there's only ever
+    // one "current" picture, no version history to manage. Bucket read
+    // AND write are both open (no `to authenticated` restriction) --
+    // an explicit, accepted trade-off since Masterboard has no sign-in
+    // and its URL is private/never shared; real access control (a
+    // sign-in gate, reusing Renewals' own magic-link pattern, or a
+    // password-gated Edge Function) can be layered on later without
+    // touching the picture itself, since it only means swapping these
+    // two policies for stricter ones.
+    const PICTURE_BUCKET = 'masterboard-assets';
+    const PICTURE_KEY = 'hero';
+
     // ---- Link tiles -- add more tools here, nothing else to touch. ----
     // TODO: Insider Edge's real URL is a placeholder ("#") until confirmed.
     // Investments now points to its own page -- the 3 holding cards moved
@@ -234,14 +272,12 @@
 
     TILES.forEach((t) => tilesEl.append(buildTile(t)));
 
-    // ---- Picture placeholder -- structure-phase only, per explicit
-    // request ("just want to see it," real spec/persistence later).
-    // Clicking the box triggers the real (hidden) file input -- the
-    // standard, reliable way to make an arbitrary element act as an
-    // upload trigger, since a plain <div> can't open a file picker on
-    // its own. The chosen file is shown as a live preview via
-    // createObjectURL -- session-only, nothing uploaded or saved
-    // anywhere yet. ----
+    // ---- Picture placeholder -- now genuinely persisted to Supabase
+    // Storage (was session-only via createObjectURL alone). Clicking
+    // the box triggers the real (hidden) file input -- the standard,
+    // reliable way to make an arbitrary element act as an upload
+    // trigger, since a plain <div> can't open a file picker on its
+    // own. ----
     const imagePlaceholder = document.getElementById('imagePlaceholder');
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
@@ -254,13 +290,16 @@
       imagePlaceholderError.textContent = '';
       imagePlaceholderError.classList.remove('visible');
       const objectUrl = URL.createObjectURL(file);
-      // Real bug fixed: previously nothing checked whether the browser
-      // could actually RENDER the chosen file -- a HEIC photo (the
-      // default format on modern iPhones) would get picked with no
+      // Instant local preview first (createObjectURL, no network wait) --
+      // real bug fixed here previously: nothing checked whether the
+      // browser could actually RENDER the chosen file -- a HEIC photo
+      // (the default format on modern iPhones) would get picked with no
       // error, then just never appear, no explanation given. onload/
-      // onerror now give honest feedback either way.
+      // onerror give honest feedback either way.
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
+        URL.revokeObjectURL(objectUrl); // already decoded/painted, safe to release
+        uploadPicture(file);
       };
       imagePreview.onerror = () => {
         URL.revokeObjectURL(objectUrl);
@@ -270,6 +309,53 @@
       };
       imagePreview.src = objectUrl;
     });
+
+    // Uploads to the fixed PICTURE_KEY, overwriting whatever was there
+    // (upsert:true) -- this is the real save, separate from the instant
+    // local preview above. contentType is set explicitly from the
+    // file's own type so the browser renders it correctly on future
+    // loads regardless of the fixed key having no extension.
+    async function uploadPicture(file) {
+      const { error } = await supabase.storage
+        .from(PICTURE_BUCKET)
+        .upload(PICTURE_KEY, file, { upsert: true, contentType: file.type });
+      if (error) {
+        // The local preview is still showing (the pick itself was
+        // valid) -- this error means specifically that it did NOT get
+        // saved, so it would vanish again on refresh. Real, separate
+        // failure mode from the format-error case above -- shown as an
+        // overlay bar at the bottom of the now-visible picture (see
+        // .image-placeholder-error's positioning), not the centered
+        // message used for the pre-image state.
+        imagePlaceholder.classList.add('save-failed');
+        imagePlaceholderError.textContent = `Picture selected, but couldn't be saved — check your connection and try again.`;
+        imagePlaceholderError.classList.add('visible');
+      } else {
+        imagePlaceholder.classList.remove('save-failed');
+      }
+    }
+
+    // On page load, try to show whatever picture was last saved. A
+    // SEPARATE Image() probe, not the real <img id="imagePreview">,
+    // and deliberately does NOT reuse the file-picker's onload/onerror
+    // above -- failure here just means "nothing uploaded yet" (the
+    // normal empty state), not a format error worth alarming about,
+    // and success shouldn't re-trigger an upload back to itself.
+    // Cache-busted with a timestamp so a freshly re-uploaded picture
+    // doesn't keep showing a stale cached version.
+    function loadSavedPicture() {
+      const { data } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
+      const probe = new Image();
+      probe.onload = () => {
+        imagePreview.src = `${data.publicUrl}?t=${Date.now()}`;
+        imagePlaceholder.classList.add('has-image');
+      };
+      probe.onerror = () => {
+        // Nothing saved yet -- stay on the normal empty-state label.
+      };
+      probe.src = `${data.publicUrl}?t=${Date.now()}`;
+    }
+    loadSavedPicture();
 
     // ---- Vertically align the tiles column with the picture. ----
     // Left stays fixed (40px, untouched) -- only `top` moves, and it's
