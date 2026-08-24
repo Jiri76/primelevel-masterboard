@@ -124,6 +124,20 @@
      a real "picture frame" line now, per explicit request ("company's
      white" = the standard --white token used everywhere else), not
      the dashed placeholder-style border it started as. */
+  /* flex-direction:column + gap:50px -- per explicit request, when an
+     error message is showing (label and error both visible at once,
+     since only has-image hides them), they stack vertically (error on
+     top, label below, see the swapped HTML order below) with a 50px
+     gap between them, rather than sitting side by side in a row. gap
+     only actually creates space between elements that are BOTH
+     display:block -- a display:none sibling (the normal case, only
+     the label showing) contributes nothing, so this is safe to leave
+     on unconditionally. justify-content:center still centers the
+     whole stack vertically within the box; align-items:center now
+     centers each line horizontally (its role swaps with the axis
+     change, same net effect). The img (has-image state) is unaffected
+     -- its own explicit width/height:100% fill the box regardless of
+     flex-direction. */
   .image-placeholder {
     width: 800px;
     height: 500px;
@@ -132,8 +146,10 @@
     border: 1px solid var(--white);
     border-radius: 10px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 50px;
     cursor: pointer;
     overflow: hidden;
     position: relative;
@@ -150,10 +166,13 @@
      The picker would let you choose it, then nothing happened, no
      explanation. Same red/13px language as Renewals' .date-error, for
      consistency across the whole PrimeLevel family. */
+  /* font-size: 15px (was 13px) -- bumped up per explicit request,
+     matching .image-placeholder-label's own 15px so both lines of the
+     stacked message read at the same size. */
   .image-placeholder-error {
     display: none;
     color: var(--red);
-    font-size: 13px;
+    font-size: 15px;
     text-align: center;
     padding: 0 30px;
   }
@@ -181,8 +200,8 @@
   <div class="container">
     <h1>Masterboard</h1>
     <div class="image-placeholder" id="imagePlaceholder">
-      <span class="image-placeholder-label">Click to select a picture</span>
       <span class="image-placeholder-error" id="imagePlaceholderError"></span>
+      <span class="image-placeholder-label">Click to select a picture</span>
       <img id="imagePreview" alt="" />
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
