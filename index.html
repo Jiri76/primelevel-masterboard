@@ -30,6 +30,12 @@
     font-family: 'Montserrat', sans-serif;
     min-height: 100%;
   }
+  /* Smooth-scrolls the "Investments" tile's #holdings anchor jump into a
+     glide instead of an instant teleport -- global, but harmless: nothing
+     else on this single-screen page currently scrolls anywhere. */
+  html {
+    scroll-behavior: smooth;
+  }
   /* Title + holdings are genuinely centered on the full page (this is
      a real page-width container, margin:0 auto). The tiles are pulled
      OUT of this flow entirely (see .tiles below, position:fixed) so
@@ -163,9 +169,14 @@
   <script type="module">
     // ---- Link tiles -- add more tools here, nothing else to touch. ----
     // TODO: Insider Edge's real URL is a placeholder ("#") until confirmed.
+    // Investments -- not an external tool link like the other two, it's a
+    // same-page anchor down to the #holdings cards already on this page
+    // (the "move the cards under that button" request -- there's nowhere
+    // else for them to live, so the tile scrolls to where they already are).
     const TILES = [
       { label: 'Insider Edge', href: '#' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
+      { label: 'Investments', href: '#holdings' },
     ];
 
     // ---- Holdings -- placeholder data only. Live pricing (a real
