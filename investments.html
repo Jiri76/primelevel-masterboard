@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Investments — Masterboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* Same design tokens as index.html -- copied verbatim, not just
+     similar, same as every other PrimeLevel tool. */
+  :root {
+    --navy: #1E2633;
+    --white: #F9F9FA;
+    --gold: #B29B68;
+    --input-bg: #2A3441;
+    --placeholder: #8A93A3;
+    --border: #3A4453;
+    --green: #4CAF7D;
+    --orange: #D9A441;
+    --red: #E45858;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100%;
+  }
+  .container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 100px 20px 80px;
+  }
+  /* Same h1 language as Masterboard's own title -- not a coincidence,
+     "placed in the same way" per explicit request. */
+  h1 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 60px;
+    margin: 0 0 100px;
+    text-align: center;
+  }
+  /* Minimal, functional-only back link -- structure-phase placeholder,
+     not yet styled/positioned to any locked spec. Without SOME way
+     back, this page would be a dead end (no browser-back guarantee on
+     every device/context) -- to be properly designed in the polish
+     pass, same as everything else on this page. */
+  .back-link {
+    position: fixed;
+    top: 40px;
+    left: 40px;
+    color: var(--white);
+    opacity: 0.6;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .back-link:hover {
+    opacity: 1;
+  }
+
+  /* Investment cards -- identical to Masterboard's own, moved here
+     verbatim, not redesigned. White fill, 10px radius, fixed-width
+     tracks + justify-content:center so the cluster centers at its
+     natural size. Modular: one card per entry in HOLDINGS. */
+  .holdings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 300px);
+    justify-content: center;
+    gap: 40px;
+  }
+  .holding-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    transition: transform 0.1s ease;
+  }
+  .holding-card:hover {
+    transform: scale(1.02);
+  }
+  .holding-card:active {
+    transform: scale(0.98);
+  }
+  .holding-ticker {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+  .holding-name {
+    color: var(--navy);
+    opacity: 0.6;
+    font-size: 13px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .holding-price {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .holding-placeholder-note {
+    color: var(--placeholder);
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .empty-state {
+    color: var(--placeholder);
+    font-size: 15px;
+    text-align: center;
+    padding: 40px 0;
+  }
+</style>
+</head>
+<body>
+  <a class="back-link" href="index.html">&larr; Masterboard</a>
+
+  <div class="container">
+    <h1>Investments</h1>
+    <div class="holdings" id="holdings"></div>
+  </div>
+
+  <script type="module">
+    // ---- Holdings -- placeholder data only, moved here verbatim from
+    // Masterboard. Live pricing (a real market-data API) and persisted
+    // share counts are the next real decision, not built yet. ----
+    const HOLDINGS = [
+      { ticker: 'AAPL', name: 'Apple Inc.', price: 0, shares: 0 },
+      { ticker: 'MSFT', name: 'Microsoft Corp.', price: 0, shares: 0 },
+      { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 0, shares: 0 },
+    ];
+
+    const holdingsEl = document.getElementById('holdings');
+
+    function buildHoldingCard(holding) {
+      const card = document.createElement('button');
+      card.className = 'holding-card';
+
+      const ticker = document.createElement('div');
+      ticker.className = 'holding-ticker';
+      ticker.textContent = holding.ticker;
+
+      const name = document.createElement('div');
+      name.className = 'holding-name';
+      name.textContent = holding.name;
+
+      const price = document.createElement('div');
+      price.className = 'holding-price';
+      price.textContent = holding.price ? `$${holding.price.toFixed(2)}` : '—';
+
+      const note = document.createElement('div');
+      note.className = 'holding-placeholder-note';
+      note.textContent = 'placeholder — live price not wired yet';
+
+      card.append(ticker, name, price, note);
+      card.addEventListener('click', () => {
+        // TODO: open detail view, edit shares, recalc position value.
+        alert(`${holding.ticker} detail view -- not built yet.`);
+      });
+      return card;
+    }
+
+    HOLDINGS.forEach((h) => holdingsEl.append(buildHoldingCard(h)));
+  </script>
+</body>
+</html>

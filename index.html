@@ -30,18 +30,12 @@
     font-family: 'Montserrat', sans-serif;
     min-height: 100%;
   }
-  /* Smooth-scrolls the "Investments" tile's #holdings anchor jump into a
-     glide instead of an instant teleport -- global, but harmless: nothing
-     else on this single-screen page currently scrolls anywhere. */
-  html {
-    scroll-behavior: smooth;
-  }
-  /* Title + holdings are genuinely centered on the full page (this is
-     a real page-width container, margin:0 auto). The tiles are pulled
-     OUT of this flow entirely (see .tiles below, position:fixed) so
-     the two can be independently positioned: tiles pinned to the left
-     edge of the viewport, title/cards centered on the whole screen --
-     these are no longer the same box, on purpose. */
+  /* Title is genuinely centered on the full page (this is a real
+     page-width container, margin:0 auto). The tiles are pulled OUT of
+     this flow entirely (see .tiles below, position:fixed) so the two
+     can be independently positioned: tiles pinned to the left edge of
+     the viewport, title centered on the whole screen -- these are no
+     longer the same box, on purpose. */
   .container {
     max-width: 1040px;
     margin: 0 auto;
@@ -59,11 +53,13 @@
      border, 10px radius), stacked vertically, each just a plain link
      out to its own existing tool. Pinned to the left edge of the
      viewport (left never changes), independent of .container so it
-     doesn't move when the centered title/cards resize. `top` starts
-     at a sensible fallback for first paint, then JS measures the real
-     top of the first holding card and overwrites it -- see
-     alignTilesToCards() below -- so "Insider Edge" lands on the exact
-     same horizontal line as the AAPL card, not a guessed pixel value. */
+     doesn't move when the centered title resizes.
+     `top: 48px` is a plain fixed value now, not JS-measured -- it used
+     to be dynamically aligned to the first holding card's top edge
+     (see the old alignTilesToCards() logic, removed), but the cards
+     have moved to their own investments.html page (per explicit
+     request), so there's nothing left on THIS page to align to.
+     Structure-phase placeholder value -- revisit in the polish pass. */
   .tiles {
     position: fixed;
     top: 48px;
@@ -95,66 +91,44 @@
     border-color: var(--white);
   }
 
-  /* Investment cards -- white fill per spec (not the navy card language
-     used elsewhere), same 10px radius as everything else on the page.
-     Fixed-width tracks + justify-content:center (not auto-fill/1fr,
-     which would stretch to fill the whole centered container) so the
-     cards read as a centered cluster of their natural size, however
-     many there are. Modular: one card per entry in HOLDINGS, add more
-     there, nothing else to touch. */
-  .holdings {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 300px);
-    justify-content: center;
-    gap: 40px;
-  }
-  .holding-card {
-    background: var(--white);
+  /* Placeholder for the (not-yet-built) main picture -- fixed 700x500,
+     centered under the title, per explicit request: "just center it,
+     we'll adjust it later with the spec." Click opens the native file
+     picker (a hidden real <input type="file">, triggered programmatically
+     -- the only reliable cross-browser way to make an arbitrary element
+     act as an upload trigger); the chosen image previews inside the box
+     immediately (object-fit:cover, session-only via createObjectURL --
+     nothing persisted anywhere yet, this is just to SEE it working). */
+  .image-placeholder {
+    width: 700px;
+    height: 500px;
+    margin: 0 auto;
+    background: var(--input-bg);
+    border: 1px dashed var(--border);
     border-radius: 10px;
-    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    border: none;
-    text-align: left;
-    font-family: 'Montserrat', sans-serif;
-    transition: transform 0.1s ease;
-  }
-  .holding-card:hover {
-    transform: scale(1.02);
-  }
-  .holding-card:active {
-    transform: scale(0.98);
-  }
-  .holding-ticker {
-    color: var(--navy);
-    font-weight: 700;
-    font-size: 20px;
-    margin-bottom: 2px;
-  }
-  .holding-name {
-    color: var(--navy);
-    opacity: 0.6;
-    font-size: 13px;
-    margin-bottom: 14px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    position: relative;
   }
-  .holding-price {
-    color: var(--navy);
-    font-weight: 700;
-    font-size: 22px;
-  }
-  .holding-placeholder-note {
-    color: var(--placeholder);
-    font-size: 11px;
-    margin-top: 6px;
-  }
-
-  .empty-state {
+  .image-placeholder-label {
     color: var(--placeholder);
     font-size: 15px;
     text-align: center;
-    padding: 40px 0;
+  }
+  .image-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .image-placeholder.has-image .image-placeholder-label {
+    display: none;
+  }
+  .image-placeholder.has-image img {
+    display: block;
   }
 </style>
 </head>
@@ -163,33 +137,26 @@
 
   <div class="container">
     <h1>Masterboard</h1>
-    <div class="holdings" id="holdings"></div>
+    <div class="image-placeholder" id="imagePlaceholder">
+      <span class="image-placeholder-label">Click to select a picture</span>
+      <img id="imagePreview" alt="" />
+      <input type="file" id="imageInput" accept="image/*" hidden />
+    </div>
   </div>
 
   <script type="module">
     // ---- Link tiles -- add more tools here, nothing else to touch. ----
     // TODO: Insider Edge's real URL is a placeholder ("#") until confirmed.
-    // Investments -- not an external tool link like the other two, it's a
-    // same-page anchor down to the #holdings cards already on this page
-    // (the "move the cards under that button" request -- there's nowhere
-    // else for them to live, so the tile scrolls to where they already are).
+    // Investments now points to its own page -- the 3 holding cards moved
+    // there entirely (per explicit request), this page no longer has a
+    // holdings section to anchor-scroll to.
     const TILES = [
       { label: 'Insider Edge', href: '#' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
-      { label: 'Investments', href: '#holdings' },
-    ];
-
-    // ---- Holdings -- placeholder data only. Live pricing (a real
-    // market-data API) and persisted share counts are the next real
-    // decision, not built yet. ----
-    const HOLDINGS = [
-      { ticker: 'AAPL', name: 'Apple Inc.', price: 0, shares: 0 },
-      { ticker: 'MSFT', name: 'Microsoft Corp.', price: 0, shares: 0 },
-      { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 0, shares: 0 },
+      { label: 'Investments', href: 'investments.html' },
     ];
 
     const tilesEl = document.getElementById('tiles');
-    const holdingsEl = document.getElementById('holdings');
 
     function buildTile({ label, href }) {
       const a = document.createElement('a');
@@ -199,53 +166,27 @@
       return a;
     }
 
-    function buildHoldingCard(holding) {
-      const card = document.createElement('button');
-      card.className = 'holding-card';
-
-      const ticker = document.createElement('div');
-      ticker.className = 'holding-ticker';
-      ticker.textContent = holding.ticker;
-
-      const name = document.createElement('div');
-      name.className = 'holding-name';
-      name.textContent = holding.name;
-
-      const price = document.createElement('div');
-      price.className = 'holding-price';
-      price.textContent = holding.price ? `$${holding.price.toFixed(2)}` : '—';
-
-      const note = document.createElement('div');
-      note.className = 'holding-placeholder-note';
-      note.textContent = 'placeholder — live price not wired yet';
-
-      card.append(ticker, name, price, note);
-      card.addEventListener('click', () => {
-        // TODO: open detail view, edit shares, recalc position value.
-        alert(`${holding.ticker} detail view -- not built yet.`);
-      });
-      return card;
-    }
-
     TILES.forEach((t) => tilesEl.append(buildTile(t)));
-    HOLDINGS.forEach((h) => holdingsEl.append(buildHoldingCard(h)));
 
-    // ---- Vertically align the tiles column with the cards row. ----
-    // Left stays fixed (40px, untouched) -- only `top` moves, and it's
-    // measured from the real rendered position of the holdings row,
-    // not a guessed pixel value, so "Insider Edge" always lands on the
-    // exact same horizontal line as the first card even if the title
-    // wraps, the font hasn't loaded yet, or HOLDINGS grows to a second
-    // row on a narrow screen.
-    function alignTilesToCards() {
-      if (!holdingsEl.firstElementChild) return;
-      const cardsTop = holdingsEl.firstElementChild.getBoundingClientRect().top;
-      tilesEl.style.top = `${Math.round(cardsTop)}px`;
-    }
-    document.fonts.ready.then(alignTilesToCards);
-    window.addEventListener('resize', alignTilesToCards);
-    window.addEventListener('load', alignTilesToCards);
-    alignTilesToCards();
+    // ---- Picture placeholder -- structure-phase only, per explicit
+    // request ("just want to see it," real spec/persistence later).
+    // Clicking the box triggers the real (hidden) file input -- the
+    // standard, reliable way to make an arbitrary element act as an
+    // upload trigger, since a plain <div> can't open a file picker on
+    // its own. The chosen file is shown as a live preview via
+    // createObjectURL -- session-only, nothing uploaded or saved
+    // anywhere yet. ----
+    const imagePlaceholder = document.getElementById('imagePlaceholder');
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+
+    imagePlaceholder.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      imagePreview.src = URL.createObjectURL(file);
+      imagePlaceholder.classList.add('has-image');
+    });
   </script>
 </body>
 </html>
