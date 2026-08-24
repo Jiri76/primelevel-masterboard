@@ -78,9 +78,18 @@
      font size, per explicit request. font-weight was already 700 on
      both, unchanged -- confirmed identical bold weight before this
      change, this only brings the size in line too. */
+  /* justify-content:center added -- per explicit request, the label
+     text is now centered horizontally too, not just vertically
+     (align-items:center already handled that). Since each tile
+     stretches to the full 200px .tiles width (flex-column's default
+     cross-axis stretch), centering means equal left/right space
+     around whatever that specific label's own rendered width is --
+     genuinely symmetric per tile, not a fixed padding value that only
+     happens to look centered for one label length. */
   .tile {
     display: flex;
     align-items: center;
+    justify-content: center;
     height: 50px;
     background: var(--input-bg);
     border: 0.5px solid var(--border);
