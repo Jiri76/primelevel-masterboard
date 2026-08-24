@@ -97,17 +97,16 @@
     padding: 0 18px;
     color: var(--white);
     font-weight: 700;
-    font-size: 20px;
+    font-size: 18px;
     text-decoration: none;
     transition: border-color 0.15s ease, transform 0.1s ease;
   }
-  /* scale(1.015) on hover -- identical value and mechanism to Renewals'
-     .item.row-hovered pop (see that file's own hover-percentage notes),
-     per explicit request that these two match exactly, not just be
-     "similar." */
+  /* scale(1.02) on hover -- bumped up from 1.015 per explicit request.
+     No longer literally identical to Renewals' 1.5% item-row pop (that
+     was the prior request, this one supersedes it for tiles only). */
   .tile:hover {
     border-color: var(--white);
-    transform: scale(1.015);
+    transform: scale(1.02);
   }
 
   /* Placeholder for the (not-yet-built) main picture -- 800x500 (width
@@ -121,12 +120,16 @@
      act as an upload trigger); the chosen image previews inside the box
      immediately (object-fit:cover, session-only via createObjectURL --
      nothing persisted anywhere yet, this is just to SEE it working). */
+  /* border: 1px solid var(--white) (was 1px dashed var(--border)) --
+     a real "picture frame" line now, per explicit request ("company's
+     white" = the standard --white token used everywhere else), not
+     the dashed placeholder-style border it started as. */
   .image-placeholder {
     width: 800px;
     height: 500px;
     margin: 0 auto;
     background: var(--input-bg);
-    border: 1px dashed var(--border);
+    border: 1px solid var(--white);
     border-radius: 10px;
     display: flex;
     align-items: center;
