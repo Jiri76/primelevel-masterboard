@@ -154,10 +154,13 @@
     // Investments now points to its own page -- the 3 holding cards moved
     // there entirely (per explicit request), this page no longer has a
     // holdings section to anchor-scroll to.
+    // Alphabetical order, per explicit request: Insider Edge, Investments,
+    // Renewals -- "Insider" sorts before "Investments" (4th letter i < v),
+    // both sort before "Renewals" (starts with R).
     const TILES = [
       { label: 'Insider Edge', href: '#' },
-      { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
       { label: 'Investments', href: 'investments.html' },
+      { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
     ];
 
     const tilesEl = document.getElementById('tiles');
