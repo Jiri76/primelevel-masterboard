@@ -54,12 +54,13 @@
      out to its own existing tool. Pinned to the left edge of the
      viewport (left never changes), independent of .container so it
      doesn't move when the centered title resizes.
-     `top: 48px` is a plain fixed value now, not JS-measured -- it used
-     to be dynamically aligned to the first holding card's top edge
-     (see the old alignTilesToCards() logic, removed), but the cards
-     have moved to their own investments.html page (per explicit
-     request), so there's nothing left on THIS page to align to.
-     Structure-phase placeholder value -- revisit in the polish pass. */
+     `top` starts at a sensible fallback for first paint, then JS
+     measures the real top of the picture placeholder and overwrites
+     it -- see alignTilesToPicture() below -- so "Insider Edge" lands
+     on the exact same horizontal line as the picture's own top edge,
+     not a guessed pixel value. Re-instated per explicit request after
+     briefly being a static fallback once the old holding cards (the
+     previous alignment target) moved to investments.html. */
   .tiles {
     position: fixed;
     top: 48px;
@@ -91,16 +92,19 @@
     border-color: var(--white);
   }
 
-  /* Placeholder for the (not-yet-built) main picture -- fixed 700x500,
-     centered under the title, per explicit request: "just center it,
-     we'll adjust it later with the spec." Click opens the native file
+  /* Placeholder for the (not-yet-built) main picture -- 800x500 (width
+     widened from 700px, +50px each side, per explicit request), still
+     centered under the title via margin:0 auto -- same horizontal
+     centering logic as before, just a wider box within it, so the
+     left/right margins from the viewport shrink symmetrically rather
+     than the box shifting off-center. Click opens the native file
      picker (a hidden real <input type="file">, triggered programmatically
      -- the only reliable cross-browser way to make an arbitrary element
      act as an upload trigger); the chosen image previews inside the box
      immediately (object-fit:cover, session-only via createObjectURL --
      nothing persisted anywhere yet, this is just to SEE it working). */
   .image-placeholder {
-    width: 700px;
+    width: 800px;
     height: 500px;
     margin: 0 auto;
     background: var(--input-bg);
@@ -187,6 +191,23 @@
       imagePreview.src = URL.createObjectURL(file);
       imagePlaceholder.classList.add('has-image');
     });
+
+    // ---- Vertically align the tiles column with the picture. ----
+    // Left stays fixed (40px, untouched) -- only `top` moves, and it's
+    // measured from the real rendered position of the picture
+    // placeholder, not a guessed pixel value, so "Insider Edge" always
+    // lands on the exact same horizontal line as the picture's own top
+    // edge, even if the title wraps or the font hasn't loaded yet.
+    // Same pattern as the original alignTilesToCards(), just re-targeted
+    // at the picture now that the holding cards have moved away.
+    function alignTilesToPicture() {
+      const pictureTop = imagePlaceholder.getBoundingClientRect().top;
+      tilesEl.style.top = `${Math.round(pictureTop)}px`;
+    }
+    document.fonts.ready.then(alignTilesToPicture);
+    window.addEventListener('resize', alignTilesToPicture);
+    window.addEventListener('load', alignTilesToPicture);
+    alignTilesToPicture();
   </script>
 </body>
 </html>
