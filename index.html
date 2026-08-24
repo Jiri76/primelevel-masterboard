@@ -74,6 +74,10 @@
      height is an exact pixel value regardless of font metrics -- not
      a side-effect of top/bottom padding that happens to add up close
      to 50px. */
+  /* font-size: 20px (was 15px) -- matched to Renewals' own item-name
+     font size, per explicit request. font-weight was already 700 on
+     both, unchanged -- confirmed identical bold weight before this
+     change, this only brings the size in line too. */
   .tile {
     display: flex;
     align-items: center;
@@ -84,7 +88,7 @@
     padding: 0 18px;
     color: var(--white);
     font-weight: 700;
-    font-size: 15px;
+    font-size: 20px;
     text-decoration: none;
     transition: border-color 0.15s ease;
   }
