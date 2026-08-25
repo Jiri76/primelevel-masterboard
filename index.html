@@ -242,6 +242,10 @@
       <img id="imagePreview" alt="" />
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
+    <!-- Temporary diagnostic output for the drag-axis bug being
+         investigated -- fills in after any real drag. Remove once
+         resolved; not part of the intended design. -->
+    <div id="dragDebug" style="color:#8A93A3; font-size:11px; text-align:center; margin-top:8px; font-family:monospace;"></div>
   </div>
 
   <script type="module">
@@ -454,10 +458,27 @@
       const newPosX = overflowX > 0 ? clamp(dragState.startPosX - (dxPx / overflowX) * 100, 0, 100) : dragState.startPosX;
       const newPosY = overflowY > 0 ? clamp(dragState.startPosY - (dyPx / overflowY) * 100, 0, 100) : dragState.startPosY;
       imagePreview.style.objectPosition = `${newPosX}% ${newPosY}%`;
+      // Temporary diagnostic capture -- the drag-axis bug hasn't
+      // reproduced in any remote test yet, so recording the real
+      // numbers from a real device's real drag is the fastest path to
+      // an actual answer. Remove once resolved.
+      window.__lastDragDiag = {
+        naturalWidth: imagePreview.naturalWidth, naturalHeight: imagePreview.naturalHeight,
+        frameWidth: frameRect.width, frameHeight: frameRect.height,
+        overflowX: overflowX.toFixed(1), overflowY: overflowY.toFixed(1),
+        dxPx, dyPx, newPosX: newPosX.toFixed(1), newPosY: newPosY.toFixed(1)
+      };
     });
     imagePreview.addEventListener('pointerup', () => {
       imagePreview.classList.remove('dragging');
-      if (dragState && dragState.moved) savePosition();
+      if (dragState && dragState.moved) {
+        savePosition();
+        const d = window.__lastDragDiag;
+        if (d) {
+          document.getElementById('dragDebug').textContent =
+            `debug: natural ${d.naturalWidth}x${d.naturalHeight} frame ${d.frameWidth}x${d.frameHeight} overflowX ${d.overflowX} overflowY ${d.overflowY} dxPx ${d.dxPx} dyPx ${d.dyPx} -> pos ${d.newPosX}% ${d.newPosY}%`;
+        }
+      }
       dragState = null;
     });
 
@@ -466,14 +487,23 @@
     }
 
     async function savePosition() {
-      const [x, y] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
+      const rawObjectPosition = getComputedStyle(imagePreview).objectPosition;
+      const [x, y] = rawObjectPosition.split(' ').map(parseFloat);
+      // Temporary diagnostic logging -- a real save failure is happening
+      // on the user's real device but hasn't reproduced in any manual
+      // test yet (raw fetch, and the supabase-js client directly, both
+      // succeed every time when tried). Logging the exact inputs and
+      // the real Supabase error (not a generic message) so the next
+      // real failure is actually diagnosable instead of a guess.
+      console.log('[savePosition] rawObjectPosition:', rawObjectPosition, 'parsed x/y:', x, y);
       const { error } = await supabase
         .from('masterboard_settings')
         .update({ image_position_x: x, image_position_y: y, updated_at: new Date().toISOString() })
         .eq('id', 1);
       if (error) {
+        console.error('[savePosition] Supabase error:', error);
         imagePlaceholder.classList.add('save-failed');
-        imagePlaceholderError.textContent = `New position selected, but couldn't be saved — check your connection and try again.`;
+        imagePlaceholderError.textContent = `Couldn't save position: ${error.message || error.code || 'unknown error'}`;
         imagePlaceholderError.classList.add('visible');
       } else {
         imagePlaceholder.classList.remove('save-failed');
