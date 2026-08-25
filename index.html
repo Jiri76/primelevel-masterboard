@@ -530,14 +530,16 @@
         });
         URL.revokeObjectURL(objectUrl);
 
-        // A brand-new picture resets to centered rather than inheriting
-        // the PREVIOUS picture's saved crop position -- that position
-        // was tuned for a different photo's composition, so keeping it
-        // would very likely look wrong on this new one. Persisted too
-        // (not just visual), so a later reload doesn't snap back to
-        // the old, now-stale position.
+        // A brand-new picture resets to centered AND un-zoomed, rather
+        // than inheriting the PREVIOUS picture's saved crop/zoom -- both
+        // were tuned for a different photo's composition, so keeping
+        // either would very likely look wrong on this new one. Persisted
+        // too (not just visual), so a later reload doesn't snap back to
+        // the old, now-stale position/zoom.
         imagePreview.style.objectPosition = '50% 50%';
-        savePosition({ picture_version: String(Date.now()) });
+        currentZoom = 1;
+        applyZoom();
+        savePosition({ picture_version: String(Date.now()), image_zoom: 1 });
       } finally {
         uploadInProgress = false;
         imagePlaceholder.classList.remove('uploading');
@@ -589,15 +591,20 @@
     // picture reuse the identical URL, so the browser's own cache can
     // serve it with zero network request at all -- not even a 304
     // round-trip).
-    // Paints the picture's position + src from a {x, y, version} object --
-    // shared by the instant local-cache paint below and the real
+    // Paints the picture's position/zoom + src from a {x, y, version, zoom}
+    // object -- shared by the instant local-cache paint below and the real
     // network-confirmed loadSettings() result below that, so there's only
-    // one place that actually touches the DOM for this.
-    function paintPicture({ x, y, version }) {
+    // one place that actually touches the DOM for this. zoom is applied
+    // inside onload, not before -- applyZoom() (see the drag section
+    // below) needs the image's real naturalWidth/Height, which isn't
+    // available until it's actually decoded.
+    function paintPicture({ x, y, version, zoom = 1 }) {
       imagePreview.style.objectPosition = `${x}% ${y}%`;
       const { data: urlData } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
+        currentZoom = zoom;
+        applyZoom();
       };
       imagePreview.onerror = () => {
         // Nothing saved yet -- stay on the normal empty-state label.
@@ -632,12 +639,12 @@
     async function loadSettings() {
       const { data, error } = await supabase
         .from('masterboard_settings')
-        .select('image_position_x, image_position_y, picture_version')
+        .select('image_position_x, image_position_y, picture_version, image_zoom')
         .eq('id', 1)
         .single();
       if (error || !data) return; // fresh install, no row yet -- stay on CSS defaults
 
-      const fresh = { x: data.image_position_x, y: data.image_position_y, version: data.picture_version };
+      const fresh = { x: data.image_position_x, y: data.image_position_y, version: data.picture_version, zoom: data.image_zoom };
       paintPicture(fresh);
       try {
         localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify(fresh));
@@ -687,6 +694,42 @@
       if (document.visibilityState === 'visible') loadSettings();
     });
 
+    // ---- Zoom (mouse wheel) -- lets the user scale the picture up beyond
+    // object-fit:cover's own minimum "just covers the frame" size. This is
+    // the real, correct fix for "I can only drag one direction" (see the
+    // drag-math comment below): panning alone can never give more than one
+    // axis of freedom for a photo whose proportions don't match the
+    // frame's, but zooming in creates real overflow on BOTH axes at once,
+    // regardless of the photo's own shape. currentZoom is a multiplier on
+    // TOP of the cover-minimum scale (1 = exactly at that minimum, no
+    // zoom); computeScale() is the one place that combines the two, reused
+    // by both applyZoom() (sizing) and the drag math below (panning range)
+    // so they can never drift out of sync with each other.
+    let currentZoom = 1;
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 3;
+    function computeScale(frameRect) {
+      const coverScale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight);
+      return coverScale * currentZoom;
+    }
+    // Explicit pixel width/height (rather than relying on object-fit:cover's
+    // own automatic sizing) is what makes zoom possible at all -- cover
+    // only ever computes ONE fixed "just covers" scale from the image's
+    // intrinsic size, with no way to tell it to go bigger. Setting the
+    // image's own box to exactly naturalSize * scale (preserving its real
+    // aspect ratio) makes object-fit a no-op regardless of its value (the
+    // box now matches the image's own proportions exactly, nothing left to
+    // crop), while still being clipped by the frame's overflow:hidden --
+    // the same visual result as cover at zoom=1, and genuinely bigger
+    // beyond that.
+    function applyZoom() {
+      if (!imagePreview.naturalWidth) return; // not decoded yet -- safe to skip, gets called again once it is
+      const frameRect = imagePlaceholder.getBoundingClientRect();
+      const scale = computeScale(frameRect);
+      imagePreview.style.width = `${imagePreview.naturalWidth * scale}px`;
+      imagePreview.style.height = `${imagePreview.naturalHeight * scale}px`;
+    }
+
     // ---- Drag-to-reposition -- click and hold on the picture, drag to
     // move which part of it shows through the frame (same interaction
     // as a profile-picture editor). Position is saved as CSS
@@ -724,23 +767,22 @@
 
       // How far the rendered image overflows the frame on each axis --
       // this IS the pixel distance that maps to the full 0-100% range,
-      // computed from the image's real natural size and object-fit:
-      // cover's own scaling rule (scale up until BOTH axes are covered,
-      // i.e. scale = the LARGER of the two ratios).
-      // IMPORTANT, confirmed with real diagnostic data, not a guess:
-      // for MOST photos, only ONE axis will have any overflow at all --
-      // this is mathematically inherent to object-fit:cover, not a bug.
-      // An 800x500 (1.6:1) frame holding a typical 4:3 phone photo
+      // computed from the image's real natural size and its current
+      // effective scale (object-fit:cover's own minimum, times whatever
+      // zoom the user has dialed in -- see computeScale() above).
+      // IMPORTANT, confirmed with real diagnostic data, not a guess: AT
+      // ZOOM=1, for MOST photos only ONE axis will have any overflow at
+      // all -- this is mathematically inherent to object-fit:cover, not a
+      // bug. An 800x500 (1.6:1) frame holding a typical 4:3 phone photo
       // (1.33:1) will have overflowX exactly 0 and real overflowY slack
       // (confirmed live: a 4032x3024 photo gave overflowX=0.0,
       // overflowY=100.0) -- so only vertical dragging is possible for
-      // that photo, and that's correct, not something to "fix." A
-      // wider photo (e.g. 16:9) would show the opposite: only
-      // horizontal room. If a user ever reports "I can only drag one
-      // way," check the actual photo's aspect ratio vs 1.6 before
-      // assuming it's a bug -- it usually isn't.
+      // that photo at zoom=1, and that's correct, not something to "fix"
+      // by itself. Zooming in (see the wheel handler below) is what adds
+      // real overflow to BOTH axes regardless of the photo's own shape --
+      // the actual, correct way to get full pan freedom on any photo.
       const frameRect = imagePlaceholder.getBoundingClientRect();
-      const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight);
+      const scale = computeScale(frameRect);
       const overflowX = imagePreview.naturalWidth * scale - frameRect.width;
       const overflowY = imagePreview.naturalHeight * scale - frameRect.height;
 
@@ -756,6 +798,30 @@
       if (dragState && dragState.moved) savePosition();
       dragState = null;
     });
+
+    // Mouse-wheel zoom -- see the zoom section above for why this is the
+    // real fix for one-axis-only panning. A wheel gesture fires MANY
+    // events per scroll tick, so the actual DB save is debounced (only
+    // fires 500ms after the wheel goes quiet), while the visible zoom
+    // itself updates on every single tick for a smooth, immediate feel --
+    // the same "instant visual, eventually-persisted" split already used
+    // for dragging (object-position updates live, savePosition() only
+    // fires once on release).
+    let zoomSaveTimer = null;
+    imagePreview.addEventListener('wheel', (e) => {
+      if (!imagePlaceholder.classList.contains('has-image')) return;
+      e.preventDefault(); // stop the page itself from scrolling while zooming the picture
+      currentZoom = clamp(currentZoom + (e.deltaY < 0 ? 0.1 : -0.1), MIN_ZOOM, MAX_ZOOM);
+      applyZoom();
+      // Zooming out can shrink the overflow on an axis that the CURRENT
+      // object-position percentage was previously relying on -- but since
+      // position is stored as a 0-100% fraction OF the overflow (not a
+      // raw pixel offset), clamping to [0,100] already guarantees no
+      // empty space is ever revealed at any zoom level, with no extra
+      // reclamping needed here.
+      clearTimeout(zoomSaveTimer);
+      zoomSaveTimer = setTimeout(() => savePosition({ image_zoom: currentZoom }), 500);
+    }, { passive: false }); // passive:false is required for preventDefault() to actually take effect on a wheel event
 
     function clamp(n, min, max) {
       return Math.min(max, Math.max(min, n));
@@ -779,19 +845,21 @@
       } else {
         imagePlaceholder.classList.remove('save-failed');
         // Keep the local instant-paint cache in sync with every
-        // successful save (a plain drag OR an upload) -- see
+        // successful save (a plain drag, a zoom, OR an upload) -- see
         // PICTURE_CACHE_KEY above. Without this, the VERY FIRST trip
         // back after a save would still instant-paint the OLD cached
         // state for a brief moment before self-correcting, rather than
         // the new one being right first time. Preserves whatever
-        // version is already cached when this particular save didn't
-        // touch the picture itself (a plain drag) -- only updates it
-        // when extraFields actually carries a new one (an upload).
+        // version/zoom is already cached when this particular save
+        // didn't touch it (e.g. a plain drag doesn't change zoom) --
+        // only updates a field when extraFields actually carries a new
+        // value for it (an upload bumps version; a wheel zoom bumps zoom).
         try {
           const existing = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null') || {};
           localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify({
             x, y,
             version: extraFields.picture_version ?? existing.version,
+            zoom: extraFields.image_zoom ?? existing.zoom ?? 1,
           }));
         } catch {
           // Harmless if storage is unavailable -- just means no instant paint next time.
