@@ -438,48 +438,56 @@
         imagePlaceholderError.classList.add('visible');
       } else {
         imagePlaceholder.classList.remove('save-failed');
-        // Persist the centered reset from just above, so a reload
-        // doesn't snap back to whatever position the PREVIOUS picture
-        // had saved.
-        savePosition();
+        // Persist the centered reset from just above, AND bump the
+        // picture's version key together in one update -- see
+        // loadSettings() below for why the version key exists (a real
+        // regression: removing cache-busting entirely to fix the ~2s
+        // reload delay meant a genuinely NEW picture could still show
+        // the OLD one on next visit, since this fixed URL never
+        // changed and revalidation apparently isn't reliably honored
+        // by every layer between here and the browser). Date.now() is
+        // simply a value guaranteed to differ from the last one.
+        savePosition({ picture_version: String(Date.now()) });
       }
     }
 
-    // On page load, try to show whatever picture was last saved.
-    // Deliberately does NOT reuse the file-picker's onload/onerror
-    // above -- failure here just means "nothing uploaded yet" (the
-    // normal empty state), not a format error worth alarming about.
-    // Real slowness found and fixed: navigating away and back was
-    // taking ~2 seconds to show the picture again, for two stacked
-    // reasons. (1) This used to fetch the picture TWICE -- a separate
-    // "probe" Image object first, then the real <img> loaded again
-    // from a SECOND, differently-cache-busted URL -- two full
-    // downloads of the same multi-MB photo, every single visit. Now
-    // loads directly into the real <img>, once.
-    // (2) The `?t=${Date.now()}` on every load defeated the browser's
-    // own HTTP cache entirely, forcing a full re-download every time
-    // regardless of whether the picture had actually changed.
-    // Confirmed via the real response headers that Supabase Storage
-    // sends `Cache-Control: no-cache` + a strong `ETag` -- "no-cache"
-    // does NOT mean "don't cache," it means "cache it, but always ask
-    // the server first" -- so the browser can send a cheap conditional
-    // request and get back a tiny 304 Not Modified (near-instant, no
-    // re-transfer) when the picture is unchanged, which is true on
-    // every ordinary page revisit. A genuinely NEW upload gets a new
-    // ETag automatically, so this still updates correctly -- nothing
-    // here is at risk of showing a stale picture, only unnecessary
-    // re-downloads of an unchanged one are being avoided.
-    function loadSavedPicture() {
-      const { data } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
+    // Real regression found and fixed: removing the `?t=timestamp`
+    // cache-bust (to fix the ~2s reload delay -- see git history)
+    // meant the picture's URL never changed even when a genuinely NEW
+    // picture was uploaded, so on the next visit the browser (or an
+    // intermediate CDN/proxy layer that doesn't reliably honor
+    // Cache-Control revalidation the way plain browser-to-origin
+    // testing suggested it should) could keep serving the OLD picture
+    // indefinitely -- confirmed for real: uploading a new picture,
+    // navigating away, and back showed the previous one, not the new
+    // one. Fixed properly this time: `picture_version` (bumped
+    // alongside the position on every successful upload, see
+    // uploadPicture() above) is appended to the picture's URL as a
+    // stable cache-busting key. This gives BOTH correctness (the URL
+    // only changes when the picture genuinely does, so a real update
+    // is never missed) AND speed (repeat visits of the SAME picture
+    // reuse the identical URL, so the browser's own cache can serve it
+    // with zero network request at all -- not even a 304 round-trip).
+    async function loadSettings() {
+      const { data, error } = await supabase
+        .from('masterboard_settings')
+        .select('image_position_x, image_position_y, picture_version')
+        .eq('id', 1)
+        .single();
+      if (error || !data) return; // fresh install, no row yet -- stay on CSS defaults
+
+      imagePreview.style.objectPosition = `${data.image_position_x}% ${data.image_position_y}%`;
+
+      const { data: urlData } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
       };
       imagePreview.onerror = () => {
         // Nothing saved yet -- stay on the normal empty-state label.
       };
-      imagePreview.src = data.publicUrl;
+      imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(data.picture_version)}`;
     }
-    loadSavedPicture();
+    loadSettings();
 
     // ---- Drag-to-reposition -- click and hold on the picture, drag to
     // move which part of it shows through the frame (same interaction
@@ -555,12 +563,15 @@
       return Math.min(max, Math.max(min, n));
     }
 
-    async function savePosition() {
+    // extraFields lets a caller bundle other columns into the SAME
+    // update (e.g. uploadPicture() above also needs to bump
+    // picture_version) -- one round-trip instead of two separate ones.
+    async function savePosition(extraFields = {}) {
       const [x, y] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
       const { error } = await withRetry(() =>
         supabase
           .from('masterboard_settings')
-          .update({ image_position_x: x, image_position_y: y, updated_at: new Date().toISOString() })
+          .update({ image_position_x: x, image_position_y: y, updated_at: new Date().toISOString(), ...extraFields })
           .eq('id', 1)
       );
       if (error) {
@@ -571,21 +582,6 @@
         imagePlaceholder.classList.remove('save-failed');
       }
     }
-
-    // Applied on page load, alongside loadSavedPicture() -- if nothing's
-    // been saved yet (a genuinely fresh install, before the seed row
-    // exists for some reason) this quietly falls back to the CSS
-    // default of 50% 50%, already set directly on .image-placeholder img.
-    async function loadSavedPosition() {
-      const { data, error } = await supabase
-        .from('masterboard_settings')
-        .select('image_position_x, image_position_y')
-        .eq('id', 1)
-        .single();
-      if (error || !data) return;
-      imagePreview.style.objectPosition = `${data.image_position_x}% ${data.image_position_y}%`;
-    }
-    loadSavedPosition();
 
     // ---- Vertically align the tiles column with the picture. ----
     // Left stays fixed (40px, untouched) -- only `top` moves, and it's
