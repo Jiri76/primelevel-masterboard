@@ -229,6 +229,29 @@
     padding: 14px 20px;
     background: rgba(30, 38, 51, 0.9);
   }
+  /* Visible "Uploading..." bar while a new picture is being saved --
+     same bottom-overlay treatment as the save-failed error bar above
+     (so it never fights the drag-to-reposition affordance sitting over
+     the picture itself), but neutral-colored since it isn't an error.
+     Exists so a slow mobile-data upload (a multi-MB photo can take
+     several real seconds) never LOOKS like nothing happened -- see the
+     uploadInProgress guard in JS below, which this status pairs with. */
+  .image-placeholder-status {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 14px 20px;
+    background: rgba(30, 38, 51, 0.9);
+    color: var(--placeholder);
+    font-size: 15px;
+    text-align: center;
+  }
+  .image-placeholder.uploading .image-placeholder-status {
+    display: block;
+  }
 </style>
 </head>
 <body>
@@ -240,6 +263,7 @@
       <span class="image-placeholder-error" id="imagePlaceholderError"></span>
       <span class="image-placeholder-label">Click to select a picture</span>
       <img id="imagePreview" alt="" />
+      <span class="image-placeholder-status" id="imagePlaceholderStatus">Uploading…</span>
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
   </div>
@@ -305,6 +329,7 @@
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
+    const imagePlaceholderStatus = document.getElementById('imagePlaceholderStatus');
     const imagePlaceholderLabel = document.querySelector('.image-placeholder-label');
     imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
 
@@ -316,7 +341,20 @@
     // whether there's already a picture showing or not (lets you
     // replace it), matching the original behavior.
     let justDragged = false;
+    // Real bug found and fixed: nothing previously stopped a SECOND
+    // upload from starting while a FIRST one was still mid-flight (a
+    // multi-MB photo over mobile data can easily take several seconds --
+    // long enough for an impatient re-tap). With no guard, two uploads
+    // raced independently, and whichever one's request happened to reach
+    // the server LAST won -- regardless of which one the user actually
+    // meant to keep. Confirmed live: six upload attempts landed within
+    // nine minutes of real testing, and the final stored picture did not
+    // match the final thing the user picked. uploadInProgress blocks any
+    // new upload (click-to-reopen AND a stray file-input change) until
+    // the current one has fully resolved.
+    let uploadInProgress = false;
     imagePlaceholder.addEventListener('click', () => {
+      if (uploadInProgress) return;
       if (justDragged) { justDragged = false; return; }
       imageInput.click();
     });
@@ -342,6 +380,7 @@
     }
 
     imageInput.addEventListener('change', async () => {
+      if (uploadInProgress) return; // belt and braces alongside the click guard above
       let file = imageInput.files[0];
       if (!file) return;
       imagePlaceholderError.textContent = '';
@@ -422,9 +461,13 @@
     // file's own type so the browser renders it correctly on future
     // loads regardless of the fixed key having no extension.
     async function uploadPicture(file) {
+      uploadInProgress = true;
+      imagePlaceholder.classList.add('uploading');
       const { error } = await withRetry(() =>
         supabase.storage.from(PICTURE_BUCKET).upload(PICTURE_KEY, file, { upsert: true, contentType: file.type })
       );
+      uploadInProgress = false;
+      imagePlaceholder.classList.remove('uploading');
       if (error) {
         // The local preview is still showing (the pick itself was
         // valid) -- this error means specifically that it did NOT get
