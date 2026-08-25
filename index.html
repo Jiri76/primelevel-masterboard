@@ -536,6 +536,26 @@
     }
     loadSettings();
 
+    // Real bug found and fixed: Renewals has no link back to Masterboard,
+    // so the only way back is the browser's own Back button -- and for
+    // an external-site round trip like that, browsers frequently restore
+    // the page from the back/forward cache (bfcache) instead of doing a
+    // real reload. A bfcache restore repaints the exact frozen DOM from
+    // the moment the user left, WITHOUT re-running any of the load-time
+    // code above, so a position saved after that snapshot was taken
+    // never shows up -- confirmed live: an internal link (Investments'
+    // "back to Masterboard") and a full close/reopen both correctly
+    // showed the saved position, only the Renewals round trip didn't,
+    // which is exactly the bfcache-vs-real-navigation split. The
+    // standard fix: `pageshow`'s `event.persisted` flag is true
+    // specifically when the page came from the bfcache, so re-running
+    // loadSettings() only in that case forces a genuine refresh from the
+    // database -- a normal fresh load (persisted: false) is untouched,
+    // since loadSettings() already ran once above for that case.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) loadSettings();
+    });
+
     // ---- Drag-to-reposition -- click and hold on the picture, drag to
     // move which part of it shows through the frame (same interaction
     // as a profile-picture editor). Position is saved as CSS
