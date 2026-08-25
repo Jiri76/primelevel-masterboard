@@ -242,10 +242,6 @@
       <img id="imagePreview" alt="" />
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
-    <!-- Temporary diagnostic output for the drag-axis bug being
-         investigated -- fills in after any real drag. Remove once
-         resolved; not part of the intended design. -->
-    <div id="dragDebug" style="color:#8A93A3; font-size:11px; text-align:center; margin-top:8px; font-family:monospace;"></div>
   </div>
 
   <script type="module">
@@ -309,6 +305,7 @@
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
+    const imagePlaceholderLabel = document.querySelector('.image-placeholder-label');
     imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
 
     // A real drag (see the pointerdown/move/up block further down) must
@@ -323,18 +320,61 @@
       if (justDragged) { justDragged = false; return; }
       imageInput.click();
     });
-    imageInput.addEventListener('change', () => {
-      const file = imageInput.files[0];
+
+    // HEIC/HEIF (the default format on modern iPhones) can be SELECTED
+    // fine but can't be RENDERED by any browser except Safari -- rather
+    // than just explain that (the previous fix), convert it to a real
+    // JPEG right here in the browser before it ever reaches the
+    // preview/upload code below, so it just works either way. Checks
+    // both the reported MIME type AND the filename extension, since
+    // some OS/browser combinations report HEIC files with an empty or
+    // generic type instead of 'image/heic'.
+    function isHeic(file) {
+      const type = (file.type || '').toLowerCase();
+      const name = (file.name || '').toLowerCase();
+      return type.includes('heic') || type.includes('heif') || name.endsWith('.heic') || name.endsWith('.heif');
+    }
+    async function convertHeicToJpeg(file) {
+      const { default: heic2any } = await import('https://esm.sh/heic2any');
+      const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      const blob = Array.isArray(result) ? result[0] : result; // HEIC can technically hold multiple images (rare); take the first
+      return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+    }
+
+    imageInput.addEventListener('change', async () => {
+      let file = imageInput.files[0];
       if (!file) return;
       imagePlaceholderError.textContent = '';
       imagePlaceholderError.classList.remove('visible');
+
+      if (isHeic(file)) {
+        // Real conversion (WASM-based HEIC decode) can take a few
+        // seconds on a large photo -- instant status feedback here,
+        // same "don't leave the user wondering if it registered"
+        // principle already applied elsewhere (Renewals' "Sending..."
+        // button state). Reuses the existing neutral-colored label,
+        // not the red error text, since this isn't a failure.
+        imagePlaceholderLabel.textContent = 'Converting HEIC photo…';
+        try {
+          file = await convertHeicToJpeg(file);
+        } catch (err) {
+          imagePlaceholderLabel.textContent = 'Click to select a picture';
+          imagePlaceholderError.textContent = `Couldn't convert "${file.name}" — this HEIC file may be unusual or corrupted. Try a JPG or PNG instead.`;
+          imagePlaceholderError.classList.add('visible');
+          return;
+        }
+        imagePlaceholderLabel.textContent = 'Click to select a picture';
+      }
+
       const objectUrl = URL.createObjectURL(file);
       // Instant local preview first (createObjectURL, no network wait) --
       // real bug fixed here previously: nothing checked whether the
       // browser could actually RENDER the chosen file -- a HEIC photo
       // (the default format on modern iPhones) would get picked with no
-      // error, then just never appear, no explanation given. onload/
-      // onerror give honest feedback either way.
+      // error, then just never appear, no explanation given -- now
+      // converted above before ever reaching this point, but the
+      // onload/onerror check stays as a safety net for any OTHER
+      // format a browser genuinely can't render.
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
         URL.revokeObjectURL(objectUrl); // already decoded/painted, safe to release
@@ -350,7 +390,7 @@
       imagePreview.onerror = () => {
         URL.revokeObjectURL(objectUrl);
         imagePlaceholder.classList.remove('has-image');
-        imagePlaceholderError.textContent = `Couldn't display "${file.name}" — this browser can't render that image format (common with iPhone photos saved as HEIC). Try a JPG or PNG instead.`;
+        imagePlaceholderError.textContent = `Couldn't display "${file.name}" — this browser can't render that image format. Try a JPG or PNG instead.`;
         imagePlaceholderError.classList.add('visible');
       };
       imagePreview.src = objectUrl;
@@ -447,6 +487,18 @@
       // computed from the image's real natural size and object-fit:
       // cover's own scaling rule (scale up until BOTH axes are covered,
       // i.e. scale = the LARGER of the two ratios).
+      // IMPORTANT, confirmed with real diagnostic data, not a guess:
+      // for MOST photos, only ONE axis will have any overflow at all --
+      // this is mathematically inherent to object-fit:cover, not a bug.
+      // An 800x500 (1.6:1) frame holding a typical 4:3 phone photo
+      // (1.33:1) will have overflowX exactly 0 and real overflowY slack
+      // (confirmed live: a 4032x3024 photo gave overflowX=0.0,
+      // overflowY=100.0) -- so only vertical dragging is possible for
+      // that photo, and that's correct, not something to "fix." A
+      // wider photo (e.g. 16:9) would show the opposite: only
+      // horizontal room. If a user ever reports "I can only drag one
+      // way," check the actual photo's aspect ratio vs 1.6 before
+      // assuming it's a bug -- it usually isn't.
       const frameRect = imagePlaceholder.getBoundingClientRect();
       const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight);
       const overflowX = imagePreview.naturalWidth * scale - frameRect.width;
@@ -458,27 +510,10 @@
       const newPosX = overflowX > 0 ? clamp(dragState.startPosX - (dxPx / overflowX) * 100, 0, 100) : dragState.startPosX;
       const newPosY = overflowY > 0 ? clamp(dragState.startPosY - (dyPx / overflowY) * 100, 0, 100) : dragState.startPosY;
       imagePreview.style.objectPosition = `${newPosX}% ${newPosY}%`;
-      // Temporary diagnostic capture -- the drag-axis bug hasn't
-      // reproduced in any remote test yet, so recording the real
-      // numbers from a real device's real drag is the fastest path to
-      // an actual answer. Remove once resolved.
-      window.__lastDragDiag = {
-        naturalWidth: imagePreview.naturalWidth, naturalHeight: imagePreview.naturalHeight,
-        frameWidth: frameRect.width, frameHeight: frameRect.height,
-        overflowX: overflowX.toFixed(1), overflowY: overflowY.toFixed(1),
-        dxPx, dyPx, newPosX: newPosX.toFixed(1), newPosY: newPosY.toFixed(1)
-      };
     });
     imagePreview.addEventListener('pointerup', () => {
       imagePreview.classList.remove('dragging');
-      if (dragState && dragState.moved) {
-        savePosition();
-        const d = window.__lastDragDiag;
-        if (d) {
-          document.getElementById('dragDebug').textContent =
-            `debug: natural ${d.naturalWidth}x${d.naturalHeight} frame ${d.frameWidth}x${d.frameHeight} overflowX ${d.overflowX} overflowY ${d.overflowY} dxPx ${d.dxPx} dyPx ${d.dyPx} -> pos ${d.newPosX}% ${d.newPosY}%`;
-        }
-      }
+      if (dragState && dragState.moved) savePosition();
       dragState = null;
     });
 
