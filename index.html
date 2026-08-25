@@ -589,6 +589,46 @@
     // picture reuse the identical URL, so the browser's own cache can
     // serve it with zero network request at all -- not even a 304
     // round-trip).
+    // Paints the picture's position + src from a {x, y, version} object --
+    // shared by the instant local-cache paint below and the real
+    // network-confirmed loadSettings() result below that, so there's only
+    // one place that actually touches the DOM for this.
+    function paintPicture({ x, y, version }) {
+      imagePreview.style.objectPosition = `${x}% ${y}%`;
+      const { data: urlData } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
+      imagePreview.onload = () => {
+        imagePlaceholder.classList.add('has-image');
+      };
+      imagePreview.onerror = () => {
+        // Nothing saved yet -- stay on the normal empty-state label.
+      };
+      imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(version)}`;
+    }
+
+    // Real, measured flash found and fixed: forcing the settings fetch to
+    // always hit the network (cache: 'no-store' above -- necessary for
+    // real correctness, see that fix) reintroduced a brief "Click to
+    // select a picture" empty-state flash on EVERY fresh page load,
+    // however fast the round trip is, because nothing paints until that
+    // fetch resolves. Remember the last successfully-loaded picture
+    // locally (just the position + version, not the image itself) and
+    // paint from it INSTANTLY, synchronously, before any network call --
+    // the actual picture URL is unchanged when nothing's different, so
+    // the browser's own image cache serves it with no visible delay at
+    // all. loadSettings() below still always runs the real network fetch
+    // afterward to quietly confirm/correct this (repainting again if it's
+    // actually different), so a genuine change is never missed -- this
+    // only removes the VISIBLE flash for the overwhelmingly common case
+    // of "nothing changed since last visit."
+    const PICTURE_CACHE_KEY = 'masterboard-picture-cache-v1';
+    try {
+      const cached = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null');
+      if (cached) paintPicture(cached);
+    } catch {
+      // Private browsing or storage disabled -- harmless, just skip the
+      // instant paint and fall back to the normal network-only path below.
+    }
+
     async function loadSettings() {
       const { data, error } = await supabase
         .from('masterboard_settings')
@@ -597,16 +637,13 @@
         .single();
       if (error || !data) return; // fresh install, no row yet -- stay on CSS defaults
 
-      imagePreview.style.objectPosition = `${data.image_position_x}% ${data.image_position_y}%`;
-
-      const { data: urlData } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
-      imagePreview.onload = () => {
-        imagePlaceholder.classList.add('has-image');
-      };
-      imagePreview.onerror = () => {
-        // Nothing saved yet -- stay on the normal empty-state label.
-      };
-      imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(data.picture_version)}`;
+      const fresh = { x: data.image_position_x, y: data.image_position_y, version: data.picture_version };
+      paintPicture(fresh);
+      try {
+        localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify(fresh));
+      } catch {
+        // Harmless if storage is unavailable -- just means no instant paint next time.
+      }
     }
     loadSettings();
 
@@ -741,6 +778,24 @@
         imagePlaceholderError.classList.add('visible');
       } else {
         imagePlaceholder.classList.remove('save-failed');
+        // Keep the local instant-paint cache in sync with every
+        // successful save (a plain drag OR an upload) -- see
+        // PICTURE_CACHE_KEY above. Without this, the VERY FIRST trip
+        // back after a save would still instant-paint the OLD cached
+        // state for a brief moment before self-correcting, rather than
+        // the new one being right first time. Preserves whatever
+        // version is already cached when this particular save didn't
+        // touch the picture itself (a plain drag) -- only updates it
+        // when extraFields actually carries a new one (an upload).
+        try {
+          const existing = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null') || {};
+          localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify({
+            x, y,
+            version: extraFields.picture_version ?? existing.version,
+          }));
+        } catch {
+          // Harmless if storage is unavailable -- just means no instant paint next time.
+        }
       }
     }
 
