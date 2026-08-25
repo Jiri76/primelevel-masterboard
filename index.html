@@ -445,25 +445,39 @@
       }
     }
 
-    // On page load, try to show whatever picture was last saved. A
-    // SEPARATE Image() probe, not the real <img id="imagePreview">,
-    // and deliberately does NOT reuse the file-picker's onload/onerror
+    // On page load, try to show whatever picture was last saved.
+    // Deliberately does NOT reuse the file-picker's onload/onerror
     // above -- failure here just means "nothing uploaded yet" (the
-    // normal empty state), not a format error worth alarming about,
-    // and success shouldn't re-trigger an upload back to itself.
-    // Cache-busted with a timestamp so a freshly re-uploaded picture
-    // doesn't keep showing a stale cached version.
+    // normal empty state), not a format error worth alarming about.
+    // Real slowness found and fixed: navigating away and back was
+    // taking ~2 seconds to show the picture again, for two stacked
+    // reasons. (1) This used to fetch the picture TWICE -- a separate
+    // "probe" Image object first, then the real <img> loaded again
+    // from a SECOND, differently-cache-busted URL -- two full
+    // downloads of the same multi-MB photo, every single visit. Now
+    // loads directly into the real <img>, once.
+    // (2) The `?t=${Date.now()}` on every load defeated the browser's
+    // own HTTP cache entirely, forcing a full re-download every time
+    // regardless of whether the picture had actually changed.
+    // Confirmed via the real response headers that Supabase Storage
+    // sends `Cache-Control: no-cache` + a strong `ETag` -- "no-cache"
+    // does NOT mean "don't cache," it means "cache it, but always ask
+    // the server first" -- so the browser can send a cheap conditional
+    // request and get back a tiny 304 Not Modified (near-instant, no
+    // re-transfer) when the picture is unchanged, which is true on
+    // every ordinary page revisit. A genuinely NEW upload gets a new
+    // ETag automatically, so this still updates correctly -- nothing
+    // here is at risk of showing a stale picture, only unnecessary
+    // re-downloads of an unchanged one are being avoided.
     function loadSavedPicture() {
       const { data } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
-      const probe = new Image();
-      probe.onload = () => {
-        imagePreview.src = `${data.publicUrl}?t=${Date.now()}`;
+      imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
       };
-      probe.onerror = () => {
+      imagePreview.onerror = () => {
         // Nothing saved yet -- stay on the normal empty-state label.
       };
-      probe.src = `${data.publicUrl}?t=${Date.now()}`;
+      imagePreview.src = data.publicUrl;
     }
     loadSavedPicture();
 
