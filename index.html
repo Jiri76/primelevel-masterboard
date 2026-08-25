@@ -241,10 +241,15 @@
      overlay -- the old picture must NOT show through at all), and is
      the ONLY thing on screen until the new picture is actually ready to
      replace it, at which point this disappears and the new picture
-     appears in the same instant. Text styling (white, bold, 15px)
-     deliberately matches Renewals' own "Sending..." button state --
-     same language for "something's happening, wait" across the whole
-     PrimeLevel family. */
+     appears in the same instant. Text styling deliberately matches
+     Renewals' own "Sending..." button state exactly, per explicit
+     follow-up request -- not just the same white/bold/15px, but the
+     same 0.45 resting opacity too (that's genuinely what gives
+     "Sending..." its slightly muted/grey look, not a different color).
+     The dimming is on the inner text span only, NOT this outer
+     background box -- the box must stay fully opaque (see the
+     paragraph above: the old picture must never show through), only
+     the text itself should read as dimmed, same as the button. */
   .image-placeholder-status {
     display: none;
     position: absolute;
@@ -253,13 +258,16 @@
     justify-content: center;
     margin: 0;
     background: var(--navy);
-    color: var(--white);
-    font-weight: 700;
-    font-size: 15px;
     text-align: center;
   }
   .image-placeholder.uploading .image-placeholder-status {
     display: flex;
+  }
+  .image-placeholder-status-text {
+    color: var(--white);
+    font-weight: 700;
+    font-size: 15px;
+    opacity: 0.45;
   }
 </style>
 </head>
@@ -272,7 +280,7 @@
       <span class="image-placeholder-error" id="imagePlaceholderError"></span>
       <span class="image-placeholder-label">Click to select a picture</span>
       <img id="imagePreview" alt="" />
-      <span class="image-placeholder-status" id="imagePlaceholderStatus">Uploading…</span>
+      <span class="image-placeholder-status"><span class="image-placeholder-status-text">Uploading…</span></span>
       <input type="file" id="imageInput" accept="image/*" hidden />
     </div>
   </div>
