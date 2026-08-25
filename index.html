@@ -192,6 +192,18 @@
     display: none;
     cursor: grab;
     user-select: none;
+    /* Real bug found and fixed: without this, a VERTICAL drag on a
+       trackpad/touchscreen gets hijacked by the browser's own native
+       "scroll the page" gesture before the pointermove handler below
+       ever sees it -- horizontal drag works because pages don't
+       scroll sideways by default, so nothing competes for it. This is
+       exactly why "I can drag horizontally but not vertically" was
+       reported despite the underlying math (tested directly: this
+       exact photo's real overflow is 0px horizontal, 101px vertical --
+       vertical was the one with room to move, and still failed).
+       touch-action:none tells the browser this element handles its
+       own gestures entirely, so it stops intercepting any direction. */
+    touch-action: none;
   }
   .image-placeholder img.dragging {
     cursor: grabbing;
@@ -404,9 +416,16 @@
     let dragState = null;
     imagePreview.addEventListener('pointerdown', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
+      e.preventDefault(); // extra defense alongside touch-action:none above, belt and braces against native gesture interception
       const [startPosX, startPosY] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
       dragState = { startX: e.clientX, startY: e.clientY, startPosX, startPosY, moved: false };
-      imagePreview.setPointerCapture(e.pointerId);
+      try {
+        imagePreview.setPointerCapture(e.pointerId);
+      } catch {
+        // Harmless if it fails -- capture is a robustness nicety (keeps
+        // the drag tracking even if the cursor strays outside the
+        // image mid-drag), not required for the core drag math above.
+      }
     });
     imagePreview.addEventListener('pointermove', (e) => {
       if (!dragState) return;
