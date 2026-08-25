@@ -179,11 +179,22 @@
   .image-placeholder-error.visible {
     display: block;
   }
+  /* cursor:grab/grabbing and user-select:none -- affordance for the
+     drag-to-reposition feature below. Prevents the browser's native
+     text/image-drag selection artifact during a real drag (same class
+     of fix as Renewals' item rows -- see that project's own
+     user-select:none note). */
   .image-placeholder img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: 50% 50%;
     display: none;
+    cursor: grab;
+    user-select: none;
+  }
+  .image-placeholder img.dragging {
+    cursor: grabbing;
   }
   .image-placeholder.has-image .image-placeholder-label {
     display: none;
@@ -282,8 +293,20 @@
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
+    imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
 
-    imagePlaceholder.addEventListener('click', () => imageInput.click());
+    // A real drag (see the pointerdown/move/up block further down) must
+    // NOT also open the file picker -- justDragged tracks whether the
+    // most recent pointer gesture actually moved enough to count as a
+    // drag, so this click handler can skip opening the picker for that
+    // one click only. A plain click (no real movement) still opens it,
+    // whether there's already a picture showing or not (lets you
+    // replace it), matching the original behavior.
+    let justDragged = false;
+    imagePlaceholder.addEventListener('click', () => {
+      if (justDragged) { justDragged = false; return; }
+      imageInput.click();
+    });
     imageInput.addEventListener('change', () => {
       const file = imageInput.files[0];
       if (!file) return;
@@ -299,6 +322,13 @@
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
         URL.revokeObjectURL(objectUrl); // already decoded/painted, safe to release
+        // A brand-new picture resets to centered rather than inheriting
+        // the PREVIOUS picture's saved crop position -- that position
+        // was tuned for a different photo's composition, so keeping it
+        // would very likely look wrong on this new one. Persisted too
+        // (not just visual), so a later reload doesn't snap back to
+        // the old, now-stale position.
+        imagePreview.style.objectPosition = '50% 50%';
         uploadPicture(file);
       };
       imagePreview.onerror = () => {
@@ -332,6 +362,10 @@
         imagePlaceholderError.classList.add('visible');
       } else {
         imagePlaceholder.classList.remove('save-failed');
+        // Persist the centered reset from just above, so a reload
+        // doesn't snap back to whatever position the PREVIOUS picture
+        // had saved.
+        savePosition();
       }
     }
 
@@ -356,6 +390,91 @@
       probe.src = `${data.publicUrl}?t=${Date.now()}`;
     }
     loadSavedPicture();
+
+    // ---- Drag-to-reposition -- click and hold on the picture, drag to
+    // move which part of it shows through the frame (same interaction
+    // as a profile-picture editor). Position is saved as CSS
+    // object-position percentages (0-100 each axis) -- the exact unit
+    // CSS already uses, so there's no conversion needed on load, and
+    // the percentage range is INHERENTLY the full, exact valid range
+    // for this image/frame pairing (0% = image's start edge flush with
+    // the frame's start edge, 100% = image's end edge flush with the
+    // frame's end edge) -- clamping to [0,100] is therefore already
+    // exactly "never reveal empty space," not an approximation. ----
+    let dragState = null;
+    imagePreview.addEventListener('pointerdown', (e) => {
+      if (!imagePlaceholder.classList.contains('has-image')) return;
+      const [startPosX, startPosY] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
+      dragState = { startX: e.clientX, startY: e.clientY, startPosX, startPosY, moved: false };
+      imagePreview.setPointerCapture(e.pointerId);
+    });
+    imagePreview.addEventListener('pointermove', (e) => {
+      if (!dragState) return;
+      const dxPx = e.clientX - dragState.startX;
+      const dyPx = e.clientY - dragState.startY;
+      if (!dragState.moved && Math.hypot(dxPx, dyPx) > 3) {
+        dragState.moved = true;
+        justDragged = true; // stops the upcoming click from opening the file picker
+        imagePreview.classList.add('dragging');
+      }
+      if (!dragState.moved) return;
+
+      // How far the rendered image overflows the frame on each axis --
+      // this IS the pixel distance that maps to the full 0-100% range,
+      // computed from the image's real natural size and object-fit:
+      // cover's own scaling rule (scale up until BOTH axes are covered,
+      // i.e. scale = the LARGER of the two ratios).
+      const frameRect = imagePlaceholder.getBoundingClientRect();
+      const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight);
+      const overflowX = imagePreview.naturalWidth * scale - frameRect.width;
+      const overflowY = imagePreview.naturalHeight * scale - frameRect.height;
+
+      // Dragging the mouse right should reveal more of the image's LEFT
+      // side (the content follows the cursor, like panning a canvas) --
+      // that's a DECREASING object-position X, hence the minus sign.
+      const newPosX = overflowX > 0 ? clamp(dragState.startPosX - (dxPx / overflowX) * 100, 0, 100) : dragState.startPosX;
+      const newPosY = overflowY > 0 ? clamp(dragState.startPosY - (dyPx / overflowY) * 100, 0, 100) : dragState.startPosY;
+      imagePreview.style.objectPosition = `${newPosX}% ${newPosY}%`;
+    });
+    imagePreview.addEventListener('pointerup', () => {
+      imagePreview.classList.remove('dragging');
+      if (dragState && dragState.moved) savePosition();
+      dragState = null;
+    });
+
+    function clamp(n, min, max) {
+      return Math.min(max, Math.max(min, n));
+    }
+
+    async function savePosition() {
+      const [x, y] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
+      const { error } = await supabase
+        .from('masterboard_settings')
+        .update({ image_position_x: x, image_position_y: y, updated_at: new Date().toISOString() })
+        .eq('id', 1);
+      if (error) {
+        imagePlaceholder.classList.add('save-failed');
+        imagePlaceholderError.textContent = `New position selected, but couldn't be saved — check your connection and try again.`;
+        imagePlaceholderError.classList.add('visible');
+      } else {
+        imagePlaceholder.classList.remove('save-failed');
+      }
+    }
+
+    // Applied on page load, alongside loadSavedPicture() -- if nothing's
+    // been saved yet (a genuinely fresh install, before the seed row
+    // exists for some reason) this quietly falls back to the CSS
+    // default of 50% 50%, already set directly on .image-placeholder img.
+    async function loadSavedPosition() {
+      const { data, error } = await supabase
+        .from('masterboard_settings')
+        .select('image_position_x, image_position_y')
+        .eq('id', 1)
+        .single();
+      if (error || !data) return;
+      imagePreview.style.objectPosition = `${data.image_position_x}% ${data.image_position_y}%`;
+    }
+    loadSavedPosition();
 
     // ---- Vertically align the tiles column with the picture. ----
     // Left stays fixed (40px, untouched) -- only `top` moves, and it's
