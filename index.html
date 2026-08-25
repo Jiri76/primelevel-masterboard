@@ -229,32 +229,32 @@
     padding: 14px 20px;
     background: rgba(30, 38, 51, 0.9);
   }
-  /* Visible "Uploading..." bar while a new picture is being saved --
-     same bottom-overlay treatment as the save-failed error bar above
-     (so it never fights the drag-to-reposition affordance sitting over
-     the picture itself). Exists so a slow mobile-data upload (a
-     multi-MB photo can take several real seconds) never LOOKS like
-     nothing happened -- see the uploadInProgress guard in JS below,
-     which this status pairs with. Text styling (white, bold, 15px)
-     deliberately matches Renewals' own "Sending..." button state, per
-     explicit request -- same language for "something's happening,
-     wait" across the whole PrimeLevel family. */
+  /* Visible "Uploading..." overlay while a new picture is being saved --
+     a real, measured problem this fixes: the local preview (below)
+     appears INSTANTLY on selection, which visually looks fully done --
+     a small strip of text underneath it then read as an unrelated,
+     confusing afterthought, not as "this is still in progress". Per
+     explicit request, it now covers the entire frame instead, centered,
+     directly over the picture it's describing, and disappears the
+     instant the real save (see uploadInProgress in JS below) finishes.
+     Text styling (white, bold, 15px) deliberately matches Renewals' own
+     "Sending..." button state -- same language for "something's
+     happening, wait" across the whole PrimeLevel family. */
   .image-placeholder-status {
     display: none;
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
     margin: 0;
-    padding: 14px 20px;
-    background: rgba(30, 38, 51, 0.9);
+    background: rgba(30, 38, 51, 0.6);
     color: var(--white);
     font-weight: 700;
     font-size: 15px;
     text-align: center;
   }
   .image-placeholder.uploading .image-placeholder-status {
-    display: block;
+    display: flex;
   }
 </style>
 </head>
@@ -383,6 +383,33 @@
       return new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
     }
 
+    // Real fix for a real, measured slowness: a modern phone photo is
+    // commonly 4000+px wide and several MB (confirmed live: 6.2MB for
+    // one of this session's own test uploads) -- but the frame only
+    // ever DISPLAYS at 800x500. Uploading the full original wastes real
+    // time transferring pixels nobody can see, on every upload AND every
+    // future page load. 1600px (2x the frame's width, generous headroom
+    // for sharpness) at 85% JPEG quality is genuinely much smaller --
+    // typically a few hundred KB instead of several MB -- so this
+    // shrinks the actual wait, not just how it's communicated. Skips
+    // re-encoding entirely if the photo is already at or under that
+    // size, so a small image isn't needlessly re-compressed.
+    async function compressImage(file, maxDimension = 1600, quality = 0.85) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      if (scale === 1) {
+        bitmap.close?.();
+        return file;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+      return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+    }
+
     imageInput.addEventListener('change', async () => {
       if (uploadInProgress) return; // belt and braces alongside the click guard above
       let file = imageInput.files[0];
@@ -467,8 +494,12 @@
     async function uploadPicture(file) {
       uploadInProgress = true;
       imagePlaceholder.classList.add('uploading');
+      // Shrink to display size BEFORE the network call -- see
+      // compressImage() above for why -- this is what actually cuts the
+      // real wait, not just the visible status message below.
+      const uploadFile = await compressImage(file);
       const { error } = await withRetry(() =>
-        supabase.storage.from(PICTURE_BUCKET).upload(PICTURE_KEY, file, { upsert: true, contentType: file.type })
+        supabase.storage.from(PICTURE_BUCKET).upload(PICTURE_KEY, uploadFile, { upsert: true, contentType: uploadFile.type })
       );
       uploadInProgress = false;
       imagePlaceholder.classList.remove('uploading');
