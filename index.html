@@ -338,7 +338,6 @@
     const imageInput = document.getElementById('imageInput');
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
-    const imagePlaceholderStatus = document.getElementById('imagePlaceholderStatus');
     imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
 
     // A real drag (see the pointerdown/move/up block further down) must
@@ -435,15 +434,14 @@
       imagePlaceholder.classList.remove('save-failed');
 
       uploadInProgress = true;
-      imagePlaceholder.classList.add('uploading');
-      imagePlaceholderStatus.textContent = 'Uploading…';
+      imagePlaceholder.classList.add('uploading'); // reveals the static "Uploading…" cover -- see the HTML span, its text never changes
 
       try {
         if (isHeic(file)) {
-          // Real conversion (WASM-based HEIC decode) can take a few
-          // seconds on a large photo -- distinct status text, same
-          // opaque cover as the upload itself.
-          imagePlaceholderStatus.textContent = 'Converting HEIC photo…';
+          // Real conversion (WASM-based HEIC decode) happens here, but
+          // per explicit request the status text stays 'Uploading…'
+          // throughout -- the user doesn't need to know a format
+          // conversion is involved, only that something is happening.
           try {
             file = await convertHeicToJpeg(file);
           } catch (err) {
@@ -451,7 +449,6 @@
             imagePlaceholderError.classList.add('visible');
             return;
           }
-          imagePlaceholderStatus.textContent = 'Uploading…';
         }
 
         // Shrink to display size BEFORE the network call -- see
