@@ -294,7 +294,32 @@
     // confirmed via get_publishable_keys, not guessed/copied blind.
     const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    // Real root cause found and fixed: the settings GET (which fetches
+    // picture_version, the whole basis for the picture's cache-busted
+    // URL) hits the EXACT SAME URL every single time -- unlike the
+    // picture request, it carries no cache-busting parameter, since
+    // there's nothing to bust it WITH until this very response comes
+    // back. Confirmed live: that response carries no Cache-Control or
+    // ETag header at all, which leaves the browser free to apply its
+    // own unpredictable heuristic caching -- explaining why the bug
+    // struck even through a genuinely fresh internal link navigation
+    // (Investments' own link, no back button, no bfcache involved at
+    // all) and why it was inconsistent rather than reliably reproducible
+    // every single time. This was the actual root cause the earlier
+    // pageshow/visibilitychange fixes were unknowingly working around,
+    // not fixing -- those addressed a real but different, narrower
+    // problem (frozen page snapshots) and left this one untouched.
+    // Fixed at the source: every request this client makes (settings
+    // reads/writes, storage uploads) now explicitly bypasses the
+    // browser's HTTP cache entirely, rather than trusting server
+    // headers that turned out to be absent. This does NOT affect the
+    // picture's own load speed -- the <img> tag's fetch is a separate
+    // browser mechanism this client doesn't touch, so the version-keyed
+    // caching that makes repeat views of the SAME picture instant is
+    // untouched.
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) },
+    });
 
     // A dedicated public bucket, one fixed object key ('hero', no
     // extension -- Content-Type is set explicitly on upload, so the
