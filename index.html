@@ -605,6 +605,26 @@
       if (event.persisted) loadSettings();
     });
 
+    // Belt and braces alongside pageshow above: confirmed live (via
+    // Supabase's own request logs) that the DATABASE always has the
+    // correct, latest picture -- the Renewals-back-button staleness the
+    // user kept reporting is a real, but purely CLIENT-SIDE, symptom,
+    // and pageshow's persisted flag isn't a fully reliable signal for
+    // it across every browser/OS combination (real-world back/forward
+    // caching heuristics vary a lot, especially on mobile). `visible`
+    // fires every time the tab becomes visible again for ANY reason --
+    // this browser's back button, switching apps and back, switching
+    // browser tabs -- so it catches the same "the page might be showing
+    // stale content" moment regardless of which specific underlying
+    // browser mechanism is responsible, rather than betting on one named
+    // API being reliable everywhere. Cheap to over-fire: when nothing
+    // has actually changed, the picture URL is identical to what's
+    // already showing, so the browser's own image cache serves it
+    // instantly with no visible reload.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadSettings();
+    });
+
     // ---- Drag-to-reposition -- click and hold on the picture, drag to
     // move which part of it shows through the frame (same interaction
     // as a profile-picture editor). Position is saved as CSS
