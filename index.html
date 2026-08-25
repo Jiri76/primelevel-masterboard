@@ -242,14 +242,15 @@
      the ONLY thing on screen until the new picture is actually ready to
      replace it, at which point this disappears and the new picture
      appears in the same instant. Text styling deliberately matches
-     Renewals' own "Sending..." button state exactly, per explicit
-     follow-up request -- not just the same white/bold/15px, but the
-     same 0.45 resting opacity too (that's genuinely what gives
-     "Sending..." its slightly muted/grey look, not a different color).
-     The dimming is on the inner text span only, NOT this outer
-     background box -- the box must stay fully opaque (see the
-     paragraph above: the old picture must never show through), only
-     the text itself should read as dimmed, same as the button. */
+     Renewals' own "Sending..." button state for color and weight (white,
+     bold) and its 0.45 resting opacity (that's genuinely what gives
+     "Sending..." its slightly muted/grey look, not a different color) --
+     but at 18px, not the button's own 15px, matching the tiles'
+     font-size instead, per an explicit follow-up correction. The
+     dimming is on the inner text span only, NOT this outer background
+     box -- the box must stay fully opaque (see the paragraph above: the
+     old picture must never show through), only the text itself should
+     read as dimmed, same as the button. */
   .image-placeholder-status {
     display: none;
     position: absolute;
@@ -266,7 +267,7 @@
   .image-placeholder-status-text {
     color: var(--white);
     font-weight: 700;
-    font-size: 15px;
+    font-size: 18px; /* per explicit request -- matches the tiles' own font-size, not Renewals' Sending... button (which stays 15px) */
     opacity: 0.45;
   }
 </style>
