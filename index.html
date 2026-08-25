@@ -232,10 +232,13 @@
   /* Visible "Uploading..." bar while a new picture is being saved --
      same bottom-overlay treatment as the save-failed error bar above
      (so it never fights the drag-to-reposition affordance sitting over
-     the picture itself), but neutral-colored since it isn't an error.
-     Exists so a slow mobile-data upload (a multi-MB photo can take
-     several real seconds) never LOOKS like nothing happened -- see the
-     uploadInProgress guard in JS below, which this status pairs with. */
+     the picture itself). Exists so a slow mobile-data upload (a
+     multi-MB photo can take several real seconds) never LOOKS like
+     nothing happened -- see the uploadInProgress guard in JS below,
+     which this status pairs with. Text styling (white, bold, 15px)
+     deliberately matches Renewals' own "Sending..." button state, per
+     explicit request -- same language for "something's happening,
+     wait" across the whole PrimeLevel family. */
   .image-placeholder-status {
     display: none;
     position: absolute;
@@ -245,7 +248,8 @@
     margin: 0;
     padding: 14px 20px;
     background: rgba(30, 38, 51, 0.9);
-    color: var(--placeholder);
+    color: var(--white);
+    font-weight: 700;
     font-size: 15px;
     text-align: center;
   }
