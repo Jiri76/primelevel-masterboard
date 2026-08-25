@@ -229,17 +229,22 @@
     padding: 14px 20px;
     background: rgba(30, 38, 51, 0.9);
   }
-  /* Visible "Uploading..." overlay while a new picture is being saved --
-     a real, measured problem this fixes: the local preview (below)
-     appears INSTANTLY on selection, which visually looks fully done --
-     a small strip of text underneath it then read as an unrelated,
-     confusing afterthought, not as "this is still in progress". Per
-     explicit request, it now covers the entire frame instead, centered,
-     directly over the picture it's describing, and disappears the
-     instant the real save (see uploadInProgress in JS below) finishes.
-     Text styling (white, bold, 15px) deliberately matches Renewals' own
-     "Sending..." button state -- same language for "something's
-     happening, wait" across the whole PrimeLevel family. */
+  /* Opaque "Uploading..." cover while a new picture is being processed
+     -- a real, measured problem this fixes: the OLD picture stayed
+     visible for a couple of real seconds after clicking (decoding a
+     large phone photo isn't instant), with nothing on screen to say
+     anything was happening, then the new picture would suddenly appear,
+     THEN a status message would show briefly. Per explicit request,
+     this now happens the instant a file is chosen (see JS below --
+     'uploading' is added before anything else runs, not after the old
+     preview approach's decode step), is fully opaque (not a translucent
+     overlay -- the old picture must NOT show through at all), and is
+     the ONLY thing on screen until the new picture is actually ready to
+     replace it, at which point this disappears and the new picture
+     appears in the same instant. Text styling (white, bold, 15px)
+     deliberately matches Renewals' own "Sending..." button state --
+     same language for "something's happening, wait" across the whole
+     PrimeLevel family. */
   .image-placeholder-status {
     display: none;
     position: absolute;
@@ -247,7 +252,7 @@
     align-items: center;
     justify-content: center;
     margin: 0;
-    background: rgba(30, 38, 51, 0.6);
+    background: var(--navy);
     color: var(--white);
     font-weight: 700;
     font-size: 15px;
@@ -334,7 +339,6 @@
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
     const imagePlaceholderStatus = document.getElementById('imagePlaceholderStatus');
-    const imagePlaceholderLabel = document.querySelector('.image-placeholder-label');
     imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
 
     // A real drag (see the pointerdown/move/up block further down) must
@@ -410,44 +414,90 @@
       return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
     }
 
+    // Real bug found and fixed: the OLD picture used to stay fully
+    // visible for a couple of real seconds after a new one was chosen
+    // (decoding a large phone photo isn't instant), with nothing on
+    // screen to say anything was happening -- then the new picture
+    // would suddenly appear, THEN a status message would show below it.
+    // Per explicit request, the opaque "Uploading..." cover (see
+    // .image-placeholder-status in the CSS) now goes up in the very
+    // first line of this handler, before the old picture is touched at
+    // all, and is the ONLY thing shown until the new picture has
+    // actually been saved AND decoded -- the old picture is never shown
+    // again once a new file is chosen, only ever the new one, once it's
+    // genuinely ready.
     imageInput.addEventListener('change', async () => {
       if (uploadInProgress) return; // belt and braces alongside the click guard above
       let file = imageInput.files[0];
       if (!file) return;
       imagePlaceholderError.textContent = '';
       imagePlaceholderError.classList.remove('visible');
+      imagePlaceholder.classList.remove('save-failed');
 
-      if (isHeic(file)) {
-        // Real conversion (WASM-based HEIC decode) can take a few
-        // seconds on a large photo -- instant status feedback here,
-        // same "don't leave the user wondering if it registered"
-        // principle already applied elsewhere (Renewals' "Sending..."
-        // button state). Reuses the existing neutral-colored label,
-        // not the red error text, since this isn't a failure.
-        imagePlaceholderLabel.textContent = 'Converting HEIC photo…';
+      uploadInProgress = true;
+      imagePlaceholder.classList.add('uploading');
+      imagePlaceholderStatus.textContent = 'Uploading…';
+
+      try {
+        if (isHeic(file)) {
+          // Real conversion (WASM-based HEIC decode) can take a few
+          // seconds on a large photo -- distinct status text, same
+          // opaque cover as the upload itself.
+          imagePlaceholderStatus.textContent = 'Converting HEIC photo…';
+          try {
+            file = await convertHeicToJpeg(file);
+          } catch (err) {
+            imagePlaceholderError.textContent = `Couldn't convert "${file.name}" — this HEIC file may be unusual or corrupted. Try a JPG or PNG instead.`;
+            imagePlaceholderError.classList.add('visible');
+            return;
+          }
+          imagePlaceholderStatus.textContent = 'Uploading…';
+        }
+
+        // Shrink to display size BEFORE the network call -- see
+        // compressImage() below for why -- this is what actually cuts
+        // the real wait, not just the visible status message. Also
+        // doubles as the "can this browser even render this file"
+        // check (createImageBitmap inside it throws for a genuinely
+        // unrenderable format), replacing the old separate
+        // preview-onerror safety net.
+        let uploadFile;
         try {
-          file = await convertHeicToJpeg(file);
+          uploadFile = await compressImage(file);
         } catch (err) {
-          imagePlaceholderLabel.textContent = 'Click to select a picture';
-          imagePlaceholderError.textContent = `Couldn't convert "${file.name}" — this HEIC file may be unusual or corrupted. Try a JPG or PNG instead.`;
+          imagePlaceholderError.textContent = `Couldn't display "${file.name}" — this browser can't render that image format. Try a JPG or PNG instead.`;
           imagePlaceholderError.classList.add('visible');
           return;
         }
-        imagePlaceholderLabel.textContent = 'Click to select a picture';
-      }
 
-      const objectUrl = URL.createObjectURL(file);
-      // Instant local preview first (createObjectURL, no network wait) --
-      // real bug fixed here previously: nothing checked whether the
-      // browser could actually RENDER the chosen file -- a HEIC photo
-      // (the default format on modern iPhones) would get picked with no
-      // error, then just never appear, no explanation given -- now
-      // converted above before ever reaching this point, but the
-      // onload/onerror check stays as a safety net for any OTHER
-      // format a browser genuinely can't render.
-      imagePreview.onload = () => {
-        imagePlaceholder.classList.add('has-image');
-        URL.revokeObjectURL(objectUrl); // already decoded/painted, safe to release
+        const { error } = await withRetry(() =>
+          supabase.storage.from(PICTURE_BUCKET).upload(PICTURE_KEY, uploadFile, { upsert: true, contentType: uploadFile.type })
+        );
+        if (error) {
+          // Nothing new has been shown yet (the cover is still up) --
+          // surface this as the picture's normal empty/error state
+          // rather than an overlay bar over a picture that was never
+          // actually saved.
+          imagePlaceholder.classList.remove('has-image');
+          imagePlaceholderError.textContent = `Couldn't save the picture: ${error.message || error.code || 'unknown error'}`;
+          imagePlaceholderError.classList.add('visible');
+          return;
+        }
+
+        // Show the EXACT file that was actually saved -- no chance of a
+        // mismatch between what's previewed here and what's stored (a
+        // real, separate improvement over the old flow, which previewed
+        // the original file but uploaded a different, compressed one).
+        // Wait for it to actually decode before dropping the cover, so
+        // the cover never disappears onto a still-blank picture.
+        const objectUrl = URL.createObjectURL(uploadFile);
+        await new Promise((resolve) => {
+          imagePreview.onload = () => { imagePlaceholder.classList.add('has-image'); resolve(); };
+          imagePreview.onerror = () => resolve(); // shouldn't happen for our own freshly-encoded output
+          imagePreview.src = objectUrl;
+        });
+        URL.revokeObjectURL(objectUrl);
+
         // A brand-new picture resets to centered rather than inheriting
         // the PREVIOUS picture's saved crop position -- that position
         // was tuned for a different photo's composition, so keeping it
@@ -455,15 +505,11 @@
         // (not just visual), so a later reload doesn't snap back to
         // the old, now-stale position.
         imagePreview.style.objectPosition = '50% 50%';
-        uploadPicture(file);
-      };
-      imagePreview.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        imagePlaceholder.classList.remove('has-image');
-        imagePlaceholderError.textContent = `Couldn't display "${file.name}" — this browser can't render that image format. Try a JPG or PNG instead.`;
-        imagePlaceholderError.classList.add('visible');
-      };
-      imagePreview.src = objectUrl;
+        savePosition({ picture_version: String(Date.now()) });
+      } finally {
+        uploadInProgress = false;
+        imagePlaceholder.classList.remove('uploading');
+      }
     });
 
     // Retries a Supabase call up to 3 times with a growing delay before
@@ -486,48 +532,12 @@
       return { error: lastError };
     }
 
-    // Uploads to the fixed PICTURE_KEY, overwriting whatever was there
-    // (upsert:true) -- this is the real save, separate from the instant
-    // local preview above. contentType is set explicitly from the
-    // file's own type so the browser renders it correctly on future
-    // loads regardless of the fixed key having no extension.
-    async function uploadPicture(file) {
-      uploadInProgress = true;
-      imagePlaceholder.classList.add('uploading');
-      // Shrink to display size BEFORE the network call -- see
-      // compressImage() above for why -- this is what actually cuts the
-      // real wait, not just the visible status message below.
-      const uploadFile = await compressImage(file);
-      const { error } = await withRetry(() =>
-        supabase.storage.from(PICTURE_BUCKET).upload(PICTURE_KEY, uploadFile, { upsert: true, contentType: uploadFile.type })
-      );
-      uploadInProgress = false;
-      imagePlaceholder.classList.remove('uploading');
-      if (error) {
-        // The local preview is still showing (the pick itself was
-        // valid) -- this error means specifically that it did NOT get
-        // saved, so it would vanish again on refresh. Real, separate
-        // failure mode from the format-error case above -- shown as an
-        // overlay bar at the bottom of the now-visible picture (see
-        // .image-placeholder-error's positioning), not the centered
-        // message used for the pre-image state.
-        imagePlaceholder.classList.add('save-failed');
-        imagePlaceholderError.textContent = `Picture selected, but couldn't be saved: ${error.message || error.code || 'unknown error'}`;
-        imagePlaceholderError.classList.add('visible');
-      } else {
-        imagePlaceholder.classList.remove('save-failed');
-        // Persist the centered reset from just above, AND bump the
-        // picture's version key together in one update -- see
-        // loadSettings() below for why the version key exists (a real
-        // regression: removing cache-busting entirely to fix the ~2s
-        // reload delay meant a genuinely NEW picture could still show
-        // the OLD one on next visit, since this fixed URL never
-        // changed and revalidation apparently isn't reliably honored
-        // by every layer between here and the browser). Date.now() is
-        // simply a value guaranteed to differ from the last one.
-        savePosition({ picture_version: String(Date.now()) });
-      }
-    }
+    // NOTE: the actual upload now happens inline inside the imageInput
+    // 'change' handler above (compress -> upload -> swap the preview to
+    // the saved file -> bump picture_version), not as a separate
+    // function -- it needs to run entirely behind the opaque "Uploading
+    // ..." cover from the moment a file is chosen, which a standalone
+    // post-preview function couldn't do.
 
     // Real regression found and fixed: removing the `?t=timestamp`
     // cache-bust (to fix the ~2s reload delay -- see git history)
@@ -539,13 +549,14 @@
     // indefinitely -- confirmed for real: uploading a new picture,
     // navigating away, and back showed the previous one, not the new
     // one. Fixed properly this time: `picture_version` (bumped
-    // alongside the position on every successful upload, see
-    // uploadPicture() above) is appended to the picture's URL as a
-    // stable cache-busting key. This gives BOTH correctness (the URL
-    // only changes when the picture genuinely does, so a real update
-    // is never missed) AND speed (repeat visits of the SAME picture
-    // reuse the identical URL, so the browser's own cache can serve it
-    // with zero network request at all -- not even a 304 round-trip).
+    // alongside the position on every successful upload, see the
+    // imageInput 'change' handler above) is appended to the picture's
+    // URL as a stable cache-busting key. This gives BOTH correctness
+    // (the URL only changes when the picture genuinely does, so a real
+    // update is never missed) AND speed (repeat visits of the SAME
+    // picture reuse the identical URL, so the browser's own cache can
+    // serve it with zero network request at all -- not even a 304
+    // round-trip).
     async function loadSettings() {
       const { data, error } = await supabase
         .from('masterboard_settings')
@@ -662,8 +673,8 @@
     }
 
     // extraFields lets a caller bundle other columns into the SAME
-    // update (e.g. uploadPicture() above also needs to bump
-    // picture_version) -- one round-trip instead of two separate ones.
+    // update (e.g. the imageInput 'change' handler above also needs to
+    // bump picture_version) -- one round-trip instead of two separate ones.
     async function savePosition(extraFields = {}) {
       const [x, y] = getComputedStyle(imagePreview).objectPosition.split(' ').map(parseFloat);
       const { error } = await withRetry(() =>
