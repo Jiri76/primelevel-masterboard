@@ -100,13 +100,11 @@
     border-color: var(--white);
     transform: scale(1.025);
   }
-  /* The currently-selected report gets a visible gold left bar -- same
-     accent color as the page title itself, so it reads as "this is the
-     one you're looking at" without introducing a second accent color
-     just for this. */
-  .report-tile.selected {
-    box-shadow: inset 4px 0 0 var(--gold);
-  }
+  /* Gold left-bar "selected" indicator removed per explicit request --
+     the button label is now just the report's date (see the scripts
+     below), short enough that which one is highlighted doesn't need a
+     visual marker beyond what's already showing in the content card
+     itself. */
 
   /* The report card now fills the (widened) container directly -- no
      longer flex:1 sharing a row with a sidebar, since the tiles moved
@@ -198,8 +196,12 @@
 
         cached.forEach(function (report) {
           var tile = document.createElement('div');
-          tile.className = 'report-tile' + (report.id === selected.id ? ' selected' : '');
-          tile.textContent = report.title;
+          tile.className = 'report-tile';
+          // Short date label, not the full title -- per explicit
+          // request. Derived from created_at (a real date value)
+          // rather than trying to parse/shorten Cowork's own title
+          // text, which has no guaranteed format.
+          tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
           reportTiles.append(tile);
         });
 
@@ -275,9 +277,13 @@
       reportTilesEl.innerHTML = '';
       reports.forEach((report) => {
         const tile = document.createElement('button');
-        tile.className = 'report-tile' + (report.id === selectedId ? ' selected' : '');
-        tile.textContent = report.title;
-        tile.title = report.title; // full title on hover, since the button itself truncates long ones
+        tile.className = 'report-tile';
+        // Short date label, not the full title -- per explicit request.
+        // Derived from created_at (a real date value) rather than
+        // trying to parse/shorten Cowork's own title text, which has
+        // no guaranteed format.
+        tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        tile.title = report.title; // full title still available on hover
         tile.addEventListener('click', () => {
           selectedId = report.id;
           renderTiles();
