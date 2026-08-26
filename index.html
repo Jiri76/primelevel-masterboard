@@ -202,24 +202,26 @@
      transform-origin: 0 0 makes the scale math anchor at the image's own
      top-left corner, matching how the translate offset below is computed
      (from the frame's top-left, not its center). */
-  /* Picture lock -- per explicit request: the picture starts LOCKED
-     (plain arrow cursor, inert) every time. A single left-click on it
-     unlocks it (cursor becomes a hand) so it can be dragged/zoomed;
-     it re-locks itself automatically after 5s of no interaction, or
-     instantly the moment you left-click anywhere OUTSIDE it -- see the
-     JS below. Right-click always opens the file picker to replace the
-     picture, regardless of lock state -- a completely separate gesture
-     from left-click, so there's no click-count ambiguity to resolve at
-     all (unlike an earlier, now-reverted version of this feature that
-     tried to use single vs. double left-click for two different
-     things). */
+  /* Picture lock, press-and-hold -- per explicit request: plain arrow
+     cursor at rest, "locked" by construction whenever the left button
+     isn't actively held down on the picture. Holding it down turns the
+     cursor into a hand (.dragging below, added the instant the button
+     goes down -- see the pointerdown handler in JS) and lets you
+     drag/reposition; releasing instantly reverts the cursor and locks
+     it again, no separate state or timer needed. Right-click (see the
+     contextmenu handler in JS) always opens the file picker to replace
+     the picture -- a fully separate gesture from left-click, so
+     there's no click-count ambiguity to resolve. Mouse-wheel zoom is
+     deliberately NOT gated by any of this -- it always works, since a
+     zoom can't happen from an accidental stray click the way dragging
+     could, so it doesn't need the same protection. */
   .image-placeholder img {
     position: absolute;
     top: 0;
     left: 0;
     transform-origin: 0 0;
     display: none;
-    cursor: default; /* locked by default -- plain arrow, no special affordance until unlocked */
+    cursor: default; /* only actually a hand while the button is held down -- see .dragging below */
     user-select: none;
     /* Real bug found and fixed: without this, a VERTICAL drag on a
        trackpad/touchscreen gets hijacked by the browser's own native
@@ -233,9 +235,6 @@
        touch-action:none tells the browser this element handles its
        own gestures entirely, so it stops intercepting any direction. */
     touch-action: none;
-  }
-  .image-placeholder.picture-unlocked img {
-    cursor: grab;
   }
   .image-placeholder img.dragging {
     cursor: grabbing;
@@ -540,48 +539,23 @@
       imagePreview.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // A real drag (see the pointerdown/move/up block further down) must
-    // NOT also count as the unlock click below -- justDragged tracks
-    // whether the most recent pointer gesture actually moved enough to
-    // count as a drag, so the click handler can skip acting on that
-    // one click only.
-    let justDragged = false;
+    // ---- Picture lock, simplified per explicit follow-up request --
+    // press-and-hold instead of a click-to-toggle state. "Locked" is no
+    // longer a variable to track at all: the picture is simply
+    // draggable exactly while the left button is physically held down
+    // on it (cursor -> hand the instant you press, back to the plain
+    // arrow the instant you release -- see the pointerdown/up handlers
+    // below), and locked at every other moment by construction. This
+    // replaces an earlier click-to-toggle version (5s idle timer +
+    // instant-lock-on-outside-click) that also had a real bug: closing
+    // the native file-picker dialog (opened by right-click, see below)
+    // could leave the picture stuck showing the unlocked/hand cursor --
+    // there's no separate "stays unlocked" state left for anything to
+    // get stuck in now, so that bug can't happen either. Right-click
+    // (see the contextmenu handler below) always opens the file picker
+    // to replace the picture -- a fully separate gesture from left-
+    // click, so there's no click-count ambiguity to resolve. ----
 
-    // ---- Picture lock -- per explicit request: starts locked (plain
-    // arrow cursor) on every load. One left-click on the picture
-    // unlocks it (cursor becomes a hand, drag/zoom now work); it
-    // re-locks itself automatically after 5s of no interaction, OR
-    // instantly the moment you left-click anywhere OUTSIDE the picture
-    // -- no need to wait. Right-click (see the contextmenu handler
-    // below) always opens the file picker to replace the picture,
-    // completely independent of lock state -- a fully separate gesture
-    // from left-click, so there's no click-count ambiguity to resolve. ----
-    let pictureLocked = true;
-    let relockTimer = null;
-    function lockPicture() {
-      pictureLocked = true;
-      clearTimeout(relockTimer);
-      relockTimer = null;
-      imagePlaceholder.classList.remove('picture-unlocked');
-    }
-    function unlockPicture() {
-      pictureLocked = false;
-      imagePlaceholder.classList.add('picture-unlocked');
-      armRelockTimer();
-    }
-    function armRelockTimer() {
-      clearTimeout(relockTimer);
-      relockTimer = setTimeout(lockPicture, 5000);
-    }
-    // Instant lock the moment you click anywhere else -- mousedown, not
-    // click, per this project's own established outside-dismiss lesson
-    // (a click requires mouseup to land back on the same point; a plain
-    // mousedown fires unconditionally on press, with no such drift risk).
-    document.addEventListener('mousedown', (e) => {
-      if (pictureLocked) return;
-      if (imagePlaceholder.contains(e.target)) return;
-      lockPicture();
-    });
     // Real bug found and fixed: nothing previously stopped a SECOND
     // upload from starting while a FIRST one was still mid-flight (a
     // multi-MB photo over mobile data can easily take several seconds --
@@ -595,22 +569,16 @@
     // the current one has fully resolved.
     let uploadInProgress = false;
     imagePlaceholder.addEventListener('click', () => {
-      if (justDragged) { justDragged = false; return; }
-      if (!imagePlaceholder.classList.contains('has-image')) {
-        // No picture yet -- nothing to lock, a plain click just opens
-        // the picker for the very first upload, same as always.
-        if (!uploadInProgress) imageInput.click();
-        return;
-      }
-      if (pictureLocked) {
-        unlockPicture();
-      } else {
-        armRelockTimer(); // already unlocked -- this click just counts as activity, resets the idle countdown
-      }
+      // Once a picture exists, left-click no longer does anything on its
+      // own -- press-and-hold to drag (below), right-click to replace
+      // (further below). Only relevant for the very first upload, when
+      // there's nothing yet to hold-and-drag.
+      if (imagePlaceholder.classList.contains('has-image')) return;
+      if (!uploadInProgress) imageInput.click();
     });
-    // Right-click always opens the file picker to replace the picture,
-    // regardless of lock state -- per explicit request. preventDefault
-    // stops the browser's own native right-click context menu.
+    // Right-click always opens the file picker to replace the picture --
+    // per explicit request. preventDefault stops the browser's own
+    // native right-click context menu.
     imagePlaceholder.addEventListener('contextmenu', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
       e.preventDefault();
@@ -960,9 +928,12 @@
     let dragState = null;
     imagePreview.addEventListener('pointerdown', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
-      if (pictureLocked) return; // must left-click once to unlock first, see above -- a click-turned-drag while still locked does nothing
-      clearTimeout(relockTimer); // actively interacting -- pause the idle countdown while a drag is in progress
       e.preventDefault(); // extra defense alongside touch-action:none above, belt and braces against native gesture interception
+      // Cursor -> hand the INSTANT the button goes down, per explicit
+      // request -- not just once real movement is detected (see the
+      // 3px jitter threshold below, which still gates the actual
+      // position math, just no longer the cursor feedback).
+      imagePreview.classList.add('dragging');
       dragState = { startX: e.clientX, startY: e.clientY, startPosX: posX, startPosY: posY, moved: false };
       try {
         imagePreview.setPointerCapture(e.pointerId);
@@ -978,8 +949,6 @@
       const dyPx = e.clientY - dragState.startY;
       if (!dragState.moved && Math.hypot(dxPx, dyPx) > 3) {
         dragState.moved = true;
-        justDragged = true; // stops the upcoming click from opening the file picker
-        imagePreview.classList.add('dragging');
       }
       if (!dragState.moved) return;
 
@@ -1013,10 +982,9 @@
       renderTransform();
     });
     imagePreview.addEventListener('pointerup', () => {
-      imagePreview.classList.remove('dragging');
+      imagePreview.classList.remove('dragging'); // release -> instantly back to the plain arrow cursor, "locked" again
       if (dragState && dragState.moved) savePosition();
       dragState = null;
-      if (!pictureLocked) armRelockTimer(); // resume the 5s idle countdown now that the drag itself is done
     });
 
     // Mouse-wheel zoom -- see renderTransform() above for why this is the
@@ -1030,11 +998,12 @@
     let zoomSaveTimer = null;
     imagePreview.addEventListener('wheel', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
-      if (pictureLocked) return; // per explicit request -- let the page scroll normally while locked, zoom only works once unlocked
+      // Deliberately NOT gated by the press-and-hold lock above -- per
+      // explicit decision, zoom always works regardless, since it can't
+      // happen from an accidental stray click the way dragging could.
       e.preventDefault(); // stop the page itself from scrolling while zooming the picture
       currentZoom = clamp(currentZoom + (e.deltaY < 0 ? 0.1 : -0.1), MIN_ZOOM, MAX_ZOOM);
       renderTransform();
-      armRelockTimer(); // zooming counts as activity too -- reset the idle countdown
       // Zooming out can shrink the overflow on an axis that the CURRENT
       // posX/posY percentage was previously relying on -- but since
       // position is stored as a 0-100% fraction OF the overflow (not a
