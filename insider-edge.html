@@ -337,7 +337,14 @@
     // time a report exists that the user hasn't opened yet, and that
     // glow is gone permanently (not just for this session) the moment
     // they open it -- persisted in localStorage so it survives closing
-    // the tab/browser, not just navigating within the page.
+    // the tab/browser, not just navigating within the page. "Opened"
+    // means an actual click on that tile specifically -- confirmed via
+    // explicit follow-up: the newest report auto-displaying on page
+    // load does NOT count as read on its own, even though its content
+    // is already visible without clicking. Only markReportRead() being
+    // called from the tile's own click handler below (not from
+    // renderContent(), which also runs for the auto-selected default)
+    // clears the glow.
     const READ_REPORTS_KEY = 'insider-edge-read-reports-v1';
     function getReadReportIds() {
       try {
@@ -374,6 +381,7 @@
         tile.title = report.title; // full title still available on hover
         tile.addEventListener('click', () => {
           selectedId = report.id;
+          markReportRead(report.id); // an explicit click, and only this, clears the glow -- see the note above
           renderTiles();
           renderContent();
         });
@@ -416,11 +424,12 @@
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
       card.append(title, date, body);
       contentEl.append(card);
-      // Opening a report (whether auto-selected on load or explicitly
-      // clicked) is what "reading" it means here -- mark it read and
-      // refresh the tiles so its own glow disappears immediately.
-      markReportRead(report.id);
-      renderTiles();
+      // Marking read/refreshing tiles is NOT done here on purpose --
+      // per explicit request, only an actual click on a tile (see its
+      // own click handler above) counts as "read," not the newest
+      // report auto-displaying on page load. Every caller of
+      // renderContent() already calls renderTiles() itself beforehand
+      // when that's actually needed.
       alignReportTiles();
     }
 
