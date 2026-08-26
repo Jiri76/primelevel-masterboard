@@ -100,6 +100,17 @@
     border-color: var(--white);
     transform: scale(1.025);
   }
+  /* Subtle gold glow for a report the user hasn't opened yet -- per
+     explicit request, a gentle "something new is here" signal, not a
+     loud one. Removed permanently (see markReportRead() in the module
+     script) the first time this specific report is actually opened,
+     persisted so it doesn't come back on a later visit. transition
+     lets it fade out smoothly the instant it's marked read, rather
+     than vanishing abruptly mid-render. */
+  .report-tile.unread {
+    box-shadow: 0 0 10px 2px rgba(178, 155, 104, 0.55);
+    transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.3s ease;
+  }
   /* Gold left-bar "selected" indicator removed per explicit request --
      the button label is now just the report's date (see the scripts
      below), short enough that which one is highlighted doesn't need a
@@ -257,11 +268,15 @@
     let selectedId = reports.length > 0 ? reports[0].id : null;
 
     // Same alignment technique as index.html's alignTilesToPicture() --
-    // match the tiles' top to the report card's (or, pre-load, the
-    // empty-state's) real rendered top edge, not a guessed pixel value.
-    // Re-run after every render, since content genuinely swaps in.
+    // match the tiles' top to whatever #content is currently showing
+    // (the empty state, the closed-state message, or a real report
+    // card)'s real rendered top edge, not a guessed pixel value.
+    // #content always holds exactly one child at a time, so its first
+    // child is always the right measurement target regardless of which
+    // state is current. Re-run after every render, since content
+    // genuinely swaps in.
     function alignReportTiles() {
-      const target = contentEl.querySelector('.report-content') || emptyStateEl;
+      const target = contentEl.firstElementChild;
       if (!target) return;
       reportTilesEl.style.top = `${Math.round(target.getBoundingClientRect().top)}px`;
     }
@@ -270,14 +285,39 @@
     window.addEventListener('load', alignReportTiles);
     alignReportTiles();
 
+    // Per explicit request: a report tile glows gold ONCE, the first
+    // time a report exists that the user hasn't opened yet, and that
+    // glow is gone permanently (not just for this session) the moment
+    // they open it -- persisted in localStorage so it survives closing
+    // the tab/browser, not just navigating within the page.
+    const READ_REPORTS_KEY = 'insider-edge-read-reports-v1';
+    function getReadReportIds() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(READ_REPORTS_KEY) || '[]'));
+      } catch {
+        return new Set(); // harmless -- glow just won't persist correctly across visits
+      }
+    }
+    function markReportRead(id) {
+      try {
+        const readIds = getReadReportIds();
+        if (readIds.has(id)) return; // already marked -- skip the write
+        readIds.add(id);
+        localStorage.setItem(READ_REPORTS_KEY, JSON.stringify([...readIds]));
+      } catch {
+        // Harmless if storage is unavailable -- unread glow just won't persist across visits.
+      }
+    }
+
     function renderTiles() {
       // Rebuilds the whole tile set each time rather than diffing --
       // this page has no live-updating requirement (a fixed set of
       // reports fetched once on load), so the simplicity is worth it.
       reportTilesEl.innerHTML = '';
+      const readIds = getReadReportIds();
       reports.forEach((report) => {
         const tile = document.createElement('button');
-        tile.className = 'report-tile';
+        tile.className = 'report-tile' + (readIds.has(report.id) ? '' : ' unread');
         // Short date label, not the full title -- per explicit request.
         // Derived from created_at (a real date value) rather than
         // trying to parse/shorten Cowork's own title text, which has
@@ -294,9 +334,27 @@
     }
 
     function renderContent() {
-      contentEl.querySelectorAll('.report-content').forEach((el) => el.remove());
+      contentEl.querySelectorAll('.report-content, .closed-state').forEach((el) => el.remove());
       const report = reports.find((r) => r.id === selectedId);
-      if (!report) return;
+      if (!report) {
+        // Per explicit request: clicking outside the report closes it
+        // back to a plain dark screen -- but a genuinely blank screen
+        // with no report AND no explanation can look broken rather than
+        // intentional (same reasoning as every other empty state on
+        // this site), so a short instructional message replaces it
+        // instead of true silence. Only shown once real reports exist
+        // at all -- the very-first-ever-visit empty state (no reports
+        // in the table yet) is the separate, static emptyStateEl markup
+        // in the HTML, untouched by this.
+        if (reports.length > 0) {
+          const closed = document.createElement('div');
+          closed.className = 'empty-state closed-state';
+          closed.textContent = 'Click a date above to open a report.';
+          contentEl.append(closed);
+        }
+        alignReportTiles();
+        return;
+      }
       const card = document.createElement('div');
       card.className = 'report-content';
       const title = document.createElement('div');
@@ -310,8 +368,25 @@
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
       card.append(title, date, body);
       contentEl.append(card);
+      // Opening a report (whether auto-selected on load or explicitly
+      // clicked) is what "reading" it means here -- mark it read and
+      // refresh the tiles so its own glow disappears immediately.
+      markReportRead(report.id);
+      renderTiles();
       alignReportTiles();
     }
+
+    // Per explicit request: a left click anywhere outside the white
+    // report card (and not on a tile, which has its own job of OPENING
+    // a report) closes the currently-open report. Checks selectedId
+    // first so this is a genuine no-op when nothing's open (avoids an
+    // unnecessary re-render on every single click on the page).
+    document.addEventListener('click', (e) => {
+      if (selectedId === null) return;
+      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+      selectedId = null;
+      renderContent();
+    });
 
     async function loadReports() {
       const { data, error } = await supabase
