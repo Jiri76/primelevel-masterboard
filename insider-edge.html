@@ -124,9 +124,9 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    /* top 100px per explicit request -- distinct from the other three
-       sides, which stay at 40px. */
-    padding: 100px 40px 40px;
+    /* top 100px, left/right 50px (was 40px), bottom stays 40px -- per
+       explicit request. */
+    padding: 100px 50px 40px;
     color: var(--navy);
   }
   .report-content-title {
@@ -205,6 +205,22 @@
   }
   .report-body li:last-child {
     margin-bottom: 0;
+  }
+  /* Per explicit request: the gap between each ticker's own name line
+     (e.g. "SRTS -- Sensus Healthcare, Inc. -- Conviction: High") and
+     its market-cap detail line right below must be DOUBLE the normal
+     line-height gap (24px at this 15px/1.6 setting -- see the earlier
+     confirmed measurement), i.e. 48px total. Cowork writes these two
+     lines as one paragraph split by a literal <br>, not two separate
+     elements, so ordinary line-height can't create extra room after
+     just this one line break -- <br> doesn't accept margin by default,
+     but making it a block element does, which is the standard way to
+     add space after a specific line break without affecting normal
+     line-wrapping elsewhere in the same paragraph. */
+  .report-body li br {
+    content: "";
+    display: block;
+    margin-bottom: 24px; /* the existing 24px line-height gap + this = 48px, exactly double */
   }
   /* The ticker code (always the first <strong> in each entry) gets its
      own slightly larger, letter-spaced treatment -- a real visual
