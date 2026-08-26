@@ -242,6 +242,14 @@
     font-size: 20px; /* corrected down from 22px per explicit follow-up -- 22 was too much */
     letter-spacing: 0.02em;
   }
+  /* Per explicit request: just the conviction word itself (High/Medium/
+     Low) must be bold -- Cowork already wraps exactly that word in an
+     inline-colored <span> (see the prompt's own color guidance), so
+     that span is the precise, already-existing hook to target, not
+     "Conviction:" or anything else on the line. */
+  .report-body li > span[style*="color"] {
+    font-weight: 700;
+  }
 
   .empty-state {
     color: var(--placeholder);
