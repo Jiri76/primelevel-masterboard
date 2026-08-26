@@ -149,9 +149,16 @@
 
   .empty-state {
     color: var(--placeholder);
-    font-size: 15px;
+    font-size: 20px; /* bumped from 15px per explicit request -- matches Renewals'/Investments' own empty-state size */
     text-align: center;
-    padding: 60px 0;
+    /* padding-top changed from 60px to 0 per explicit request -- the h1
+       above already provides a 100px margin-bottom, so a further 60px
+       here made the real gap 160px, not the intended 100px. Zeroing
+       this out makes the title-to-message gap exactly 100px, matching
+       every other page. Bottom padding (60px) is left as-is -- purely
+       visual balance below the text, not part of the requested
+       measurement. */
+    padding: 0 0 60px;
     width: 100%;
   }
 </style>
