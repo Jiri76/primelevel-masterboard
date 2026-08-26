@@ -29,8 +29,13 @@
     font-family: 'Montserrat', sans-serif;
     min-height: 100%;
   }
+  /* max-width: 1240px -- widened from the 1040px shared with Masterboard/
+     Investments, by exactly 100px each side (200px total), per explicit
+     request. The report card below fills this container directly (no
+     longer sharing width with a sidebar), so widening the container is
+     what widens the report itself. */
   .container {
-    max-width: 1040px;
+    max-width: 1240px;
     margin: 0 auto;
     padding: 100px 20px 80px;
   }
@@ -41,84 +46,73 @@
     margin: 0 0 100px;
     text-align: center;
   }
-  /* Same minimal back-link pattern as investments.html -- functional,
-     not yet part of any locked design pass. */
-  .back-link {
-    position: fixed;
-    top: 40px;
-    left: 40px;
-    color: var(--white);
-    opacity: 0.6;
-    font-size: 14px;
-    text-decoration: none;
-  }
-  .back-link:hover {
-    opacity: 1;
-  }
+  /* .back-link removed per explicit request 2026-08-26 -- deliberately
+     relies on the browser's own back navigation instead now. Real
+     trade-off flagged before removing (no guarantee of browser history
+     on every device/context, e.g. opening via the desktop shortcut) --
+     user's own explicit call, may revisit later. */
 
-  /* Two-column layout: a list of reports on the left (fixed width, so
-     titles/dates don't reflow awkwardly), the selected report's actual
-     content on the right (flexible, since report length is unknown and
-     varies week to week). Stacks to one column on narrow viewports --
-     this page isn't governed by the LOCKED index.html layout spec, so
-     ordinary responsive behavior is fine here. */
-  .layout {
-    display: flex;
-    gap: 40px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-  .report-list {
-    width: 280px;
-    flex-shrink: 0;
+  /* Report tiles -- per explicit request, no longer a sidebar sharing
+     space with the report card. Pinned to the left edge of the viewport
+     exactly like index.html's own .tiles (position:fixed; left:40px;
+     same 15px gap, same 200x50px button size/colors/font/hover) -- same
+     "top starts at a sensible fallback, then JS measures the real top of
+     the content and overwrites it" pattern as index.html's own
+     alignTilesToPicture(), see alignReportTiles() in the module script
+     below, so a tile always lands on the exact same horizontal line as
+     the report card's own top edge, not a guessed pixel value. */
+  .report-tiles {
+    position: fixed;
+    top: 48px;
+    left: 40px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
+    width: 200px;
   }
-  /* Same card language as everywhere else (white fill, 10px radius) --
-     a report entry is a button, not a link, since selecting one swaps
-     content on THIS page rather than navigating away. */
-  .report-item {
-    background: var(--white);
+  /* Identical to index.html's own .tile -- same size, colors, font,
+     hover -- per explicit request ("must match the width and the size
+     of Investments/Renewals button"). Title-only, single line (a report
+     title + date together don't fit a 50px-tall button at a readable
+     size -- the date still shows in the main report card itself, so
+     no information is actually lost, just not duplicated here). */
+  .report-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    width: 200px;
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
     border-radius: 10px;
-    padding: 14px 18px;
-    cursor: pointer;
-    border: none;
-    text-align: left;
-    font-family: 'Montserrat', sans-serif;
-    transition: transform 0.1s ease;
-  }
-  .report-item:hover {
-    transform: scale(1.02);
-  }
-  .report-item:active {
-    transform: scale(0.98);
-  }
-  /* The currently-selected report gets a visible gold left border --
-     the same accent color used for the page title itself, so it reads
-     as "this is the one you're looking at" without needing a second
-     color introduced just for this. */
-  .report-item.selected {
-    box-shadow: inset 4px 0 0 var(--gold);
-  }
-  .report-item-title {
-    color: var(--navy);
+    padding: 0 18px;
+    color: var(--white);
     font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 4px;
+    font-size: 18px;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: border-color 0.15s ease, transform 0.1s ease;
   }
-  .report-item-date {
-    color: var(--navy);
-    opacity: 0.6;
-    font-size: 12px;
+  .report-tile:hover {
+    border-color: var(--white);
+    transform: scale(1.025);
+  }
+  /* The currently-selected report gets a visible gold left bar -- same
+     accent color as the page title itself, so it reads as "this is the
+     one you're looking at" without introducing a second accent color
+     just for this. */
+  .report-tile.selected {
+    box-shadow: inset 4px 0 0 var(--gold);
   }
 
+  /* The report card now fills the (widened) container directly -- no
+     longer flex:1 sharing a row with a sidebar, since the tiles moved
+     out to their own fixed, independently-positioned column above. */
   .report-content {
-    flex: 1;
-    min-width: 300px;
+    width: 100%;
     background: var(--white);
     border-radius: 10px;
     padding: 40px;
@@ -135,13 +129,13 @@
     font-size: 13px;
     margin-bottom: 24px;
   }
-  /* The actual report body -- Cowork writes real HTML here (see
-     index.js's insider_edge_reports table), rendered directly rather
-     than escaped/shown as text. Trusted content: only a service-role
-     key (never exposed to this public page) can ever write a row here,
-     the public/anon key this page itself uses can only ever read --
-     see the table's own RLS/grants for why this is safe to render as-is
-     rather than something arbitrary any site visitor could inject. */
+  /* The actual report body -- Cowork writes real HTML here (see the
+     insider_edge_reports table), rendered directly rather than escaped/
+     shown as text. Trusted content: only a service-role key (never
+     exposed to this public page) can ever write a row here, the public/
+     anon key this page itself uses can only ever read -- see the
+     table's own RLS/grants for why this is safe to render as-is rather
+     than something arbitrary any site visitor could inject. */
   .report-body {
     font-size: 15px;
     line-height: 1.6;
@@ -151,29 +145,91 @@
     color: var(--placeholder);
     font-size: 20px; /* bumped from 15px per explicit request -- matches Renewals'/Investments' own empty-state size */
     text-align: center;
-    /* padding-top changed from 60px to 0 per explicit request -- the h1
-       above already provides a 100px margin-bottom, so a further 60px
-       here made the real gap 160px, not the intended 100px. Zeroing
-       this out makes the title-to-message gap exactly 100px, matching
-       every other page. Bottom padding (60px) is left as-is -- purely
-       visual balance below the text, not part of the requested
-       measurement. */
+    /* padding-top is 0, not the label's old 60px -- the h1 above already
+       provides a 100px margin-bottom, so the title-to-message gap is
+       exactly 100px, matching every other page. Bottom padding (60px)
+       is left as-is -- purely visual balance below the text. */
     padding: 0 0 60px;
     width: 100%;
   }
 </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">&larr; Masterboard</a>
+  <div class="report-tiles" id="reportTiles"></div>
 
   <div class="container">
     <h1>Insider Edge</h1>
-    <div class="layout" id="layout">
+    <div id="content">
       <div class="empty-state" id="emptyState">
         No reports yet — check back after the next scheduled report.
       </div>
     </div>
   </div>
+
+  <!-- Real, root-caused fix for a flash matching the picture's own saga
+       on index.html: the module script below can't run AT ALL
+       (including any instant-paint logic placed inside it) until its
+       own `import` (fetched from esm.sh) resolves over the network --
+       not always instant. This plain, non-module inline script has zero
+       import/network dependency, so it runs the moment the HTML parser
+       reaches it. It reads the same localStorage cache the module
+       script also reads/writes, and paints the tiles + selected report
+       directly -- duplicating the module script's own render structure
+       so there's no visible difference once the real fetch confirms/
+       corrects this moments later. Exposes what it found on
+       window.__insiderEdgeCachedReports so the module script picks up
+       the SAME state instead of resetting to empty first (which would
+       itself cause a visible flicker). The tiles here are plain,
+       non-clickable divs (not real buttons) -- real click handling
+       needs the module script's own fetched state, so interactivity
+       arrives a moment after the instant paint, same "paint first,
+       upgrade quietly" pattern as the picture. -->
+  <script>
+    (function () {
+      try {
+        var cached = JSON.parse(localStorage.getItem('insider-edge-reports-cache-v1') || 'null');
+        if (!cached || cached.length === 0) return;
+        window.__insiderEdgeCachedReports = cached;
+
+        var reportTiles = document.getElementById('reportTiles');
+        var content = document.getElementById('content');
+        var emptyState = document.getElementById('emptyState');
+        var selected = cached[0];
+
+        cached.forEach(function (report) {
+          var tile = document.createElement('div');
+          tile.className = 'report-tile' + (report.id === selected.id ? ' selected' : '');
+          tile.textContent = report.title;
+          reportTiles.append(tile);
+        });
+
+        var contentEl = document.createElement('div');
+        contentEl.className = 'report-content';
+        var contentTitle = document.createElement('div');
+        contentTitle.className = 'report-content-title';
+        contentTitle.textContent = selected.title;
+        var contentDate = document.createElement('div');
+        contentDate.className = 'report-content-date';
+        contentDate.textContent = new Date(selected.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        var body = document.createElement('div');
+        body.className = 'report-body';
+        body.innerHTML = selected.html_content; // trusted -- see the module script's own note on why
+        contentEl.append(contentTitle, contentDate, body);
+
+        emptyState.remove();
+        content.append(contentEl);
+
+        // Same alignment technique as index.html's alignTilesToPicture()
+        // -- match the tiles' top to the report card's real rendered
+        // top edge, not a guessed pixel value.
+        reportTiles.style.top = Math.round(content.getBoundingClientRect().top) + 'px';
+      } catch (e) {
+        // Harmless -- private browsing, storage disabled, or anything
+        // else -- the module script below handles everything normally
+        // regardless, this is purely an optimistic head start.
+      }
+    })();
+  </script>
 
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -184,45 +240,59 @@
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
     const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-    const layoutEl = document.getElementById('layout');
+    const reportTilesEl = document.getElementById('reportTiles');
+    const contentEl = document.getElementById('content');
     const emptyStateEl = document.getElementById('emptyState');
 
-    let reports = [];
-    let selectedId = null;
+    const REPORTS_CACHE_KEY = 'insider-edge-reports-cache-v1';
 
-    function renderList() {
-      // Rebuilds the whole list each time rather than diffing -- this
-      // page has no live-updating requirement (a fixed set of reports
-      // fetched once on load), so the simplicity is worth it.
-      document.querySelectorAll('.report-list').forEach((el) => el.remove());
-      const listEl = document.createElement('div');
-      listEl.className = 'report-list';
+    // reports/selectedId may already be pre-populated by the inline
+    // pre-script above (zero network dependency, ran before this whole
+    // module -- including its own `import` above -- had even finished
+    // loading over the network). If so, don't stomp on that instant
+    // paint by resetting to empty here.
+    let reports = window.__insiderEdgeCachedReports || [];
+    let selectedId = reports.length > 0 ? reports[0].id : null;
+
+    // Same alignment technique as index.html's alignTilesToPicture() --
+    // match the tiles' top to the report card's (or, pre-load, the
+    // empty-state's) real rendered top edge, not a guessed pixel value.
+    // Re-run after every render, since content genuinely swaps in.
+    function alignReportTiles() {
+      const target = contentEl.querySelector('.report-content') || emptyStateEl;
+      if (!target) return;
+      reportTilesEl.style.top = `${Math.round(target.getBoundingClientRect().top)}px`;
+    }
+    document.fonts.ready.then(alignReportTiles);
+    window.addEventListener('resize', alignReportTiles);
+    window.addEventListener('load', alignReportTiles);
+    alignReportTiles();
+
+    function renderTiles() {
+      // Rebuilds the whole tile set each time rather than diffing --
+      // this page has no live-updating requirement (a fixed set of
+      // reports fetched once on load), so the simplicity is worth it.
+      reportTilesEl.innerHTML = '';
       reports.forEach((report) => {
-        const item = document.createElement('button');
-        item.className = 'report-item' + (report.id === selectedId ? ' selected' : '');
-        const title = document.createElement('div');
-        title.className = 'report-item-title';
-        title.textContent = report.title;
-        const date = document.createElement('div');
-        date.className = 'report-item-date';
-        date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-        item.append(title, date);
-        item.addEventListener('click', () => {
+        const tile = document.createElement('button');
+        tile.className = 'report-tile' + (report.id === selectedId ? ' selected' : '');
+        tile.textContent = report.title;
+        tile.title = report.title; // full title on hover, since the button itself truncates long ones
+        tile.addEventListener('click', () => {
           selectedId = report.id;
-          renderList();
+          renderTiles();
           renderContent();
         });
-        listEl.append(item);
+        reportTilesEl.append(tile);
       });
-      layoutEl.prepend(listEl);
     }
 
     function renderContent() {
-      document.querySelectorAll('.report-content').forEach((el) => el.remove());
+      contentEl.querySelectorAll('.report-content').forEach((el) => el.remove());
       const report = reports.find((r) => r.id === selectedId);
       if (!report) return;
-      const contentEl = document.createElement('div');
-      contentEl.className = 'report-content';
+      const card = document.createElement('div');
+      card.className = 'report-content';
       const title = document.createElement('div');
       title.className = 'report-content-title';
       title.textContent = report.title;
@@ -232,8 +302,9 @@
       const body = document.createElement('div');
       body.className = 'report-body';
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
-      contentEl.append(title, date, body);
-      layoutEl.append(contentEl);
+      card.append(title, date, body);
+      contentEl.append(card);
+      alignReportTiles();
     }
 
     async function loadReports() {
@@ -241,13 +312,27 @@
         .from('insider_edge_reports')
         .select('id, title, html_content, created_at')
         .order('created_at', { ascending: false });
-      if (error || !data || data.length === 0) return; // stay on the empty-state markup already in the HTML
+      // If this fails or returns nothing, and the inline pre-script above
+      // already instant-painted from a local cache, just leave that
+      // display as-is rather than reverting to the empty state -- a
+      // stale-but-real cached report is a better fallback than a false
+      // "no reports yet" while this is a transient network hiccup.
+      if (error || !data || data.length === 0) return;
 
       reports = data;
       selectedId = reports[0].id; // most recent report selected by default
       emptyStateEl.remove();
-      renderList();
+      renderTiles();
       renderContent();
+
+      // Keep the local instant-paint cache in sync on every real,
+      // confirmed load -- so the NEXT visit's inline pre-script has
+      // today's actual latest reports to paint from immediately.
+      try {
+        localStorage.setItem(REPORTS_CACHE_KEY, JSON.stringify(reports));
+      } catch {
+        // Harmless if storage is unavailable -- just means no instant paint next time.
+      }
     }
     loadReports();
   </script>

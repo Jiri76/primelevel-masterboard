@@ -48,18 +48,11 @@
      back, this page would be a dead end (no browser-back guarantee on
      every device/context) -- to be properly designed in the polish
      pass, same as everything else on this page. */
-  .back-link {
-    position: fixed;
-    top: 40px;
-    left: 40px;
-    color: var(--white);
-    opacity: 0.6;
-    font-size: 14px;
-    text-decoration: none;
-  }
-  .back-link:hover {
-    opacity: 1;
-  }
+  /* .back-link removed per explicit request 2026-08-26 -- deliberately
+     relies on the browser's own back navigation instead now. Real
+     trade-off flagged before removing (no guarantee of browser history
+     on every device/context, e.g. opening via the desktop shortcut) --
+     user's own explicit call, may revisit later. */
 
   /* Investment cards -- identical to Masterboard's own, moved here
      verbatim, not redesigned. White fill, 10px radius, fixed-width
@@ -122,8 +115,6 @@
 </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">&larr; Masterboard</a>
-
   <div class="container">
     <h1>Investments</h1>
     <div class="holdings" id="holdings"></div>
