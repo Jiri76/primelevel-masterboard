@@ -140,7 +140,14 @@
     color: var(--gold); /* changed from navy per explicit request -- "leaving the same size as it is" */
     opacity: 0.6;
     font-size: 15px;
-    margin-bottom: 50px; /* bumped from 30px per explicit request */
+    /* 26px, not 50px -- per explicit correction, the requested 50px is
+       the TOTAL gap from the TITLE's bottom edge to the body text
+       (spanning through this date line), not this margin alone. Solved
+       from a real measurement, not a guess: with the date's own 5px gap
+       below the title and its own ~19px line height, a 50px total needs
+       exactly 50 - 5 - 19 = 26px of margin here. Verified live
+       afterward, not just computed. */
+    margin-bottom: 26px;
     text-align: center;
   }
   /* The actual report body -- Cowork writes real HTML here (see the
