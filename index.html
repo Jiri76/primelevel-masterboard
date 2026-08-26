@@ -305,6 +305,61 @@
     </div>
   </div>
 
+  <!-- Real, root-caused fix for a flash that survived the earlier
+       localStorage-instant-paint fix: that fix lived inside the
+       type="module" script below, which can't run AT ALL until its
+       `import` (the Supabase library, fetched over the network from
+       esm.sh) has resolved -- normally instant from browser cache, but
+       genuinely not always: confirmed live by the user on two real
+       paths that don't reliably have that warm -- a Google Calendar
+       round trip (a real cross-origin trip, not the same-origin
+       Renewals/Investments case the earlier fix was proven against)
+       and launching via a desktop shortcut icon (which can spin up a
+       fresh browsing context with nothing warm in cache yet). Either
+       way, until that import resolves, the raw HTML/CSS default state
+       (the empty "Click to select a picture" placeholder) is the only
+       thing on screen -- moving the earlier fix into the module script
+       never actually eliminated this, since it was still gated behind
+       the same import. This plain, non-module inline script has ZERO
+       import/network dependency, so it runs the instant the HTML
+       parser reaches this point, with nothing to wait for. It reads
+       the exact same localStorage cache the module script below also
+       reads/writes (same key), and hand-builds the picture's public
+       URL directly (Supabase's storage URL format is fixed and
+       predictable -- no need for the actual library just to construct
+       a string). The module script's own loadSettings() still always
+       runs afterward and is the real, final, authoritative repaint (a
+       silent no-op if this optimistic one already got it right) --
+       this is purely about getting the RIGHT network request started
+       as early as physically possible, not a second source of truth. -->
+  <script>
+    (function () {
+      try {
+        var cached = JSON.parse(localStorage.getItem('masterboard-picture-cache-v1') || 'null');
+        if (!cached) return; // nothing cached yet -- fine, the module script below handles this normally
+        var img = document.getElementById('imagePreview');
+        var placeholder = document.getElementById('imagePlaceholder');
+        var url = 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version);
+        img.onload = function () {
+          placeholder.classList.add('has-image');
+          var frameRect = placeholder.getBoundingClientRect();
+          var zoom = cached.zoom || 1;
+          var scale = Math.max(frameRect.width / img.naturalWidth, frameRect.height / img.naturalHeight) * zoom;
+          var overflowX = Math.max(0, img.naturalWidth * scale - frameRect.width);
+          var overflowY = Math.max(0, img.naturalHeight * scale - frameRect.height);
+          var tx = -(overflowX * cached.x) / 100;
+          var ty = -(overflowY * cached.y) / 100;
+          img.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+        };
+        img.src = url;
+      } catch (e) {
+        // Harmless -- private browsing, storage disabled, or anything
+        // else -- the module script below handles everything normally
+        // regardless, this is purely an optimistic head start.
+      }
+    })();
+  </script>
+
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -674,29 +729,24 @@
       imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(version)}`;
     }
 
-    // Real, measured flash found and fixed: forcing the settings fetch to
-    // always hit the network (cache: 'no-store' above -- necessary for
-    // real correctness, see that fix) reintroduced a brief "Click to
-    // select a picture" empty-state flash on EVERY fresh page load,
-    // however fast the round trip is, because nothing paints until that
-    // fetch resolves. Remember the last successfully-loaded picture
-    // locally (just the position + version, not the image itself) and
-    // paint from it INSTANTLY, synchronously, before any network call --
-    // the actual picture URL is unchanged when nothing's different, so
-    // the browser's own image cache serves it with no visible delay at
-    // all. loadSettings() below still always runs the real network fetch
-    // afterward to quietly confirm/correct this (repainting again if it's
-    // actually different), so a genuine change is never missed -- this
-    // only removes the VISIBLE flash for the overwhelmingly common case
-    // of "nothing changed since last visit."
+    // Real, measured flash found and fixed (twice -- see the inline
+    // <script> above `<script type="module">` for the SECOND, more
+    // complete fix): forcing the settings fetch to always hit the
+    // network (cache: 'no-store' above -- necessary for real
+    // correctness, see that fix) reintroduced a brief "Click to select
+    // a picture" empty-state flash on every fresh page load, because
+    // nothing painted until that fetch resolved. The FIRST fix (an
+    // instant paint from a localStorage cache) lived right here, but
+    // still couldn't run until this whole module script's own `import`
+    // above had resolved over the network -- which isn't always instant
+    // (confirmed live: a Google Calendar round trip and a fresh desktop-
+    // shortcut launch both still showed the flash). That instant-paint
+    // logic has since moved to the plain inline script above, which has
+    // no import/network dependency at all and runs the moment the HTML
+    // parser reaches it -- see that block for the real fix. This
+    // PICTURE_CACHE_KEY constant stays here since savePosition() and the
+    // upload flow below still read/write the same cache for next time.
     const PICTURE_CACHE_KEY = 'masterboard-picture-cache-v1';
-    try {
-      const cached = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null');
-      if (cached) paintPicture(cached);
-    } catch {
-      // Private browsing or storage disabled -- harmless, just skip the
-      // instant paint and fall back to the normal network-only path below.
-    }
 
     async function loadSettings() {
       const { data, error } = await supabase
