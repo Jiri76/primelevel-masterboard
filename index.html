@@ -161,6 +161,25 @@
     font-size: 15px;
     text-align: center;
   }
+  /* Reposition lock -- per explicit request: an accidental drag while
+     just clicking the picture was mis-repositioning it. Double-click
+     to unlock (see the dblclick handler below); this outline is the
+     visible "it's unlocked right now, dragging will move it" cue --
+     outline (not border) so it doesn't disturb the existing 1px white
+     frame border or the box's own layout/size. */
+  .image-placeholder.reposition-unlocked {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .image-placeholder img {
+    cursor: pointer; /* only actually grab-able once unlocked, see below -- was unconditionally 'grab' before */
+  }
+  .image-placeholder.reposition-unlocked img {
+    cursor: grab;
+  }
+  /* .dragging (further below) only ever gets added while actually
+     unlocked and dragging, so its existing cursor:grabbing rule
+     already applies correctly with no separate scoped copy needed. */
   /* Real bug found and fixed: previously, a file the browser couldn't
      actually render (most commonly a HEIC photo straight from an
      iPhone -- Chrome/Firefox/Edge can't display that format in an
@@ -208,7 +227,9 @@
     left: 0;
     transform-origin: 0 0;
     display: none;
-    cursor: grab;
+    /* cursor: grab moved to .reposition-unlocked img below -- only
+       actually grab-able once unlocked (see the dblclick handler),
+       otherwise this is a plain pointer like the rest of the frame. */
     user-select: none;
     /* Real bug found and fixed: without this, a VERTICAL drag on a
        trackpad/touchscreen gets hijacked by the browser's own native
@@ -534,6 +555,30 @@
     // whether there's already a picture showing or not (lets you
     // replace it), matching the original behavior.
     let justDragged = false;
+    // ---- Reposition lock -- per explicit request: a plain click that
+    // slightly moves the mouse was accidentally repositioning the
+    // picture. Locked by default on every page load (safest default --
+    // nothing to remember or persist), unlocked only by a deliberate
+    // double-click (see the dblclick handler below), and auto-relocks
+    // itself either right after one completed drag or after a short
+    // idle window if no drag actually happens -- so it can never be
+    // left accidentally unlocked, waiting to cause the exact same
+    // mistake again later. Double-click again while already unlocked
+    // re-locks it early, same gesture either direction. ----
+    let repositionLocked = true;
+    let relockTimer = null;
+    function lockReposition() {
+      repositionLocked = true;
+      clearTimeout(relockTimer);
+      relockTimer = null;
+      imagePlaceholder.classList.remove('reposition-unlocked');
+    }
+    function unlockReposition() {
+      repositionLocked = false;
+      imagePlaceholder.classList.add('reposition-unlocked');
+      clearTimeout(relockTimer);
+      relockTimer = setTimeout(lockReposition, 5000); // auto re-lock if no drag starts within 5s
+    }
     // Real bug found and fixed: nothing previously stopped a SECOND
     // upload from starting while a FIRST one was still mid-flight (a
     // multi-MB photo over mobile data can easily take several seconds --
@@ -546,10 +591,21 @@
     // new upload (click-to-reopen AND a stray file-input change) until
     // the current one has fully resolved.
     let uploadInProgress = false;
+    // Delayed slightly (standard OS double-click window) so a genuine
+    // double-click -- used to toggle the reposition lock above, see the
+    // dblclick handler right below -- can cancel this instead of ALSO
+    // opening the file picker on its first click.
+    let clickTimer = null;
     imagePlaceholder.addEventListener('click', () => {
       if (uploadInProgress) return;
       if (justDragged) { justDragged = false; return; }
-      imageInput.click();
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { imageInput.click(); }, 250);
+    });
+    imagePlaceholder.addEventListener('dblclick', () => {
+      clearTimeout(clickTimer);
+      if (!imagePlaceholder.classList.contains('has-image')) return;
+      if (repositionLocked) unlockReposition(); else lockReposition();
     });
 
     // HEIC/HEIF (the default format on modern iPhones) can be SELECTED
@@ -894,6 +950,8 @@
     let dragState = null;
     imagePreview.addEventListener('pointerdown', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
+      if (repositionLocked) return; // must double-click to unlock first, see above
+      clearTimeout(relockTimer); // actively using it now -- don't let the idle auto-relock fire mid-drag
       e.preventDefault(); // extra defense alongside touch-action:none above, belt and braces against native gesture interception
       dragState = { startX: e.clientX, startY: e.clientY, startPosX: posX, startPosY: posY, moved: false };
       try {
@@ -946,7 +1004,10 @@
     });
     imagePreview.addEventListener('pointerup', () => {
       imagePreview.classList.remove('dragging');
-      if (dragState && dragState.moved) savePosition();
+      if (dragState && dragState.moved) {
+        savePosition();
+        lockReposition(); // per explicit request -- re-lock immediately after one completed reposition
+      }
       dragState = null;
     });
 
