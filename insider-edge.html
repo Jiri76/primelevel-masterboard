@@ -124,14 +124,14 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    /* top 50px per explicit request (was 30px, before that 40px) --
-       distinct from the other three sides, which stay at 40px. */
-    padding: 50px 40px 40px;
+    /* top 60px per explicit request (was 50px, before that 30px/40px)
+       -- distinct from the other three sides, which stay at 40px. */
+    padding: 60px 40px 40px;
     color: var(--navy);
   }
   .report-content-title {
     font-weight: 700;
-    font-size: 40px; /* bumped from 30px per explicit request */
+    font-size: 35px; /* reduced from 40px per explicit request */
     margin-bottom: 5px;
     text-align: center;
     color: var(--gold);
@@ -140,14 +140,14 @@
     color: var(--gold); /* changed from navy per explicit request -- "leaving the same size as it is" */
     opacity: 0.6;
     font-size: 15px;
-    /* 26px, not 50px -- per explicit correction, the requested 50px is
-       the TOTAL gap from the TITLE's bottom edge to the body text
-       (spanning through this date line), not this margin alone. Solved
-       from a real measurement, not a guess: with the date's own 5px gap
-       below the title and its own ~19px line height, a 50px total needs
-       exactly 50 - 5 - 19 = 26px of margin here. Verified live
+    /* 36px -- the requested 60px is the TOTAL gap from the TITLE's
+       bottom edge to the body text (spanning through this date line),
+       not this margin alone, same reasoning as the previous 50px round:
+       title's own 5px gap + date's own ~19px line height (unaffected
+       by the title's font-size, a separate element) + this margin =
+       60px total needs exactly 60 - 5 - 19 = 36px here. Verified live
        afterward, not just computed. */
-    margin-bottom: 26px;
+    margin-bottom: 36px;
     text-align: center;
   }
   /* The actual report body -- Cowork writes real HTML here (see the
