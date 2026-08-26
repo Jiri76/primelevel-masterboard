@@ -124,9 +124,11 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    /* top 100px, left/right 50px (was 40px), bottom stays 40px -- per
-       explicit request. */
-    padding: 100px 50px 40px;
+    /* top 100px, left/right 60px (was 50px, +10 per explicit request),
+       bottom 100px (was 40px -- explicitly matched to the top padding,
+       same 100px "card top to title" gap mirrored at the bottom, from
+       the report's last line to the card's bottom edge). */
+    padding: 100px 60px 100px;
     color: var(--navy);
   }
   .report-content-title {
@@ -227,7 +229,7 @@
      bold text (company name context, dollar figures) inside the same
      entry. */
   .report-body li > strong:first-child {
-    font-size: 17px;
+    font-size: 22px; /* was 17px, +5 per explicit request */
     letter-spacing: 0.02em;
   }
 
