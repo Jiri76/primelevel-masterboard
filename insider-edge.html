@@ -213,11 +213,18 @@
      confirmed measurement), i.e. 48px total. Cowork writes these two
      lines as one paragraph split by a literal <br>, not two separate
      elements, so ordinary line-height can't create extra room after
-     just this one line break -- <br> doesn't accept margin by default,
-     but making it a block element does, which is the standard way to
-     add space after a specific line break without affecting normal
-     line-wrapping elsewhere in the same paragraph. */
-  .report-body li br {
+     just this one line break on its own.
+     Real bug found and fixed here: styling the <br> element itself
+     (display:block + margin-bottom) measured as only ~6px live, not
+     the intended 48px -- an empty block with no border/padding/content
+     has nothing to stop its own margin from collapsing away, a known
+     CSS quirk. Targeting br::after instead (a real generated pseudo-
+     element, which doesn't have that emptiness problem) is the
+     standard, reliable version of this technique -- confirmed via a
+     genuine measurement afterward (text-node-to-text-node, not just
+     computed style), not assumed correct just because the styles
+     "applied". */
+  .report-body li br::after {
     content: "";
     display: block;
     margin-bottom: 24px; /* the existing 24px line-height gap + this = 48px, exactly double */
