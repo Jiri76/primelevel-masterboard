@@ -124,30 +124,30 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    /* top 60px per explicit request (was 50px, before that 30px/40px)
-       -- distinct from the other three sides, which stay at 40px. */
-    padding: 60px 40px 40px;
+    /* top 100px per explicit request -- distinct from the other three
+       sides, which stay at 40px. */
+    padding: 100px 40px 40px;
     color: var(--navy);
   }
   .report-content-title {
     font-weight: 700;
-    font-size: 35px; /* reduced from 40px per explicit request */
+    font-size: 35px;
     margin-bottom: 5px;
     text-align: center;
     color: var(--gold);
   }
   .report-content-date {
-    color: var(--gold); /* changed from navy per explicit request -- "leaving the same size as it is" */
+    color: var(--gold);
     opacity: 0.6;
     font-size: 15px;
-    /* 36px -- the requested 60px is the TOTAL gap from the TITLE's
+    /* 76px -- the requested 100px is the TOTAL gap from the TITLE's
        bottom edge to the body text (spanning through this date line),
-       not this margin alone, same reasoning as the previous 50px round:
+       not this margin alone, same reasoning as the previous rounds:
        title's own 5px gap + date's own ~19px line height (unaffected
        by the title's font-size, a separate element) + this margin =
-       60px total needs exactly 60 - 5 - 19 = 36px here. Verified live
-       afterward, not just computed. */
-    margin-bottom: 36px;
+       100px total needs exactly 100 - 5 - 19 = 76px here. Verified
+       live afterward, not just computed. */
+    margin-bottom: 76px;
     text-align: center;
   }
   /* The actual report body -- Cowork writes real HTML here (see the
@@ -175,9 +175,17 @@
   }
   .report-body h3 {
     color: var(--gold); /* unchanged per explicit request -- "leaving the gold" */
-    font-size: 25px; /* bumped from 19px per explicit request -- applies to every section header (Section 1/2/3, Methodology) uniformly, one shared rule */
+    font-size: 25px;
     font-weight: 700;
-    margin: 40px 0 16px;
+    /* top: paragraph-to-heading gap (e.g. the intro paragraph to
+       "Section 2"), per explicit request. bottom: heading-to-first-item
+       gap (e.g. "Section 2" to "SRTS"), corrected via explicit follow-up
+       from an initial 20px to 30px, matching the same 30px used between
+       items themselves below. One shared rule, applies uniformly to
+       every section header (Section 1/2/3, Methodology) -- there's no
+       way to target just one heading without adding a class Cowork's
+       real HTML doesn't have. */
+    margin: 50px 0 30px;
   }
   .report-body h3:first-child {
     margin-top: 0;
@@ -187,18 +195,16 @@
     padding: 0;
     list-style: none;
   }
-  /* Generous spacing + a divider between entries is what actually makes
-     a dense list scannable -- each ticker reads as its own distinct
-     block instead of the list blurring into one wall of text. */
+  /* Generous spacing is what actually makes a dense list scannable --
+     each ticker reads as its own distinct block instead of the list
+     blurring into one wall of text. The divider line between entries
+     (border-bottom) was removed per explicit request -- spacing alone
+     now does the separating. */
   .report-body li {
-    padding-bottom: 24px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 30px; /* was 24px + a 24px padding-bottom + a border, per explicit request now just this one clean gap */
   }
   .report-body li:last-child {
-    padding-bottom: 0;
     margin-bottom: 0;
-    border-bottom: none;
   }
   /* The ticker code (always the first <strong> in each entry) gets its
      own slightly larger, letter-spaced treatment -- a real visual
