@@ -124,19 +124,24 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    padding: 40px;
+    /* top 30px per explicit request -- distinct from the other three
+       sides, which stay at the original 40px. */
+    padding: 30px 40px 40px;
     color: var(--navy);
   }
   .report-content-title {
     font-weight: 700;
-    font-size: 24px;
-    margin-bottom: 4px;
+    font-size: 30px; /* bumped from 24px per explicit request */
+    margin-bottom: 5px; /* was 4px */
+    text-align: center; /* per explicit request */
+    color: var(--gold); /* per explicit request */
   }
   .report-content-date {
-    color: var(--navy);
+    color: var(--navy); /* unchanged per explicit request -- only centering, size, and spacing change here */
     opacity: 0.6;
-    font-size: 13px;
-    margin-bottom: 24px;
+    font-size: 15px; /* bumped from 13px per explicit request */
+    margin-bottom: 30px; /* bumped from 24px per explicit request */
+    text-align: center; /* per explicit request */
   }
   /* The actual report body -- Cowork writes real HTML here (see the
      insider_edge_reports table), rendered directly rather than escaped/
