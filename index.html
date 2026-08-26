@@ -202,13 +202,24 @@
      transform-origin: 0 0 makes the scale math anchor at the image's own
      top-left corner, matching how the translate offset below is computed
      (from the frame's top-left, not its center). */
+  /* Picture lock -- per explicit request: the picture starts LOCKED
+     (plain arrow cursor, inert) every time. A single left-click on it
+     unlocks it (cursor becomes a hand) so it can be dragged/zoomed;
+     it re-locks itself automatically after 5s of no interaction, or
+     instantly the moment you left-click anywhere OUTSIDE it -- see the
+     JS below. Right-click always opens the file picker to replace the
+     picture, regardless of lock state -- a completely separate gesture
+     from left-click, so there's no click-count ambiguity to resolve at
+     all (unlike an earlier, now-reverted version of this feature that
+     tried to use single vs. double left-click for two different
+     things). */
   .image-placeholder img {
     position: absolute;
     top: 0;
     left: 0;
     transform-origin: 0 0;
     display: none;
-    cursor: grab;
+    cursor: default; /* locked by default -- plain arrow, no special affordance until unlocked */
     user-select: none;
     /* Real bug found and fixed: without this, a VERTICAL drag on a
        trackpad/touchscreen gets hijacked by the browser's own native
@@ -222,6 +233,9 @@
        touch-action:none tells the browser this element handles its
        own gestures entirely, so it stops intercepting any direction. */
     touch-action: none;
+  }
+  .image-placeholder.picture-unlocked img {
+    cursor: grab;
   }
   .image-placeholder img.dragging {
     cursor: grabbing;
@@ -527,13 +541,47 @@
     }
 
     // A real drag (see the pointerdown/move/up block further down) must
-    // NOT also open the file picker -- justDragged tracks whether the
-    // most recent pointer gesture actually moved enough to count as a
-    // drag, so this click handler can skip opening the picker for that
-    // one click only. A plain click (no real movement) still opens it,
-    // whether there's already a picture showing or not (lets you
-    // replace it), matching the original behavior.
+    // NOT also count as the unlock click below -- justDragged tracks
+    // whether the most recent pointer gesture actually moved enough to
+    // count as a drag, so the click handler can skip acting on that
+    // one click only.
     let justDragged = false;
+
+    // ---- Picture lock -- per explicit request: starts locked (plain
+    // arrow cursor) on every load. One left-click on the picture
+    // unlocks it (cursor becomes a hand, drag/zoom now work); it
+    // re-locks itself automatically after 5s of no interaction, OR
+    // instantly the moment you left-click anywhere OUTSIDE the picture
+    // -- no need to wait. Right-click (see the contextmenu handler
+    // below) always opens the file picker to replace the picture,
+    // completely independent of lock state -- a fully separate gesture
+    // from left-click, so there's no click-count ambiguity to resolve. ----
+    let pictureLocked = true;
+    let relockTimer = null;
+    function lockPicture() {
+      pictureLocked = true;
+      clearTimeout(relockTimer);
+      relockTimer = null;
+      imagePlaceholder.classList.remove('picture-unlocked');
+    }
+    function unlockPicture() {
+      pictureLocked = false;
+      imagePlaceholder.classList.add('picture-unlocked');
+      armRelockTimer();
+    }
+    function armRelockTimer() {
+      clearTimeout(relockTimer);
+      relockTimer = setTimeout(lockPicture, 5000);
+    }
+    // Instant lock the moment you click anywhere else -- mousedown, not
+    // click, per this project's own established outside-dismiss lesson
+    // (a click requires mouseup to land back on the same point; a plain
+    // mousedown fires unconditionally on press, with no such drift risk).
+    document.addEventListener('mousedown', (e) => {
+      if (pictureLocked) return;
+      if (imagePlaceholder.contains(e.target)) return;
+      lockPicture();
+    });
     // Real bug found and fixed: nothing previously stopped a SECOND
     // upload from starting while a FIRST one was still mid-flight (a
     // multi-MB photo over mobile data can easily take several seconds --
@@ -547,8 +595,26 @@
     // the current one has fully resolved.
     let uploadInProgress = false;
     imagePlaceholder.addEventListener('click', () => {
-      if (uploadInProgress) return;
       if (justDragged) { justDragged = false; return; }
+      if (!imagePlaceholder.classList.contains('has-image')) {
+        // No picture yet -- nothing to lock, a plain click just opens
+        // the picker for the very first upload, same as always.
+        if (!uploadInProgress) imageInput.click();
+        return;
+      }
+      if (pictureLocked) {
+        unlockPicture();
+      } else {
+        armRelockTimer(); // already unlocked -- this click just counts as activity, resets the idle countdown
+      }
+    });
+    // Right-click always opens the file picker to replace the picture,
+    // regardless of lock state -- per explicit request. preventDefault
+    // stops the browser's own native right-click context menu.
+    imagePlaceholder.addEventListener('contextmenu', (e) => {
+      if (!imagePlaceholder.classList.contains('has-image')) return;
+      e.preventDefault();
+      if (uploadInProgress) return;
       imageInput.click();
     });
 
@@ -894,6 +960,8 @@
     let dragState = null;
     imagePreview.addEventListener('pointerdown', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
+      if (pictureLocked) return; // must left-click once to unlock first, see above -- a click-turned-drag while still locked does nothing
+      clearTimeout(relockTimer); // actively interacting -- pause the idle countdown while a drag is in progress
       e.preventDefault(); // extra defense alongside touch-action:none above, belt and braces against native gesture interception
       dragState = { startX: e.clientX, startY: e.clientY, startPosX: posX, startPosY: posY, moved: false };
       try {
@@ -948,6 +1016,7 @@
       imagePreview.classList.remove('dragging');
       if (dragState && dragState.moved) savePosition();
       dragState = null;
+      if (!pictureLocked) armRelockTimer(); // resume the 5s idle countdown now that the drag itself is done
     });
 
     // Mouse-wheel zoom -- see renderTransform() above for why this is the
@@ -961,9 +1030,11 @@
     let zoomSaveTimer = null;
     imagePreview.addEventListener('wheel', (e) => {
       if (!imagePlaceholder.classList.contains('has-image')) return;
+      if (pictureLocked) return; // per explicit request -- let the page scroll normally while locked, zoom only works once unlocked
       e.preventDefault(); // stop the page itself from scrolling while zooming the picture
       currentZoom = clamp(currentZoom + (e.deltaY < 0 ? 0.1 : -0.1), MIN_ZOOM, MAX_ZOOM);
       renderTransform();
+      armRelockTimer(); // zooming counts as activity too -- reset the idle countdown
       // Zooming out can shrink the overflow on an axis that the CURRENT
       // posX/posY percentage was previously relying on -- but since
       // position is stored as a 0-100% fraction OF the overflow (not a
