@@ -742,7 +742,12 @@
     // throws a SecurityError.
     function makeThumbnail() {
       try {
-        const THUMB_W = 80, THUMB_H = 50;
+        // 240x150 / 75% quality -- bumped up from 80x50 / 50% per
+        // explicit request, since the low-res version was visibly
+        // blurry for the brief moment before the real photo swaps in.
+        // Still trivially small for localStorage (a few KB at most, vs.
+        // its typical 5-10MB budget) even at this size.
+        const THUMB_W = 240, THUMB_H = 150;
         const frameRect = imagePlaceholder.getBoundingClientRect();
         const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight) * currentZoom;
         const overflowX = Math.max(0, imagePreview.naturalWidth * scale - frameRect.width);
@@ -755,7 +760,7 @@
         canvas.width = THUMB_W;
         canvas.height = THUMB_H;
         canvas.getContext('2d').drawImage(imagePreview, srcX, srcY, srcW, srcH, 0, 0, THUMB_W, THUMB_H);
-        return canvas.toDataURL('image/jpeg', 0.5);
+        return canvas.toDataURL('image/jpeg', 0.75);
       } catch {
         return null; // harmless -- just means no instant thumbnail next time, the normal fetch path still works
       }
