@@ -207,28 +207,20 @@
     margin-bottom: 0;
   }
   /* Per explicit request: the gap between each ticker's own name line
-     (e.g. "SRTS -- Sensus Healthcare, Inc. -- Conviction: High") and
-     its market-cap detail line right below must be DOUBLE the normal
-     line-height gap (24px at this 15px/1.6 setting -- see the earlier
-     confirmed measurement), i.e. 48px total. Cowork writes these two
-     lines as one paragraph split by a literal <br>, not two separate
-     elements, so ordinary line-height can't create extra room after
-     just this one line break on its own.
-     Real bug found and fixed here: styling the <br> element itself
-     (display:block + margin-bottom) measured as only ~6px live, not
-     the intended 48px -- an empty block with no border/padding/content
-     has nothing to stop its own margin from collapsing away, a known
-     CSS quirk. Targeting br::after instead (a real generated pseudo-
-     element, which doesn't have that emptiness problem) is the
-     standard, reliable version of this technique -- confirmed via a
-     genuine measurement afterward (text-node-to-text-node, not just
-     computed style), not assumed correct just because the styles
-     "applied". */
-  .report-body li br::after {
-    content: "";
-    display: block;
-    margin-bottom: 24px; /* the existing 24px line-height gap + this = 48px, exactly double */
-  }
+     and its market-cap detail line right below must be DOUBLE the
+     normal line-height gap -- see doubleTickerLineBreaks() in the
+     module script (and its duplicate in the inline pre-script) for how
+     this is actually achieved. TWO real CSS attempts were tried here
+     first and both measured as failing live (br { display:block;
+     margin-bottom } measured ~6px, not 48px; br::after with the same
+     properties also measured ~6px despite getComputedStyle reporting
+     the rule as applied) -- <br> elements do not reliably generate
+     boxes for their own margin or for ::after content in practice,
+     regardless of what the CSSOM claims. Fixed instead with a plain,
+     completely standard JS approach: insert a second real <br>
+     immediately after each existing one inside a ticker entry. Two
+     consecutive line breaks reliably create a full second empty line
+     in every browser, no CSS edge cases involved at all. */
   /* The ticker code (always the first <strong> in each entry) gets its
      own slightly larger, letter-spaced treatment -- a real visual
      anchor to scan down the list for, distinct from the rest of the
@@ -316,6 +308,13 @@
         var body = document.createElement('div');
         body.className = 'report-body';
         body.innerHTML = selected.html_content; // trusted -- see the module script's own note on why
+        // Per explicit request: double the gap after each ticker's own
+        // name line -- see the module script's own note on why this is
+        // a real second <br> rather than a CSS trick (two CSS attempts
+        // both measured as not actually working on a bare <br>).
+        body.querySelectorAll('li br').forEach(function (br) {
+          br.insertAdjacentElement('afterend', document.createElement('br'));
+        });
         contentEl.append(contentTitle, contentDate, body);
 
         emptyState.remove();
@@ -463,6 +462,20 @@
       const body = document.createElement('div');
       body.className = 'report-body';
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
+      // Per explicit request: double the gap after each ticker's own
+      // name line. Real bug found and fixed: two CSS-only attempts
+      // (styling the <br> directly, then br::after) both measured as
+      // NOT actually creating the extra space live, despite
+      // getComputedStyle reporting the rules as applied -- <br>
+      // elements don't reliably generate boxes for their own margin or
+      // for generated content in practice. Fixed instead with a plain,
+      // completely standard approach: insert a real second <br>
+      // immediately after each existing one inside a ticker entry --
+      // two consecutive line breaks reliably create a full second
+      // empty line in every browser, no CSS edge cases involved.
+      body.querySelectorAll('li br').forEach((br) => {
+        br.insertAdjacentElement('afterend', document.createElement('br'));
+      });
       card.append(title, date, body);
       contentEl.append(card);
       // Marking read/refreshing tiles is NOT done here on purpose --
