@@ -336,25 +336,46 @@
       try {
         var cached = JSON.parse(localStorage.getItem('masterboard-picture-cache-v1') || 'null');
         if (!cached) return; // nothing cached yet -- fine, the module script below handles this normally
-        var src = cached.thumb || (cached.version
-          ? 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version)
-          : null);
-        if (!src) return;
         var img = document.getElementById('imagePreview');
         var placeholder = document.getElementById('imagePlaceholder');
         img.crossOrigin = 'anonymous'; // must be set before src -- see the module script's own note on this
-        img.onload = function () {
-          placeholder.classList.add('has-image');
-          var frameRect = placeholder.getBoundingClientRect();
-          var zoom = cached.zoom || 1;
-          var scale = Math.max(frameRect.width / img.naturalWidth, frameRect.height / img.naturalHeight) * zoom;
-          var overflowX = Math.max(0, img.naturalWidth * scale - frameRect.width);
-          var overflowY = Math.max(0, img.naturalHeight * scale - frameRect.height);
-          var tx = -(overflowX * cached.x) / 100;
-          var ty = -(overflowY * cached.y) / 100;
-          img.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
-        };
-        img.src = src;
+        if (cached.thumb) {
+          // Real bug found and fixed, confirmed via the user's own saved
+          // zoom value (1.7x): the thumbnail drawn by makeThumbnail() in
+          // the module script below is already a FINISHED snapshot --
+          // it's drawn FROM the exact crop/zoom/pan the user had, baked
+          // directly into its 800x500 pixels. Re-running the SAME pan/
+          // zoom math against it here (as the old code below still does,
+          // correctly, for the raw un-cropped photo) double-applies the
+          // zoom on top of an image that's already zoomed -- looks
+          // exactly like what was reported: the picture briefly renders
+          // too big, then "shrinks" once the real photo (correctly
+          // sized against its own true natural dimensions) replaces it.
+          // The fix: a cached thumbnail needs NO transform at all, it's
+          // already the exact final picture -- just show it as-is.
+          img.onload = function () {
+            placeholder.classList.add('has-image');
+          };
+          img.src = cached.thumb;
+        } else if (cached.version) {
+          // Fallback for the (now rare) case of no thumbnail cached yet
+          // -- this loads the RAW, un-cropped photo at its true natural
+          // size, so it genuinely does need the full pan/zoom math
+          // applied, same as the module script's own paintPicture().
+          var url = 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version);
+          img.onload = function () {
+            placeholder.classList.add('has-image');
+            var frameRect = placeholder.getBoundingClientRect();
+            var zoom = cached.zoom || 1;
+            var scale = Math.max(frameRect.width / img.naturalWidth, frameRect.height / img.naturalHeight) * zoom;
+            var overflowX = Math.max(0, img.naturalWidth * scale - frameRect.width);
+            var overflowY = Math.max(0, img.naturalHeight * scale - frameRect.height);
+            var tx = -(overflowX * cached.x) / 100;
+            var ty = -(overflowY * cached.y) / 100;
+            img.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+          };
+          img.src = url;
+        }
       } catch (e) {
         // Harmless -- private browsing, storage disabled, or anything
         // else -- the module script below handles everything normally
