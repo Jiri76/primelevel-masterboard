@@ -435,10 +435,12 @@
     const PICTURE_KEY = 'hero';
 
     // ---- Link tiles -- add more tools here, nothing else to touch. ----
-    // TODO: Insider Edge's real URL is a placeholder ("#") until confirmed.
-    // Investments now points to its own page -- the 3 holding cards moved
-    // there entirely (per explicit request), this page no longer has a
-    // holdings section to anchor-scroll to.
+    // Insider Edge now points to its own page (insider-edge.html), which
+    // reads from the insider_edge_reports table -- empty for now until
+    // Claude Cowork actually starts writing scheduled reports into it.
+    // Investments also points to its own page -- the 3 holding cards
+    // moved there entirely (per explicit request), this page no longer
+    // has a holdings section to anchor-scroll to.
     // Alphabetical order, per explicit request: Calendar, Insider Edge,
     // Investments, Renewals -- "Calendar" sorts before all three (C < I),
     // "Insider" before "Investments" (4th letter i < v), both before
@@ -448,7 +450,7 @@
     // (if any) takes over from there.
     const TILES = [
       { label: 'Calendar', href: 'https://calendar.google.com/' },
-      { label: 'Insider Edge', href: '#' },
+      { label: 'Insider Edge', href: 'insider-edge.html' },
       { label: 'Investments', href: 'investments.html' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
     ];

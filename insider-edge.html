@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Insider Edge — Masterboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* Same design tokens as index.html/investments.html -- copied
+     verbatim, not just similar, same as every other PrimeLevel tool. */
+  :root {
+    --navy: #1E2633;
+    --white: #F9F9FA;
+    --gold: #B29B68;
+    --input-bg: #2A3441;
+    --placeholder: #8A93A3;
+    --border: #3A4453;
+    --green: #4CAF7D;
+    --orange: #D9A441;
+    --red: #E45858;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100%;
+  }
+  .container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 100px 20px 80px;
+  }
+  h1 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 60px;
+    margin: 0 0 100px;
+    text-align: center;
+  }
+  /* Same minimal back-link pattern as investments.html -- functional,
+     not yet part of any locked design pass. */
+  .back-link {
+    position: fixed;
+    top: 40px;
+    left: 40px;
+    color: var(--white);
+    opacity: 0.6;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .back-link:hover {
+    opacity: 1;
+  }
+
+  /* Two-column layout: a list of reports on the left (fixed width, so
+     titles/dates don't reflow awkwardly), the selected report's actual
+     content on the right (flexible, since report length is unknown and
+     varies week to week). Stacks to one column on narrow viewports --
+     this page isn't governed by the LOCKED index.html layout spec, so
+     ordinary responsive behavior is fine here. */
+  .layout {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .report-list {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  /* Same card language as everywhere else (white fill, 10px radius) --
+     a report entry is a button, not a link, since selecting one swaps
+     content on THIS page rather than navigating away. */
+  .report-item {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    font-family: 'Montserrat', sans-serif;
+    transition: transform 0.1s ease;
+  }
+  .report-item:hover {
+    transform: scale(1.02);
+  }
+  .report-item:active {
+    transform: scale(0.98);
+  }
+  /* The currently-selected report gets a visible gold left border --
+     the same accent color used for the page title itself, so it reads
+     as "this is the one you're looking at" without needing a second
+     color introduced just for this. */
+  .report-item.selected {
+    box-shadow: inset 4px 0 0 var(--gold);
+  }
+  .report-item-title {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .report-item-date {
+    color: var(--navy);
+    opacity: 0.6;
+    font-size: 12px;
+  }
+
+  .report-content {
+    flex: 1;
+    min-width: 300px;
+    background: var(--white);
+    border-radius: 10px;
+    padding: 40px;
+    color: var(--navy);
+  }
+  .report-content-title {
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+  .report-content-date {
+    color: var(--navy);
+    opacity: 0.6;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  /* The actual report body -- Cowork writes real HTML here (see
+     index.js's insider_edge_reports table), rendered directly rather
+     than escaped/shown as text. Trusted content: only a service-role
+     key (never exposed to this public page) can ever write a row here,
+     the public/anon key this page itself uses can only ever read --
+     see the table's own RLS/grants for why this is safe to render as-is
+     rather than something arbitrary any site visitor could inject. */
+  .report-body {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .empty-state {
+    color: var(--placeholder);
+    font-size: 15px;
+    text-align: center;
+    padding: 60px 0;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+  <a class="back-link" href="index.html">&larr; Masterboard</a>
+
+  <div class="container">
+    <h1>Insider Edge</h1>
+    <div class="layout" id="layout">
+      <div class="empty-state" id="emptyState">
+        No reports yet — check back after the next scheduled report.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // Same Supabase project every other PrimeLevel tool uses -- same
+    // URL/key pattern as index.html.
+    const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const layoutEl = document.getElementById('layout');
+    const emptyStateEl = document.getElementById('emptyState');
+
+    let reports = [];
+    let selectedId = null;
+
+    function renderList() {
+      // Rebuilds the whole list each time rather than diffing -- this
+      // page has no live-updating requirement (a fixed set of reports
+      // fetched once on load), so the simplicity is worth it.
+      document.querySelectorAll('.report-list').forEach((el) => el.remove());
+      const listEl = document.createElement('div');
+      listEl.className = 'report-list';
+      reports.forEach((report) => {
+        const item = document.createElement('button');
+        item.className = 'report-item' + (report.id === selectedId ? ' selected' : '');
+        const title = document.createElement('div');
+        title.className = 'report-item-title';
+        title.textContent = report.title;
+        const date = document.createElement('div');
+        date.className = 'report-item-date';
+        date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        item.append(title, date);
+        item.addEventListener('click', () => {
+          selectedId = report.id;
+          renderList();
+          renderContent();
+        });
+        listEl.append(item);
+      });
+      layoutEl.prepend(listEl);
+    }
+
+    function renderContent() {
+      document.querySelectorAll('.report-content').forEach((el) => el.remove());
+      const report = reports.find((r) => r.id === selectedId);
+      if (!report) return;
+      const contentEl = document.createElement('div');
+      contentEl.className = 'report-content';
+      const title = document.createElement('div');
+      title.className = 'report-content-title';
+      title.textContent = report.title;
+      const date = document.createElement('div');
+      date.className = 'report-content-date';
+      date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      const body = document.createElement('div');
+      body.className = 'report-body';
+      body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
+      contentEl.append(title, date, body);
+      layoutEl.append(contentEl);
+    }
+
+    async function loadReports() {
+      const { data, error } = await supabase
+        .from('insider_edge_reports')
+        .select('id, title, html_content, created_at')
+        .order('created_at', { ascending: false });
+      if (error || !data || data.length === 0) return; // stay on the empty-state markup already in the HTML
+
+      reports = data;
+      selectedId = reports[0].id; // most recent report selected by default
+      emptyStateEl.remove();
+      renderList();
+      renderContent();
+    }
+    loadReports();
+  </script>
+</body>
+</html>
