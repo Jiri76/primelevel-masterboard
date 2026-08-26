@@ -144,10 +144,58 @@
      exposed to this public page) can ever write a row here, the public/
      anon key this page itself uses can only ever read -- see the
      table's own RLS/grants for why this is safe to render as-is rather
-     than something arbitrary any site visitor could inject. */
+     than something arbitrary any site visitor could inject.
+     Styling below targets Cowork's actual real output structure (plain
+     HTML: <p> for the summary, <h3> per section, <ul>/<li> for tickers,
+     inline color on the "Conviction: ..." span, which Cowork already
+     sets itself per the prompt's own color guidance) -- not a guess,
+     built by reading the real generated report first. Per explicit
+     request: needs to be genuinely scannable, not just readable --
+     real spacing between sections and between ticker entries, and a
+     distinct look for each ticker's own code, so the eye can scan
+     straight down the list without reading every word. */
   .report-body {
     font-size: 15px;
     line-height: 1.6;
+  }
+  .report-body p {
+    margin: 0 0 20px;
+  }
+  .report-body h3 {
+    color: var(--gold);
+    font-size: 19px;
+    font-weight: 700;
+    margin: 40px 0 16px;
+  }
+  .report-body h3:first-child {
+    margin-top: 0;
+  }
+  .report-body ul {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+  }
+  /* Generous spacing + a divider between entries is what actually makes
+     a dense list scannable -- each ticker reads as its own distinct
+     block instead of the list blurring into one wall of text. */
+  .report-body li {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .report-body li:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+  /* The ticker code (always the first <strong> in each entry) gets its
+     own slightly larger, letter-spaced treatment -- a real visual
+     anchor to scan down the list for, distinct from the rest of the
+     bold text (company name context, dollar figures) inside the same
+     entry. */
+  .report-body li > strong:first-child {
+    font-size: 17px;
+    letter-spacing: 0.02em;
   }
 
   .empty-state {
