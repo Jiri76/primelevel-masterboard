@@ -305,41 +305,44 @@
     </div>
   </div>
 
-  <!-- Real, root-caused fix for a flash that survived the earlier
-       localStorage-instant-paint fix: that fix lived inside the
-       type="module" script below, which can't run AT ALL until its
-       `import` (the Supabase library, fetched over the network from
-       esm.sh) has resolved -- normally instant from browser cache, but
-       genuinely not always: confirmed live by the user on two real
-       paths that don't reliably have that warm -- a Google Calendar
-       round trip (a real cross-origin trip, not the same-origin
-       Renewals/Investments case the earlier fix was proven against)
-       and launching via a desktop shortcut icon (which can spin up a
-       fresh browsing context with nothing warm in cache yet). Either
-       way, until that import resolves, the raw HTML/CSS default state
-       (the empty "Click to select a picture" placeholder) is the only
-       thing on screen -- moving the earlier fix into the module script
-       never actually eliminated this, since it was still gated behind
-       the same import. This plain, non-module inline script has ZERO
-       import/network dependency, so it runs the instant the HTML
-       parser reaches this point, with nothing to wait for. It reads
-       the exact same localStorage cache the module script below also
-       reads/writes (same key), and hand-builds the picture's public
-       URL directly (Supabase's storage URL format is fixed and
-       predictable -- no need for the actual library just to construct
-       a string). The module script's own loadSettings() still always
-       runs afterward and is the real, final, authoritative repaint (a
-       silent no-op if this optimistic one already got it right) --
-       this is purely about getting the RIGHT network request started
-       as early as physically possible, not a second source of truth. -->
+  <!-- Real, root-caused fix, third attempt at this specific flash --
+       confirmed live by the user that the first two attempts (moving
+       the instant-paint out of the module script; forcing
+       cache:'no-store' on the settings fetch) both still left a real,
+       visible gap on a Google Calendar round trip and a fresh desktop-
+       shortcut launch, plus a smaller one even on a plain reload. Root
+       cause, now properly identified: EVERY previous fix, however
+       early it ran, still ultimately depended on the PICTURE ITSELF
+       finishing a real network fetch (even from a warm HTTP cache,
+       decode time isn't literally zero) before anything meaningful
+       could paint -- there was no version of "fetch the real photo
+       faster" that could guarantee zero visible gap under all network
+       conditions. The only fix with NO network dependency at all is to
+       not need the network for the very first paint: a tiny (80x50),
+       low-quality thumbnail of the picture is generated and stored
+       (as a base64 data URI, alongside the position/zoom/version) every
+       time the real picture successfully saves or loads -- see
+       makeThumbnail() in the module script below. A data URI decodes
+       from memory, not the network, so this script can paint it
+       essentially instantly regardless of connection speed or cache
+       state. The real, full-resolution picture then loads in the
+       background exactly as before and swaps in seamlessly (a gentle
+       "sharpen," not an empty-to-picture jump) once it's ready -- see
+       the module script's paintPicture() for that. Falls back to the
+       old hand-built full-URL approach if no thumbnail is cached yet
+       (e.g. the very first time this runs after this fix ships). -->
   <script>
     (function () {
       try {
         var cached = JSON.parse(localStorage.getItem('masterboard-picture-cache-v1') || 'null');
         if (!cached) return; // nothing cached yet -- fine, the module script below handles this normally
+        var src = cached.thumb || (cached.version
+          ? 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version)
+          : null);
+        if (!src) return;
         var img = document.getElementById('imagePreview');
         var placeholder = document.getElementById('imagePlaceholder');
-        var url = 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version);
+        img.crossOrigin = 'anonymous'; // must be set before src -- see the module script's own note on this
         img.onload = function () {
           placeholder.classList.add('has-image');
           var frameRect = placeholder.getBoundingClientRect();
@@ -351,7 +354,7 @@
           var ty = -(overflowY * cached.y) / 100;
           img.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
         };
-        img.src = url;
+        img.src = src;
       } catch (e) {
         // Harmless -- private browsing, storage disabled, or anything
         // else -- the module script below handles everything normally
@@ -452,6 +455,16 @@
     const imagePreview = document.getElementById('imagePreview');
     const imagePlaceholderError = document.getElementById('imagePlaceholderError');
     imagePreview.draggable = false; // suppress the browser's own native image-drag-ghost, so our custom pointer-drag below is the only drag behavior
+    // Required so a canvas can read back the (cross-origin, Supabase-
+    // hosted) picture's pixels without a SecurityError -- see
+    // makeThumbnail() below. Confirmed safe first: Supabase's public
+    // storage responses carry Access-Control-Allow-Origin: *. Also set
+    // in the inline pre-script above (before it ever assigns `src`) --
+    // setting this AFTER src is already loading/loaded can force an
+    // unwanted re-fetch, so both scripts set it before their own first
+    // src assignment; setting the same value twice here is a harmless
+    // no-op.
+    imagePreview.crossOrigin = 'anonymous';
 
     // ---- Picture position/zoom state -- tracked directly in JS (not
     // read back from CSS via getComputedStyle) since the picture is now
@@ -707,10 +720,64 @@
     // picture reuse the identical URL, so the browser's own cache can
     // serve it with zero network request at all -- not even a 304
     // round-trip).
+    const PICTURE_CACHE_KEY = 'masterboard-picture-cache-v1';
+
+    // Generates a tiny (80x50, matching the frame's own 1.6:1 aspect),
+    // low-quality thumbnail of the CURRENTLY DISPLAYED crop (the same
+    // position/zoom the user actually sees, not just the raw uncropped
+    // photo) as a base64 data URI. This is the real fix for a flash
+    // that survived two earlier, lighter-weight attempts -- see the
+    // inline <script> above `<script type="module">` for the full
+    // story. A data URI has ZERO network dependency (it decodes from
+    // memory, not a fetch), so it's the only thing that can genuinely
+    // guarantee an instant first paint regardless of connection speed
+    // or cache state -- unlike the picture's own URL, which however
+    // early it's requested still has to finish a real network round
+    // trip first. Draws directly from the already-decoded imagePreview
+    // element rather than re-fetching anything. Requires
+    // imagePreview.crossOrigin = 'anonymous' (set above) plus Supabase
+    // serving Access-Control-Allow-Origin: * on public storage objects
+    // (confirmed directly via curl before relying on this) -- without
+    // both, reading pixels back off a cross-origin image into a canvas
+    // throws a SecurityError.
+    function makeThumbnail() {
+      try {
+        const THUMB_W = 80, THUMB_H = 50;
+        const frameRect = imagePlaceholder.getBoundingClientRect();
+        const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight) * currentZoom;
+        const overflowX = Math.max(0, imagePreview.naturalWidth * scale - frameRect.width);
+        const overflowY = Math.max(0, imagePreview.naturalHeight * scale - frameRect.height);
+        const srcX = (overflowX * posX) / 100 / scale;
+        const srcY = (overflowY * posY) / 100 / scale;
+        const srcW = frameRect.width / scale;
+        const srcH = frameRect.height / scale;
+        const canvas = document.createElement('canvas');
+        canvas.width = THUMB_W;
+        canvas.height = THUMB_H;
+        canvas.getContext('2d').drawImage(imagePreview, srcX, srcY, srcW, srcH, 0, 0, THUMB_W, THUMB_H);
+        return canvas.toDataURL('image/jpeg', 0.5);
+      } catch {
+        return null; // harmless -- just means no instant thumbnail next time, the normal fetch path still works
+      }
+    }
+
+    // The one place that writes the local instant-paint cache -- called
+    // once the real picture is confirmed genuinely displayed (so
+    // makeThumbnail() has something correct to draw from), by both
+    // paintPicture()'s onload below and savePosition() further down.
+    function cachePictureLocally(state) {
+      try {
+        localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify({ ...state, thumb: makeThumbnail() }));
+      } catch {
+        // Harmless if storage is unavailable -- just means no instant paint next time.
+      }
+    }
+
     // Paints the picture's position/zoom + src from a {x, y, version, zoom}
-    // object -- shared by the instant local-cache paint below and the real
-    // network-confirmed loadSettings() result below that, so there's only
-    // one place that actually touches the DOM for this. renderTransform()
+    // object -- shared by the inline pre-script's optimistic paint (which
+    // calls this indirectly by triggering onload) and the real
+    // network-confirmed loadSettings() result below, so there's only one
+    // place that actually touches the DOM for this. renderTransform()
     // runs inside onload, not before -- it needs the image's real
     // naturalWidth/Height, which isn't available until it's actually
     // decoded.
@@ -722,31 +789,13 @@
         imagePlaceholder.classList.add('has-image');
         currentZoom = zoom;
         renderTransform();
+        cachePictureLocally({ x, y, version, zoom });
       };
       imagePreview.onerror = () => {
         // Nothing saved yet -- stay on the normal empty-state label.
       };
       imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(version)}`;
     }
-
-    // Real, measured flash found and fixed (twice -- see the inline
-    // <script> above `<script type="module">` for the SECOND, more
-    // complete fix): forcing the settings fetch to always hit the
-    // network (cache: 'no-store' above -- necessary for real
-    // correctness, see that fix) reintroduced a brief "Click to select
-    // a picture" empty-state flash on every fresh page load, because
-    // nothing painted until that fetch resolved. The FIRST fix (an
-    // instant paint from a localStorage cache) lived right here, but
-    // still couldn't run until this whole module script's own `import`
-    // above had resolved over the network -- which isn't always instant
-    // (confirmed live: a Google Calendar round trip and a fresh desktop-
-    // shortcut launch both still showed the flash). That instant-paint
-    // logic has since moved to the plain inline script above, which has
-    // no import/network dependency at all and runs the moment the HTML
-    // parser reaches it -- see that block for the real fix. This
-    // PICTURE_CACHE_KEY constant stays here since savePosition() and the
-    // upload flow below still read/write the same cache for next time.
-    const PICTURE_CACHE_KEY = 'masterboard-picture-cache-v1';
 
     async function loadSettings() {
       const { data, error } = await supabase
@@ -756,13 +805,7 @@
         .single();
       if (error || !data) return; // fresh install, no row yet -- stay on CSS defaults
 
-      const fresh = { x: data.image_position_x, y: data.image_position_y, version: data.picture_version, zoom: data.image_zoom };
-      paintPicture(fresh);
-      try {
-        localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify(fresh));
-      } catch {
-        // Harmless if storage is unavailable -- just means no instant paint next time.
-      }
+      paintPicture({ x: data.image_position_x, y: data.image_position_y, version: data.picture_version, zoom: data.image_zoom });
     }
     loadSettings();
 
@@ -918,26 +961,28 @@
         imagePlaceholderError.classList.add('visible');
       } else {
         imagePlaceholder.classList.remove('save-failed');
-        // Keep the local instant-paint cache in sync with every
-        // successful save (a plain drag, a zoom, OR an upload) -- see
-        // PICTURE_CACHE_KEY above. Without this, the VERY FIRST trip
-        // back after a save would still instant-paint the OLD cached
-        // state for a brief moment before self-correcting, rather than
-        // the new one being right first time. Preserves whatever
-        // version/zoom is already cached when this particular save
-        // didn't touch it (e.g. a plain drag doesn't change zoom) --
-        // only updates a field when extraFields actually carries a new
-        // value for it (an upload bumps version; a wheel zoom bumps zoom).
+        // Keep the local instant-paint cache (incl. a freshly-redrawn
+        // thumbnail, see cachePictureLocally() above) in sync with every
+        // successful save (a plain drag, a zoom, OR an upload). Without
+        // this, the VERY FIRST trip back after a save would still
+        // instant-paint the OLD cached state for a brief moment before
+        // self-correcting, rather than the new one being right first
+        // time. Preserves whatever version/zoom is already cached when
+        // this particular save didn't touch it (e.g. a plain drag
+        // doesn't change zoom) -- only updates a field when extraFields
+        // actually carries a new value for it (an upload bumps version;
+        // a wheel zoom bumps zoom).
+        let existing = {};
         try {
-          const existing = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null') || {};
-          localStorage.setItem(PICTURE_CACHE_KEY, JSON.stringify({
-            x: posX, y: posY,
-            version: extraFields.picture_version ?? existing.version,
-            zoom: extraFields.image_zoom ?? existing.zoom ?? 1,
-          }));
+          existing = JSON.parse(localStorage.getItem(PICTURE_CACHE_KEY) || 'null') || {};
         } catch {
-          // Harmless if storage is unavailable -- just means no instant paint next time.
+          // Harmless -- just means we can't preserve a prior version/zoom below, cachePictureLocally() still runs fine.
         }
+        cachePictureLocally({
+          x: posX, y: posY,
+          version: extraFields.picture_version ?? existing.version,
+          zoom: extraFields.image_zoom ?? existing.zoom ?? 1,
+        });
       }
     }
 
