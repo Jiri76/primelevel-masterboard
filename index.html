@@ -742,12 +742,16 @@
     // throws a SecurityError.
     function makeThumbnail() {
       try {
-        // 240x150 / 75% quality -- bumped up from 80x50 / 50% per
-        // explicit request, since the low-res version was visibly
-        // blurry for the brief moment before the real photo swaps in.
-        // Still trivially small for localStorage (a few KB at most, vs.
-        // its typical 5-10MB budget) even at this size.
-        const THUMB_W = 240, THUMB_H = 150;
+        // Full frame resolution (800x500) / 85% quality -- matching the
+        // main picture's own compressImage() quality exactly, per
+        // explicit request ("crystal clear like the picture"). No longer
+        // really a "thumbnail" -- two smaller/blurrier sizes were tried
+        // first and both left a visible soft-to-sharp moment; matching
+        // the real picture's own quality is what actually makes the
+        // swap imperceptible. Still comfortably small for localStorage
+        // (a compressed JPEG at this size is typically well under 200KB,
+        // against a typical 5-10MB budget).
+        const THUMB_W = 800, THUMB_H = 500;
         const frameRect = imagePlaceholder.getBoundingClientRect();
         const scale = Math.max(frameRect.width / imagePreview.naturalWidth, frameRect.height / imagePreview.naturalHeight) * currentZoom;
         const overflowX = Math.max(0, imagePreview.naturalWidth * scale - frameRect.width);
@@ -760,7 +764,7 @@
         canvas.width = THUMB_W;
         canvas.height = THUMB_H;
         canvas.getContext('2d').drawImage(imagePreview, srcX, srcY, srcW, srcH, 0, 0, THUMB_W, THUMB_H);
-        return canvas.toDataURL('image/jpeg', 0.75);
+        return canvas.toDataURL('image/jpeg', 0.85);
       } catch {
         return null; // harmless -- just means no instant thumbnail next time, the normal fetch path still works
       }
