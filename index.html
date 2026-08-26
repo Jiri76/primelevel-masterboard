@@ -56,7 +56,8 @@
      doesn't move when the centered title resizes.
      `top` starts at a sensible fallback for first paint, then JS
      measures the real top of the picture placeholder and overwrites
-     it -- see alignTilesToPicture() below -- so "Insider Edge" lands
+     it -- see alignTilesToPicture() below -- so the FIRST tile (whichever
+     one alphabetically sorts first -- see the TILES array in JS) lands
      on the exact same horizontal line as the picture's own top edge,
      not a guessed pixel value. Re-instated per explicit request after
      briefly being a static fallback once the old holding cards (the
@@ -101,12 +102,13 @@
     text-decoration: none;
     transition: border-color 0.15s ease, transform 0.1s ease;
   }
-  /* scale(1.02) on hover -- bumped up from 1.015 per explicit request.
-     No longer literally identical to Renewals' 1.5% item-row pop (that
-     was the prior request, this one supersedes it for tiles only). */
+  /* scale(1.025) on hover -- bumped up from 1.02 (which itself was
+     bumped from 1.015) per explicit request. No longer literally
+     identical to Renewals' 1.5% item-row pop -- that was the original
+     request, since superseded twice for tiles only. */
   .tile:hover {
     border-color: var(--white);
-    transform: scale(1.02);
+    transform: scale(1.025);
   }
 
   /* Placeholder for the (not-yet-built) main picture -- 800x500 (width
@@ -358,10 +360,15 @@
     // Investments now points to its own page -- the 3 holding cards moved
     // there entirely (per explicit request), this page no longer has a
     // holdings section to anchor-scroll to.
-    // Alphabetical order, per explicit request: Insider Edge, Investments,
-    // Renewals -- "Insider" sorts before "Investments" (4th letter i < v),
-    // both sort before "Renewals" (starts with R).
+    // Alphabetical order, per explicit request: Calendar, Insider Edge,
+    // Investments, Renewals -- "Calendar" sorts before all three (C < I),
+    // "Insider" before "Investments" (4th letter i < v), both before
+    // "Renewals" (starts with R). Calendar links straight to Google
+    // Calendar's own site -- no sign-in flow of ours involved, the click
+    // just opens Google's own page, where the user's own Google session
+    // (if any) takes over from there.
     const TILES = [
+      { label: 'Calendar', href: 'https://calendar.google.com/' },
       { label: 'Insider Edge', href: '#' },
       { label: 'Investments', href: 'investments.html' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
