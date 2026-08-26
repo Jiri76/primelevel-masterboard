@@ -402,7 +402,16 @@
 
       reports = data;
       selectedId = reports[0].id; // most recent report selected by default
-      emptyStateEl.remove();
+      // Real bug found and fixed: emptyStateEl can already be null here.
+      // If the inline pre-script above successfully instant-painted from
+      // a cache, IT already removed #emptyState from the DOM before this
+      // module script's own `document.getElementById('emptyState')`
+      // line even ran -- so emptyStateEl was already null from the
+      // start, and calling .remove() on it threw, silently killing the
+      // rest of this function (renderTiles/renderContent's real-fetch
+      // confirmation, and the cache write-back) every single time there
+      // was a cached instant-paint, i.e. on almost every real visit.
+      emptyStateEl?.remove();
       renderTiles();
       renderContent();
 
