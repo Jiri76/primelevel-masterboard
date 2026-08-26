@@ -208,6 +208,16 @@
   .report-body li:last-child {
     margin-bottom: 0;
   }
+  /* Real bug found by measurement, not guessed: the card's own 100px
+     bottom padding is the intended full gap to the card edge, but
+     whatever element is genuinely last in the report body (currently
+     the Methodology paragraph) still carries its own margin-bottom
+     (20px on p) on top of that padding -- measured live at 120px total,
+     not the requested 100px. Same fix already applied to li:last-child
+     above, generalized to whatever tag actually ends the report. */
+  .report-body > *:last-child {
+    margin-bottom: 0;
+  }
   /* Per explicit request: the gap between each ticker's own name line
      and its market-cap detail line right below must be DOUBLE the
      normal line-height gap -- see doubleTickerLineBreaks() in the
