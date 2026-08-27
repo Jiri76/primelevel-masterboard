@@ -125,10 +125,9 @@
     background: var(--white);
     border-radius: 10px;
     /* top 100px, left/right 70px (was 50px -> 60px -> 70px across two
-       +10px requests), bottom 100px (explicitly matched to the top
-       padding -- same 100px "card top to title" gap mirrored at the
-       bottom, from the report's last line to the card's bottom edge). */
-    padding: 100px 70px 100px;
+       +10px requests), bottom 50px (was 100px, matched to the top --
+       per explicit follow-up, no longer matched, now its own 50px). */
+    padding: 100px 70px 50px;
     color: var(--navy);
   }
   /* Header band -- per explicit request: the title+date area now sits
@@ -149,8 +148,14 @@
      "New Discoveries" (or whatever heading comes first). */
   .report-header-band {
     background: var(--input-bg);
-    margin: -100px -70px 30px;
-    padding: 100px 70px 30px;
+    /* margin-bottom 50px -- band's own bottom edge to "New Discoveries",
+       per explicit request (was 30px). padding-bottom 76px -- solved,
+       not guessed, same way the original title-to-body 100px rule was
+       solved: measured live at 54px total (title-bottom to band-bottom)
+       with 30px padding, so 30 + (100 - 54) = 76px hits exactly 100px
+       total from the title's own text to the band's bottom edge. */
+    margin: -100px -70px 50px;
+    padding: 100px 70px 76px;
     border-radius: 10px 10px 0 0;
   }
   .report-content-title {
