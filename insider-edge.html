@@ -191,7 +191,7 @@
     line-height: 1.6;
   }
   .report-body p {
-    margin: 0 0 20px;
+    margin: 0 0 30px; /* was 20px -- didn't match the 30px used everywhere else (list items, heading-to-content). Only visibly matters once a section has 2+ paragraphs in a row, e.g. Verdict once more than one ticker survives in a future week. */
   }
   .report-body h3 {
     color: var(--navy); /* every section heading EXCEPT Verdict, per explicit request -- see h3:last-of-type below */
