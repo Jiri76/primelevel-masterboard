@@ -176,7 +176,7 @@
     margin: 0 0 20px;
   }
   .report-body h3 {
-    color: var(--gold); /* unchanged per explicit request -- "leaving the gold" */
+    color: var(--navy); /* every section heading EXCEPT Verdict, per explicit request -- see h3:last-of-type below */
     font-size: 25px;
     font-weight: 700;
     /* top: paragraph-to-heading gap (e.g. the intro paragraph to
@@ -191,6 +191,30 @@
   }
   .report-body h3:first-child {
     margin-top: 0;
+  }
+  /* Verdict is always the last section by design (see the fixed
+     section order Cowork's prompt follows), so :last-of-type is a
+     reliable way to target just it without a class Cowork's real HTML
+     doesn't have -- same trick as :first-child above for the same
+     reason. Per explicit request: every other heading is navy now,
+     Verdict alone stays gold. */
+  .report-body h3:last-of-type {
+    color: var(--gold);
+  }
+  /* Verdict's own per-ticker line -- per explicit request, the ticker
+     name should read at the same size as a ticker elsewhere in the
+     report (e.g. under Fundamentals), even though Verdict's entries
+     are plain <p> paragraphs, not <li> items, so the existing
+     `li > strong:first-child` rule doesn't reach them. The star
+     rating sits in its own span so it can be colored gold and sized
+     up independently, rather than inheriting the ticker's own size. */
+  .verdict-ticker {
+    font-size: 20px;
+    letter-spacing: 0.02em;
+  }
+  .verdict-stars {
+    color: var(--gold);
+    font-size: 24px;
   }
   .report-body ul {
     margin: 0 0 8px;
