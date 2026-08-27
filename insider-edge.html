@@ -131,6 +131,28 @@
     padding: 100px 70px 100px;
     color: var(--navy);
   }
+  /* Header band -- per explicit request: the title+date area now sits
+     on its own filled background, the same color as the report tile
+     buttons (--input-bg), instead of sitting directly on the white
+     card. Escapes .report-content's own 100px/70px top/left/right
+     padding with a matching negative margin (the standard "full-bleed
+     section inside a padded container" technique) so the band's
+     background reaches the card's true edges and gets its own rounded
+     top corners (matching the card's own 10px radius) -- then re-adds
+     that same padding internally so the title/date sit at exactly the
+     same 100px-from-top, centered position they always did. The
+     bottom padding (30px) is a real design choice, not something
+     explicitly specified -- picked to match the "30px everywhere"
+     rhythm used for the rest of this pass; flagged here so it's easy
+     to spot and change if a different value is wanted. margin-bottom
+     (30px) is the actual requested gap: band's own bottom edge to
+     "New Discoveries" (or whatever heading comes first). */
+  .report-header-band {
+    background: var(--input-bg);
+    margin: -100px -70px 30px;
+    padding: 100px 70px 30px;
+    border-radius: 10px 10px 0 0;
+  }
   .report-content-title {
     font-weight: 700;
     font-size: 35px;
@@ -142,14 +164,10 @@
     color: var(--gold);
     opacity: 0.6;
     font-size: 15px;
-    /* 76px -- the requested 100px is the TOTAL gap from the TITLE's
-       bottom edge to the body text (spanning through this date line),
-       not this margin alone, same reasoning as the previous rounds:
-       title's own 5px gap + date's own ~19px line height (unaffected
-       by the title's font-size, a separate element) + this margin =
-       100px total needs exactly 100 - 5 - 19 = 76px here. Verified
-       live afterward, not just computed. */
-    margin-bottom: 76px;
+    /* margin-bottom removed -- the OLD 76px value existed solely to
+       hit a "100px from title-bottom to body" rule that no longer
+       applies now that the band's own bottom padding controls the
+       space below the date instead. */
     text-align: center;
   }
   /* The actual report body -- Cowork writes real HTML here (see the
@@ -218,13 +236,13 @@
   .report-body h3:nth-of-type(1),
   .report-body h3:nth-of-type(2),
   .report-body h3:last-of-type {
-    border-bottom: 2px solid var(--navy);
+    border-bottom: 3px solid var(--navy);
     padding-bottom: 4px;
   }
   .report-body h3:nth-of-type(3),
   .report-body h3:nth-of-type(4),
   .report-body h3:nth-of-type(5) {
-    border-bottom: 2px solid var(--gold);
+    border-bottom: 3px solid var(--gold);
     padding-bottom: 4px;
   }
   /* Verdict's own per-ticker line -- per explicit request, the ticker
@@ -525,12 +543,15 @@
       }
       const card = document.createElement('div');
       card.className = 'report-content';
+      const headerBand = document.createElement('div');
+      headerBand.className = 'report-header-band';
       const title = document.createElement('div');
       title.className = 'report-content-title';
       title.textContent = report.title;
       const date = document.createElement('div');
       date.className = 'report-content-date';
       date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      headerBand.append(title, date);
       const body = document.createElement('div');
       body.className = 'report-body';
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
@@ -548,7 +569,7 @@
       body.querySelectorAll('li br').forEach((br) => {
         br.insertAdjacentElement('afterend', document.createElement('br'));
       });
-      card.append(title, date, body);
+      card.append(headerBand, body);
       contentEl.append(card);
       // Marking read/refreshing tiles is NOT done here on purpose --
       // per explicit request, only an actual click on a tile (see its
