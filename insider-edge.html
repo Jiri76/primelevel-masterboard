@@ -201,6 +201,28 @@
   .report-body h3:last-of-type {
     color: var(--gold);
   }
+  /* Experimental, per explicit request -- "just to see what it's like,"
+     not a locked decision. text-decoration (not border-bottom) so the
+     line hugs just the heading text itself, not the full block width an
+     h3 would otherwise stretch to. Targets headings by their fixed
+     position in the known, locked section order (New Discoveries,
+     Institutional Buying, Fundamentals, Watch Line, Repeat Alerts,
+     Verdict) -- same reasoning as h3:last-of-type above, since Cowork's
+     real HTML has no distinguishing class per section. */
+  .report-body h3:nth-of-type(1),
+  .report-body h3:nth-of-type(2),
+  .report-body h3:last-of-type {
+    text-decoration-line: underline;
+    text-decoration-color: var(--navy);
+    text-decoration-thickness: 1px;
+  }
+  .report-body h3:nth-of-type(3),
+  .report-body h3:nth-of-type(4),
+  .report-body h3:nth-of-type(5) {
+    text-decoration-line: underline;
+    text-decoration-color: var(--gold);
+    text-decoration-thickness: 1px;
+  }
   /* Verdict's own per-ticker line -- per explicit request, the ticker
      name should read at the same size as a ticker elsewhere in the
      report (e.g. under Fundamentals), even though Verdict's entries
