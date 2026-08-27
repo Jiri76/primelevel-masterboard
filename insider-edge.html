@@ -125,9 +125,9 @@
     background: var(--white);
     border-radius: 10px;
     /* top 100px, left/right 70px (was 50px -> 60px -> 70px across two
-       +10px requests), bottom 50px (was 100px, matched to the top --
-       per explicit follow-up, no longer matched, now its own 50px). */
-    padding: 100px 70px 50px;
+       +10px requests), bottom 100px (was 50px, briefly, before being
+       set back to match the top again). */
+    padding: 100px 70px 100px;
     color: var(--navy);
   }
   /* Header band -- per explicit request: the title+date area now sits
@@ -148,7 +148,7 @@
        solved: measured live at 54px total (title-bottom to band-bottom)
        with 30px padding, so 30 + (100 - 54) = 76px hits exactly 100px
        total from the title's own text to the band's bottom edge. */
-    margin: -100px -70px 50px;
+    margin: -100px -70px 100px; /* band-bottom to first heading, was 30px then 50px, now 100px */
     padding: 100px 70px 76px;
     border-radius: 10px 10px 0 0;
   }
