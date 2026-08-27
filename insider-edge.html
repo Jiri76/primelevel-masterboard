@@ -139,13 +139,7 @@
      background reaches the card's true edges and gets its own rounded
      top corners (matching the card's own 10px radius) -- then re-adds
      that same padding internally so the title/date sit at exactly the
-     same 100px-from-top, centered position they always did. The
-     bottom padding (30px) is a real design choice, not something
-     explicitly specified -- picked to match the "30px everywhere"
-     rhythm used for the rest of this pass; flagged here so it's easy
-     to spot and change if a different value is wanted. margin-bottom
-     (30px) is the actual requested gap: band's own bottom edge to
-     "New Discoveries" (or whatever heading comes first). */
+     same 100px-from-top, centered position they always did. */
   .report-header-band {
     background: var(--input-bg);
     /* margin-bottom 50px -- band's own bottom edge to "New Discoveries",
@@ -241,11 +235,11 @@
      above, since Cowork's real HTML has no distinguishing class per
      section. */
   .report-body h3:not(:last-of-type) {
-    border-bottom: 3px solid var(--navy);
+    border-bottom: 2px solid var(--navy);
     padding-bottom: 4px;
   }
   .report-body h3:last-of-type {
-    border-bottom: 3px solid var(--gold);
+    border-bottom: 2px solid var(--gold);
     padding-bottom: 4px;
   }
   /* Verdict's own per-ticker line -- per explicit request, the ticker
