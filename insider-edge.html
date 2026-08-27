@@ -219,29 +219,27 @@
   .report-body h3:last-of-type {
     color: var(--gold);
   }
-  /* Experimental, per explicit request -- "just to see what it's like,"
-     not a locked decision. border-bottom (not text-decoration) so the
-     line runs the FULL width of the block, not just under the text --
-     per explicit follow-up ("run the line across the whole page").
-     padding-bottom adds real breathing room between the text and the
-     line itself (the first attempt sat right on the descenders, too
-     tight -- "too scorched"). This padding DOES add to the existing
-     30px heading-to-next-item gap below, on top of it, not instead of
-     it -- flagged plainly, not silently absorbed into that number.
-     Targets headings by their fixed position in the known, locked
-     section order (New Discoveries, Institutional Buying, Fundamentals,
-     Watch Line, Repeat Alerts, Verdict) -- same reasoning as
-     h3:last-of-type above, since Cowork's real HTML has no
-     distinguishing class per section. */
-  .report-body h3:nth-of-type(1),
-  .report-body h3:nth-of-type(2),
-  .report-body h3:last-of-type {
+  /* Line color settled, per explicit request: every heading's line
+     matches its own text color now -- navy line under navy text for
+     all 5 non-Verdict headings, gold line under Verdict's already-gold
+     text. Matching text+line reads as one quiet, consistent separator
+     per heading, rather than the earlier mixed navy/gold split which
+     put a differently-colored line under text that had no other gold
+     association. border-bottom (not text-decoration) so the line runs
+     the FULL width of the block, not just under the text. padding-
+     bottom adds real breathing room between the text and the line
+     itself. This padding DOES add to the existing 30px heading-to-
+     next-item gap below, on top of it, not instead of it. Targets
+     headings by their fixed position in the known, locked section
+     order (New Discoveries, Institutional Buying, Fundamentals, Watch
+     Line, Repeat Alerts, Verdict) -- same reasoning as h3:last-of-type
+     above, since Cowork's real HTML has no distinguishing class per
+     section. */
+  .report-body h3:not(:last-of-type) {
     border-bottom: 3px solid var(--navy);
     padding-bottom: 4px;
   }
-  .report-body h3:nth-of-type(3),
-  .report-body h3:nth-of-type(4),
-  .report-body h3:nth-of-type(5) {
+  .report-body h3:last-of-type {
     border-bottom: 3px solid var(--gold);
     padding-bottom: 4px;
   }
