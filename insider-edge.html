@@ -304,11 +304,22 @@
         var reportTiles = document.getElementById('reportTiles');
         var content = document.getElementById('content');
         var emptyState = document.getElementById('emptyState');
-        var selected = cached[0];
 
+        // Now that nothing auto-opens (see below), this tile list is the
+        // very first thing actually on screen -- the unread glow needs to
+        // be right from this very first paint, not "upgraded" a moment
+        // later once the module script's real fetch confirms it, or it'd
+        // visibly flash in. Same localStorage key/logic as the module
+        // script's own getReadReportIds().
+        var readIds;
+        try {
+          readIds = JSON.parse(localStorage.getItem('insider-edge-read-reports-v1') || '[]');
+        } catch (e) {
+          readIds = [];
+        }
         cached.forEach(function (report) {
           var tile = document.createElement('div');
-          tile.className = 'report-tile';
+          tile.className = 'report-tile' + (readIds.indexOf(report.id) === -1 ? ' unread' : '');
           // Short date label, not the full title -- per explicit
           // request. Derived from created_at (a real date value)
           // rather than trying to parse/shorten Cowork's own title
@@ -317,28 +328,17 @@
           reportTiles.append(tile);
         });
 
-        var contentEl = document.createElement('div');
-        contentEl.className = 'report-content';
-        var contentTitle = document.createElement('div');
-        contentTitle.className = 'report-content-title';
-        contentTitle.textContent = selected.title;
-        var contentDate = document.createElement('div');
-        contentDate.className = 'report-content-date';
-        contentDate.textContent = new Date(selected.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-        var body = document.createElement('div');
-        body.className = 'report-body';
-        body.innerHTML = selected.html_content; // trusted -- see the module script's own note on why
-        // Per explicit request: double the gap after each ticker's own
-        // name line -- see the module script's own note on why this is
-        // a real second <br> rather than a CSS trick (two CSS attempts
-        // both measured as not actually working on a bare <br>).
-        body.querySelectorAll('li br').forEach(function (br) {
-          br.insertAdjacentElement('afterend', document.createElement('br'));
-        });
-        contentEl.append(contentTitle, contentDate, body);
+        // Per explicit request: nothing auto-opens any more, not even the
+        // newest report -- landing on this page always shows the closed
+        // state until you actually click a date tile. The report-card-
+        // building block that used to render cached[0] here is gone
+        // entirely, along with the `selected` variable it used.
+        var closed = document.createElement('div');
+        closed.className = 'empty-state closed-state';
+        closed.textContent = 'Click a date on the left to open a report.';
 
         emptyState.remove();
-        content.append(contentEl);
+        content.append(closed);
 
         // Same alignment technique as index.html's alignTilesToPicture()
         // -- match the tiles' top to the report card's real rendered
@@ -367,13 +367,15 @@
 
     const REPORTS_CACHE_KEY = 'insider-edge-reports-cache-v1';
 
-    // reports/selectedId may already be pre-populated by the inline
-    // pre-script above (zero network dependency, ran before this whole
-    // module -- including its own `import` above -- had even finished
-    // loading over the network). If so, don't stomp on that instant
-    // paint by resetting to empty here.
+    // reports may already be pre-populated by the inline pre-script above
+    // (zero network dependency, ran before this whole module -- including
+    // its own `import` above -- had even finished loading over the
+    // network). If so, don't stomp on that instant paint by resetting to
+    // empty here. selectedId always starts null though -- per explicit
+    // request, nothing auto-opens any more, not even the newest report;
+    // the closed state is the genuine default until an actual tile click.
     let reports = window.__insiderEdgeCachedReports || [];
-    let selectedId = reports.length > 0 ? reports[0].id : null;
+    let selectedId = null;
 
     // Same alignment technique as index.html's alignTilesToPicture() --
     // match the tiles' top to whatever #content is currently showing
@@ -532,7 +534,8 @@
       if (error || !data || data.length === 0) return;
 
       reports = data;
-      selectedId = reports[0].id; // most recent report selected by default
+      // selectedId is deliberately left untouched here -- per explicit
+      // request, nothing auto-opens, not even the newest report.
       // Real bug found and fixed: emptyStateEl can already be null here.
       // If the inline pre-script above successfully instant-painted from
       // a cache, IT already removed #emptyState from the DOM before this

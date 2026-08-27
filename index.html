@@ -110,6 +110,17 @@
     border-color: var(--white);
     transform: scale(1.025);
   }
+  /* Same subtle gold glow as insider-edge.html's own per-report tiles
+     (identical box-shadow value, on purpose) -- lets the Insider Edge
+     tile HERE, on the hub itself, signal "there's a new report" before
+     you've even clicked in, per explicit request. Cleared the moment
+     you actually open that report on the Insider Edge page (shared
+     localStorage key, see checkInsiderEdgeUnread() below) -- not a
+     separate read-state to keep in sync, the same one. */
+  .tile.unread {
+    box-shadow: 0 0 10px 2px rgba(178, 155, 104, 0.55);
+    transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.3s ease;
+  }
 
   /* Placeholder for the (not-yet-built) main picture -- 800x500 (width
      widened from 700px, +50px each side, per explicit request), still
@@ -479,6 +490,33 @@
     }
 
     TILES.forEach((t) => tilesEl.append(buildTile(t)));
+
+    // ---- Insider Edge "new report" glow, mirrored from insider-edge.html
+    // -- per explicit request, the SAME gold glow shows here on the hub
+    // tile too, not just on the report's own tile once you're already
+    // inside that page. Reads the exact same localStorage key
+    // insider-edge.html itself writes to (same origin, different path --
+    // localStorage is shared) so there's only ever ONE "have I read this"
+    // record, never two to keep in sync. ----
+    async function checkInsiderEdgeUnread() {
+      const { data, error } = await supabase
+        .from('insider_edge_reports')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (error || !data || !data.length) return; // no reports yet, or a real fetch error -- either way, nothing to glow about
+      const latestId = data[0].id;
+      let readIds;
+      try {
+        readIds = new Set(JSON.parse(localStorage.getItem('insider-edge-read-reports-v1') || '[]'));
+      } catch {
+        readIds = new Set(); // harmless -- glow just won't persist correctly if storage is unavailable
+      }
+      if (readIds.has(latestId)) return;
+      const insiderEdgeTile = tilesEl.querySelector('a[href="insider-edge.html"]');
+      if (insiderEdgeTile) insiderEdgeTile.classList.add('unread');
+    }
+    checkInsiderEdgeUnread();
 
     // ---- Picture placeholder -- now genuinely persisted to Supabase
     // Storage (was session-only via createObjectURL alone). Clicking
