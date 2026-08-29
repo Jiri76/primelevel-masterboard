@@ -196,18 +196,17 @@
     color: var(--navy); /* every section heading EXCEPT Verdict, per explicit request -- see h3:last-of-type below */
     font-size: 25px;
     font-weight: 700;
-    /* top: gap from whatever ends the previous section up to this
-       heading -- per explicit request, bumped from 30px/50px (actual
-       measured, collapsed-margin gap) to a flat 100px, matching the
-       header-band-to-"New Discoveries" gap exactly, so every section
-       break in the report reads as the same visual "new chapter"
-       pause. bottom: heading-to-first-item gap (e.g. "Section 2" to
-       "SRTS"), corrected via explicit follow-up from an initial 20px to
-       30px, matching the same 30px used between items themselves below.
-       One shared rule, applies uniformly to every section header
-       (Section 1/2/3, Methodology) -- there's no way to target just one
-       heading without adding a class Cowork's real HTML doesn't have. */
-    margin: 100px 0 30px;
+    /* top AND bottom: per explicit request, both the gap INTO a new
+       section (from whatever ended the previous one) and the gap OUT of
+       its own heading (down to the section's first line) are now the
+       same flat 100px -- matching the header-band-to-"New Discoveries"
+       gap exactly, so a heading reads as a genuine "new chapter" pause
+       on both sides, not just above it. Was 30px on this side (raised
+       from an original 20px earlier in the project) before this
+       request. One shared rule, applies uniformly to every section
+       header -- there's no way to target just one heading without
+       adding a class Cowork's real HTML doesn't have. */
+    margin: 100px 0;
   }
   .report-body h3:first-child {
     margin-top: 0;
