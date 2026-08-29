@@ -285,6 +285,13 @@
      above, generalized to whatever tag actually ends the report. */
   .report-body > *:last-child {
     margin-bottom: 0;
+    /* Per explicit request: the auto-appended independent-verification
+       sentence (always the true final element now, added by the
+       Supabase trigger right after Verdict's own last entry) reads as
+       its own trailing block, offset by the same 100px used at every
+       other section boundary on the page -- not the plain 30px
+       paragraph-to-paragraph gap it'd otherwise collapse to. */
+    margin-top: 100px;
   }
   /* Per explicit request: the gap between each ticker's own name line
      and its market-cap detail line right below must be DOUBLE the
