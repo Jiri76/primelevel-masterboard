@@ -303,9 +303,18 @@
      anchor to scan down the list for, distinct from the rest of the
      bold text (company name context, dollar figures) inside the same
      entry. */
-  .report-body li > strong:first-child {
+  .report-body li strong:first-child {
     font-size: 20px; /* corrected down from 22px per explicit follow-up -- 22 was too much */
     letter-spacing: 0.02em;
+  }
+  /* Per explicit request: the rest of line 1 (company -- sector --
+     market cap) is now bolded too, matching the ticker -- see the JS
+     wrapper above. A plain <span> class, not another <strong>, and
+     only font-weight here -- explicitly NOT font-size, so the ticker's
+     own distinct 20px/letter-spaced treatment right above stays exactly
+     as it was, un-inherited by the rest of the line. */
+  .report-body li > span.line1-bold {
+    font-weight: 700;
   }
   /* Per explicit request: just the conviction word itself (High/Medium/
      Low) must be bold -- Cowork already wraps exactly that word in an
@@ -552,6 +561,29 @@
       const body = document.createElement('div');
       body.className = 'report-body';
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
+      // Per explicit request: bold the ticker's descriptive first line
+      // (Company -- Sector -- Market Cap) so it reads as one visually
+      // consistent bold unit alongside the ticker itself -- font SIZE
+      // is untouched, only weight. A Range grabs everything before the
+      // first <br> (the ticker's own existing <strong> nests inside
+      // harmlessly) rather than any CSS ::first-line trick, which would
+      // be fragile against real text wrapping.
+      body.querySelectorAll('li').forEach((li) => {
+        const firstBr = li.querySelector('br');
+        if (!firstBr) return;
+        const range = document.createRange();
+        range.setStart(li, 0);
+        range.setEndBefore(firstBr);
+        // A <span> with its own class, not another <strong> -- the
+        // ticker's existing <strong> (see the CSS rule targeting it
+        // specifically for its own larger, letter-spaced size) stays
+        // nested one level inside this, and must remain distinguishable
+        // from this wrapper so its size doesn't leak onto the whole line.
+        const wrap = document.createElement('span');
+        wrap.className = 'line1-bold';
+        wrap.appendChild(range.extractContents());
+        li.insertBefore(wrap, firstBr);
+      });
       // Per explicit request: double the gap after each ticker's own
       // name line. Real bug found and fixed: two CSS-only attempts
       // (styling the <br> directly, then br::after) both measured as
