@@ -132,6 +132,16 @@
        guarantees the band's corners always match exactly, regardless of
        any sub-pixel rounding difference between the two elements. */
     overflow: hidden;
+    /* Real bug found via the user's own zoomed-in screenshot, not
+       guessed: the "white bit" was a thin, lighter blue anti-aliasing
+       halo tracing the rounded corner's curve -- a known Chromium
+       rendering quirk where a border-radius + overflow:hidden clip
+       between two similar dark colors gets its edge smoothed against a
+       different reference before the real colors composite on top.
+       Forcing this element onto its own GPU layer changes how the
+       browser anti-aliases the curve and eliminates the fringe -- the
+       standard fix for exactly this artifact. */
+    transform: translateZ(0);
     /* top 100px, left/right 70px (was 50px -> 60px -> 70px across two
        +10px requests), bottom 100px (was 50px, briefly, before being
        set back to match the top again). */
