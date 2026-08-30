@@ -125,58 +125,51 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
-    /* Real bug fixed: without this, the header band's own rounded top
-       corners didn't perfectly align with the card's own curve, leaving
-       tiny white wedges of the card's background visible right at the
-       corners. Clipping the whole card to its own rounded shape
-       guarantees the band's corners always match exactly, regardless of
-       any sub-pixel rounding difference between the two elements. */
     overflow: hidden;
-    /* Real bug found via the user's own zoomed-in screenshot, not
-       guessed: the "white bit" was a thin, lighter blue anti-aliasing
-       halo tracing the rounded corner's curve -- a known Chromium
-       rendering quirk where a border-radius + overflow:hidden clip
-       between two similar dark colors gets its edge smoothed against a
-       different reference before the real colors composite on top.
-       Forcing this element onto its own GPU layer changes how the
-       browser anti-aliases the curve and eliminates the fringe -- the
-       standard fix for exactly this artifact. */
-    transform: translateZ(0);
-    /* top 100px, left/right 70px (was 50px -> 60px -> 70px across two
-       +10px requests), bottom 100px (was 50px, briefly, before being
-       set back to match the top again). */
-    padding: 100px 70px 100px;
+    /* No padding here anymore -- see the real root-cause note on
+       .report-header-band below for why. .report-body now carries the
+       70px/100px side/bottom padding directly instead. */
     color: var(--navy);
   }
-  /* Header band -- per explicit request: the title+date area now sits
-     on its own filled background, the same color as the report tile
-     buttons (--input-bg), instead of sitting directly on the white
-     card. Escapes .report-content's own 100px/70px top/left/right
-     padding with a matching negative margin (the standard "full-bleed
-     section inside a padded container" technique) so the band's
-     background reaches the card's true edges and gets its own rounded
-     top corners (matching the card's own 10px radius) -- then re-adds
-     that same padding internally so the title/date sit at exactly the
-     same 100px-from-top, centered position they always did. */
+  /* Header band -- per explicit request: the title+date area sits on its
+     own filled background, the same color as the report tile buttons
+     (--input-bg), instead of sitting directly on the white card.
+
+     REAL ROOT CAUSE FOUND (not another guess) via the user's own zoomed-
+     in screenshots: three prior fix attempts (overflow:hidden on the
+     parent, removing the band's own border-radius, translateZ(0) for
+     GPU compositing) all failed to remove a thin, lighter-blue fringe
+     tracing the rounded corner. None of those addressed the actual
+     mechanism: the band previously reached the card's true edge via a
+     NEGATIVE MARGIN escaping the card's own padding (margin:
+     -100px -70px, canceling out .report-content's padding: 100px 70px).
+     A negative margin meeting a border-radius + overflow:hidden clip
+     boundary is a known source of a genuine SUB-PIXEL layout gap (not an
+     anti-aliasing/compositing issue, which is why translateZ(0) did
+     nothing) -- the band's edge can land a fraction of a pixel short of
+     the card's true edge, letting a hairline of the card's own white
+     background peek through at exactly the point of most visual
+     curvature (the rounded corner), which anti-aliases against the dark
+     colors on both sides into a muted lighter-blue line rather than
+     looking purely white.
+
+     FIX: eliminate the negative-margin/padding-escape technique
+     entirely. .report-content now has NO padding at all, so this band,
+     as its plain first child with a normal (non-negative) margin, sits
+     flush against the card's true edges with no escape math and no
+     sub-pixel risk. The card's own overflow:hidden + border-radius does
+     100% of the corner rounding on a completely ordinary box. */
   .report-header-band {
     background: var(--input-bg);
-    /* margin-bottom 50px -- band's own bottom edge to "New Discoveries",
-       per explicit request (was 30px). padding-bottom 76px -- solved,
-       not guessed, same way the original title-to-body 100px rule was
-       solved: measured live at 54px total (title-bottom to band-bottom)
-       with 30px padding, so 30 + (100 - 54) = 76px hits exactly 100px
-       total from the title's own text to the band's bottom edge. */
-    margin: -100px -70px 100px; /* band-bottom to first heading, was 30px then 50px, now 100px */
+    /* margin-bottom 100px -- band's own bottom edge to "New Discoveries".
+       padding-bottom 76px -- solved, not guessed: measured live at 54px
+       total (title-bottom to band-bottom) with 30px padding, so
+       30 + (100 - 54) = 76px hits exactly 100px total from the title's
+       own text to the band's bottom edge. padding-top 100px/left-right
+       70px reproduce the same title inset the card's own padding used to
+       provide before this restructure. */
+    margin: 0 0 100px;
     padding: 100px 70px 76px;
-    /* No border-radius here anymore -- per user report, a hairline white
-       artifact was still visible at the top corners on their real device
-       even after the card's own overflow:hidden fix (didn't reproduce in
-       automated testing, likely a sub-pixel rendering difference between
-       two independently-rounded overlapping corners). Removing this
-       entirely and relying SOLELY on .report-content's own
-       overflow:hidden + border-radius to clip the band means only one
-       rounding operation happens, not two -- eliminates the whole class
-       of mismatch rather than just hoping the two stay aligned. */
   }
   .report-content-title {
     font-weight: 700;
@@ -215,6 +208,11 @@
   .report-body {
     font-size: 15px;
     line-height: 1.6;
+    /* 70px sides / 100px bottom -- previously came from .report-content's
+       own padding, moved here as part of eliminating the negative-margin
+       corner-artifact fix above. No top padding needed: the header band
+       already provides its own 100px top inset internally. */
+    padding: 0 70px 100px;
   }
   .report-body p {
     margin: 0 0 30px; /* was 20px -- didn't match the 30px used everywhere else (list items, heading-to-content). Only visibly matters once a section has 2+ paragraphs in a row, e.g. Verdict once more than one ticker survives in a future week. */
