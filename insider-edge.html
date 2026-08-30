@@ -125,6 +125,13 @@
     width: 100%;
     background: var(--white);
     border-radius: 10px;
+    /* Real bug fixed: without this, the header band's own rounded top
+       corners didn't perfectly align with the card's own curve, leaving
+       tiny white wedges of the card's background visible right at the
+       corners. Clipping the whole card to its own rounded shape
+       guarantees the band's corners always match exactly, regardless of
+       any sub-pixel rounding difference between the two elements. */
+    overflow: hidden;
     /* top 100px, left/right 70px (was 50px -> 60px -> 70px across two
        +10px requests), bottom 100px (was 50px, briefly, before being
        set back to match the top again). */
