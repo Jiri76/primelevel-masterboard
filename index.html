@@ -512,11 +512,28 @@
       } catch {
         readIds = new Set(); // harmless -- glow just won't persist correctly if storage is unavailable
       }
-      if (readIds.has(latestId)) return;
       const insiderEdgeTile = tilesEl.querySelector('a[href="insider-edge.html"]');
-      if (insiderEdgeTile) insiderEdgeTile.classList.add('unread');
+      if (!insiderEdgeTile) return;
+      // toggle(force), not a conditional add -- this function previously
+      // only ever ADDED the class, never removed it, so a re-run (e.g.
+      // from the bfcache fix below) could never clear an already-applied
+      // glow even once every report was genuinely read; it could only
+      // ever add one that wasn't there yet. Explicitly setting the class
+      // both ways makes this idempotent and safe to call repeatedly.
+      insiderEdgeTile.classList.toggle('unread', !readIds.has(latestId));
     }
     checkInsiderEdgeUnread();
+    // Real gap found and fixed: this only ran once, at initial page load
+    // -- unlike loadSettings() below (see its own pageshow/visibilitychange
+    // handling), nothing re-ran this check when the page was restored from
+    // the browser's back/forward cache (bfcache), so returning to
+    // Masterboard via the back button after reading every report could
+    // still show a frozen, stale "unread" glow from the snapshot taken
+    // before those reports were read. Same established fix, same reason,
+    // applied here too for consistency.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) checkInsiderEdgeUnread();
+    });
 
     // ---- Picture placeholder -- now genuinely persisted to Supabase
     // Storage (was session-only via createObjectURL alone). Clicking

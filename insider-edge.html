@@ -124,7 +124,11 @@
   .report-content {
     width: 100%;
     background: var(--white);
-    border-radius: 10px;
+    /* TEMPORARY DIAGNOSTIC, per explicit request: radius dropped 10px ->
+       0px (sharp 90-degree corners) to test whether the rendering fringe
+       is specifically tied to the curve. Revert to 10px once the test is
+       done, whichever way it goes. */
+    border-radius: 0px;
     overflow: hidden;
     /* No padding here anymore -- see the real root-cause note on
        .report-header-band below for why. .report-body now carries the
