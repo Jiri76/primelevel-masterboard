@@ -473,7 +473,19 @@
     function alignReportTiles() {
       const target = contentEl.firstElementChild;
       if (!target) return;
-      reportTilesEl.style.top = `${Math.round(target.getBoundingClientRect().top)}px`;
+      // Real bug found and fixed: getBoundingClientRect().top is
+      // VIEWPORT-relative (changes with scroll position), but .report-
+      // tiles is `position: fixed`, which needs a scroll-INDEPENDENT
+      // value. Calling this while scrolled deep into a report (e.g. by
+      // clicking a different tile without scrolling back to the top
+      // first) previously pushed the tiles to a wildly wrong position --
+      // confirmed live: scrolling to 4000px then clicking a tile set
+      // top to -3727px, completely off-screen, and stuck there
+      // permanently since a fixed element ignores scroll for its own
+      // positioning. Adding the current scroll offset back in computes
+      // what the position would be at scroll 0, regardless of where the
+      // page actually was scrolled to when this function happened to run.
+      reportTilesEl.style.top = `${Math.round(target.getBoundingClientRect().top + window.scrollY)}px`;
     }
     document.fonts.ready.then(alignReportTiles);
     window.addEventListener('resize', alignReportTiles);
