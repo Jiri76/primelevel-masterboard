@@ -158,7 +158,15 @@
        total from the title's own text to the band's bottom edge. */
     margin: -100px -70px 100px; /* band-bottom to first heading, was 30px then 50px, now 100px */
     padding: 100px 70px 76px;
-    border-radius: 10px 10px 0 0;
+    /* No border-radius here anymore -- per user report, a hairline white
+       artifact was still visible at the top corners on their real device
+       even after the card's own overflow:hidden fix (didn't reproduce in
+       automated testing, likely a sub-pixel rendering difference between
+       two independently-rounded overlapping corners). Removing this
+       entirely and relying SOLELY on .report-content's own
+       overflow:hidden + border-radius to clip the band means only one
+       rounding operation happens, not two -- eliminates the whole class
+       of mismatch rather than just hoping the two stay aligned. */
   }
   .report-content-title {
     font-weight: 700;
