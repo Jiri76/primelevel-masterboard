@@ -68,6 +68,10 @@
     background: var(--white);
     border-radius: 10px;
     padding: 18px;
+    /* height 300px, per explicit request -- was previously unset/auto,
+       sized only by its own content (measured live at 139px before this
+       change). Fixed now, so it no longer grows/shrinks with content. */
+    height: 300px;
     cursor: pointer;
     border: none;
     text-align: left;
