@@ -96,7 +96,8 @@
     white-space: nowrap;
     transition: border-color 0.15s ease, transform 0.1s ease;
   }
-  .report-tile:hover {
+  .report-tile:hover,
+  .report-tile.selected {
     border-color: var(--white);
     transform: scale(1.025);
   }
@@ -517,7 +518,9 @@
       const readIds = getReadReportIds();
       reports.forEach((report) => {
         const tile = document.createElement('button');
-        tile.className = 'report-tile' + (readIds.has(report.id) ? '' : ' unread');
+        tile.className = 'report-tile'
+          + (readIds.has(report.id) ? '' : ' unread')
+          + (report.id === selectedId ? ' selected' : ''); // per explicit request: the open report's own tile stays highlighted, same treatment as its hover state
         // Short date label, not the full title -- per explicit request.
         // Derived from created_at (a real date value) rather than
         // trying to parse/shorten Cowork's own title text, which has
@@ -628,6 +631,7 @@
       if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
       selectedId = null;
       renderContent();
+      renderTiles(); // clears the now-stale .selected highlight -- previously only renderContent() ran here
     });
 
     async function loadReports() {
