@@ -124,11 +124,14 @@
   .report-content {
     width: 100%;
     background: var(--white);
-    /* TEMPORARY DIAGNOSTIC, per explicit request: radius dropped 10px ->
-       0px (sharp 90-degree corners) to test whether the rendering fringe
-       is specifically tied to the curve. Revert to 10px once the test is
-       done, whichever way it goes. */
-    border-radius: 0px;
+    /* LOCKED, 2026-08-31: sharp square corners, no radius -- this
+       started as a diagnostic (testing whether a rendering fringe at
+       the rounded corners was tied to the curve; it was, confirmed live
+       by the user), but the user then explicitly chose to keep it this
+       way permanently -- "like a piece of paper" -- rather than revert
+       to the old 10px radius. This is the real, intentional design now,
+       not a leftover test value. */
+    border-radius: 0;
     overflow: hidden;
     /* No padding here anymore -- see the real root-cause note on
        .report-header-band below for why. .report-body now carries the
