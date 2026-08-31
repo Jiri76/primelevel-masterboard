@@ -141,28 +141,29 @@
      card, per explicit request -- centered, same 16px/20px padding
      Renewals' own .item uses, same 8px gap language as its
      .edit-actions group. */
-  /* justify-content: flex-start (not center) -- per explicit request,
-     switched from auto-centered content to two fixed, deliberately
-     computed distances instead: card-top-to-"Ticker" and
-     Delete-button-bottom-to-card-bottom both exactly 100px. Solved, not
-     guessed: card's own 18px padding + this panel's own padding = 100px
-     on each side, with the bottom side also accounting for the real
-     measured height of the note below Delete (28px) and its real gap
-     above it (12px = the 8px flex gap + its own 4px margin-top) --
-     100 - 18 - 28 - 12 = 42px padding-bottom, confirmed by live
-     measurement afterward, not just computed on paper. */
+  /* Two independent fixed anchors -- card-top-to-"Ticker" AND
+     Delete-button-bottom-to-card-bottom both exactly 100px -- with
+     flexible content in between that can change height without
+     disturbing either one. Padding alone can't do this: it only pins
+     ONE end reliably (the top) while leftover space from a
+     shorter-than-available content block lands somewhere ambiguous
+     depending on justify-content -- confirmed live, twice, hitting two
+     different wrong numbers (148px stray gap with height:100% +
+     flex-start; then 230px+ once height:100% was removed and the panel
+     no longer reached the card's true bottom edge at all). The correct,
+     standard fix: keep height:100% so the panel's own box always spans
+     the card's full inner height (guaranteeing SOMETHING reaches the
+     true bottom edge), and use `margin-top: auto` on the element that
+     should anchor to the bottom (Save, see the JS below) -- an auto
+     margin on a flex child absorbs ALL leftover space at exactly that
+     point, pushing everything from there onward (Save, Delete, the
+     note) down to sit flush against padding-bottom, regardless of how
+     tall the fields above happen to be. */
   .holding-edit-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* No height:100% -- real bug caught live: with a forced full-card
-       height, flex-start packs children at the top and leaves ALL the
-       leftover space stranded below the last child, past padding-bottom
-       entirely (measured live: a 148px stray gap, not the intended
-       42px). Without a forced height, the panel takes exactly its own
-       content's height, so padding-top/padding-bottom alone reliably
-       control the two fixed 100px distances -- no leftover space left
-       to land in the wrong place. */
+    height: 100%;
     gap: 8px;
     padding: 82px 20px 42px;
   }
@@ -388,6 +389,12 @@
       const saveBtn = document.createElement('button');
       saveBtn.type = 'button';
       saveBtn.textContent = 'Save';
+      // margin-top:auto -- see the .holding-edit-panel CSS comment for
+      // why: absorbs all leftover vertical space right here, pushing
+      // Save/Delete/the note down to sit flush against the panel's own
+      // padding-bottom, so Delete's distance from the card's bottom
+      // edge stays fixed regardless of how tall the fields above are.
+      saveBtn.style.marginTop = 'auto';
       saveBtn.addEventListener('mousedown', async () => {
         const updated = {
           ticker: tickerInput.value.trim().toUpperCase(),
