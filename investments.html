@@ -43,16 +43,8 @@
     margin: 0 0 100px;
     text-align: center;
   }
-  /* Minimal, functional-only back link -- structure-phase placeholder,
-     not yet styled/positioned to any locked spec. Without SOME way
-     back, this page would be a dead end (no browser-back guarantee on
-     every device/context) -- to be properly designed in the polish
-     pass, same as everything else on this page. */
   /* .back-link removed per explicit request 2026-08-26 -- deliberately
-     relies on the browser's own back navigation instead now. Real
-     trade-off flagged before removing (no guarantee of browser history
-     on every device/context, e.g. opening via the desktop shortcut) --
-     user's own explicit call, may revisit later. */
+     relies on the browser's own back navigation instead now. */
 
   /* Investment cards -- identical to Masterboard's own, moved here
      verbatim, not redesigned. White fill, 10px radius, fixed-width
@@ -76,6 +68,11 @@
     text-align: left;
     font-family: 'Montserrat', sans-serif;
     transition: transform 0.1s ease;
+    /* Now a real container for two mutually-exclusive views (display vs
+       edit), same "one surface toggles in place" pattern as Renewals'
+       own .item -- see buildHoldingCard() below. */
+    display: flex;
+    flex-direction: column;
   }
   .holding-card:hover {
     transform: scale(1.02);
@@ -98,7 +95,27 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* Two stacked numbers now, not one -- per explicit request: line 3 is
+     the instrument's own live price per unit, line 4 is the position's
+     total value (price x units). Both still show "--" until a real
+     price source is wired up (see the placeholder note below) -- a
+     position value computed from a fake price would be actively
+     misleading, not just incomplete. */
+  .holding-price-row {
+    margin-bottom: 10px;
+  }
+  .holding-price-label,
+  .holding-position-label {
+    color: var(--placeholder);
+    font-size: 11px;
+    margin-bottom: 1px;
+  }
   .holding-price {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .holding-position {
     color: var(--navy);
     font-weight: 700;
     font-size: 22px;
@@ -106,12 +123,96 @@
   .holding-placeholder-note {
     color: var(--placeholder);
     font-size: 11px;
-    margin-top: 6px;
+    margin-top: auto;
+  }
+
+  /* Edit panel -- opened by clicking the card, replaces its normal
+     display content in place (same interaction model as Renewals' own
+     .edit-panel). Renewals' own layout was horizontal (fields, then
+     Save/Delete, side by side in one wide row); this is the same
+     colors/sizing/terminology turned VERTICAL to fit a narrow 300px
+     card, per explicit request -- centered, same 16px/20px padding
+     Renewals' own .item uses, same 8px gap language as its
+     .edit-actions group. */
+  .holding-edit-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    padding: 16px 20px;
+  }
+  /* Field colors/sizing are Renewals' .edit-panel input, verbatim --
+     background, border, radius, font-size, padding all identical.
+     width:100% (not Renewals' fixed 276px) since this column is much
+     narrower and everything needs to line up under each other, not
+     sit in a wide horizontal row. Text stays LEFT-aligned (the
+     default) rather than centered, even though the surrounding layout
+     is centered -- centering EDITABLE variable-length text creates
+     real typing friction (the cursor position drifts on every
+     keystroke), an already-learned lesson on this project, not a new
+     design opinion. */
+  .holding-edit-panel input {
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    padding: 6px 8px;
+    outline: none;
+    width: 100%;
+  }
+  .holding-edit-panel input::placeholder {
+    color: var(--placeholder);
+  }
+  /* Button colors/sizing are Renewals' .edit-save-btn, verbatim --
+     transparent fill, white outline, 0.45 resting opacity, same
+     hover/active swap. width:100% (not Renewals' fixed 90px) for the
+     same reason as the inputs above -- a uniform-width stacked column
+     reads as centered, a small button under full-width inputs
+     wouldn't. */
+  .holding-edit-panel button {
+    width: 100%;
+    text-align: center;
+    background: transparent;
+    border: 1px solid var(--white);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    opacity: 0.45;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+  .holding-edit-panel button:hover {
+    opacity: 1;
+    background: var(--white);
+    color: var(--navy);
+    transform: scale(1.02);
+  }
+  .holding-edit-panel button:active {
+    transform: scale(0.96);
+  }
+  .holding-edit-label {
+    color: var(--placeholder);
+    font-size: 11px;
+    align-self: flex-start;
+    margin-bottom: -4px;
+  }
+  .holding-edit-note {
+    color: var(--placeholder);
+    font-size: 11px;
+    text-align: center;
+    margin-top: 4px;
   }
 
   .empty-state {
     color: var(--placeholder);
-    font-size: 20px; /* bumped from 15px per explicit request -- matches Renewals' own empty-state size */
+    font-size: 20px;
     text-align: center;
     padding: 40px 0;
   }
@@ -124,21 +225,52 @@
   </div>
 
   <script type="module">
-    // ---- Holdings -- placeholder data only, moved here verbatim from
-    // Masterboard. Live pricing (a real market-data API) and persisted
-    // share counts are the next real decision, not built yet. ----
-    const HOLDINGS = [
-      { ticker: 'AAPL', name: 'Apple Inc.', price: 0, shares: 0 },
-      { ticker: 'MSFT', name: 'Microsoft Corp.', price: 0, shares: 0 },
-      { ticker: 'NVDA', name: 'NVIDIA Corp.', price: 0, shares: 0 },
-    ];
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // Same Supabase project every other PrimeLevel tool uses -- same
+    // URL/key pattern as index.html/insider-edge.html.
+    const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
     const holdingsEl = document.getElementById('holdings');
+    let holdings = [];
+    let editingId = null;
 
-    function buildHoldingCard(holding) {
-      const card = document.createElement('button');
-      card.className = 'holding-card';
+    async function loadHoldings() {
+      const { data, error } = await supabase
+        .from('investment_holdings')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) {
+        holdingsEl.innerHTML = '<div class="empty-state">Could not load holdings. Please refresh.</div>';
+        return;
+      }
+      holdings = data;
+      renderHoldings();
+    }
 
+    function renderHoldings() {
+      holdingsEl.innerHTML = '';
+      if (!holdings.length) {
+        holdingsEl.innerHTML = '<div class="empty-state">Nothing tracked yet.</div>';
+        return;
+      }
+      for (const h of holdings) {
+        holdingsEl.append(buildHoldingCard(h));
+      }
+    }
+
+    // Live price/position value are both still "--" -- no market-data
+    // source is wired up yet (a real decision, not an oversight: the
+    // user chose a live API lookup for the ticker<->name/price feature,
+    // which needs an actual API key registered with a provider before
+    // it can be built for real -- see the note in the edit panel).
+    function formatMoney(n) {
+      return n == null ? '—' : `$${n.toFixed(2)}`;
+    }
+
+    function buildDisplayView(card, holding) {
       const ticker = document.createElement('div');
       ticker.className = 'holding-ticker';
       ticker.textContent = holding.ticker;
@@ -147,23 +279,129 @@
       name.className = 'holding-name';
       name.textContent = holding.name;
 
+      const priceRow = document.createElement('div');
+      priceRow.className = 'holding-price-row';
+      const priceLabel = document.createElement('div');
+      priceLabel.className = 'holding-price-label';
+      priceLabel.textContent = 'Price per unit';
       const price = document.createElement('div');
       price.className = 'holding-price';
-      price.textContent = holding.price ? `$${holding.price.toFixed(2)}` : '—';
+      price.textContent = formatMoney(null);
+      priceRow.append(priceLabel, price);
+
+      const positionLabel = document.createElement('div');
+      positionLabel.className = 'holding-position-label';
+      positionLabel.textContent = `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
+      const position = document.createElement('div');
+      position.className = 'holding-position';
+      position.textContent = formatMoney(null);
 
       const note = document.createElement('div');
       note.className = 'holding-placeholder-note';
       note.textContent = 'placeholder — live price not wired yet';
 
-      card.append(ticker, name, price, note);
-      card.addEventListener('click', () => {
-        // TODO: open detail view, edit shares, recalc position value.
-        alert(`${holding.ticker} detail view -- not built yet.`);
+      card.append(ticker, name, priceRow, positionLabel, position, note);
+    }
+
+    function buildEditView(card, holding) {
+      const panel = document.createElement('div');
+      panel.className = 'holding-edit-panel';
+      // Stop a click inside the panel (an input, a button) from also
+      // being read as "click the card" and re-toggling edit mode --
+      // same reasoning as every other click-to-edit surface on this
+      // project.
+      panel.addEventListener('click', (e) => e.stopPropagation());
+
+      const tickerLabel = document.createElement('div');
+      tickerLabel.className = 'holding-edit-label';
+      tickerLabel.textContent = 'Ticker';
+      const tickerInput = document.createElement('input');
+      tickerInput.value = holding.ticker;
+      tickerInput.placeholder = 'e.g. AAPL';
+
+      const nameLabel = document.createElement('div');
+      nameLabel.className = 'holding-edit-label';
+      nameLabel.textContent = 'Company name';
+      const nameInput = document.createElement('input');
+      nameInput.value = holding.name;
+      nameInput.placeholder = 'e.g. Apple Inc.';
+
+      const unitsLabel = document.createElement('div');
+      unitsLabel.className = 'holding-edit-label';
+      unitsLabel.textContent = 'Units';
+      const unitsInput = document.createElement('input');
+      unitsInput.type = 'number';
+      unitsInput.min = '0';
+      unitsInput.step = 'any';
+      unitsInput.value = holding.units;
+
+      // Update: real action today (re-renders the card's own display
+      // fields live from whatever's currently typed, before Save is
+      // pressed), but NOT the ticker<->name auto-lookup the user
+      // actually asked for -- that needs a genuine live market-data API
+      // key, which only the user can obtain by registering with a
+      // provider (nothing Claude can sign up for on their behalf). Once
+      // that key exists, this button is exactly where the real lookup
+      // call belongs.
+      const updateBtn = document.createElement('button');
+      updateBtn.type = 'button';
+      updateBtn.textContent = 'Update';
+      updateBtn.addEventListener('click', () => {
+        note.textContent = `Preview — not saved yet: ${tickerInput.value.toUpperCase()} · ${nameInput.value} · ${unitsInput.value || 0} unit(s). Live ticker↔name lookup isn't wired up yet — needs a market-data API key first.`;
       });
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', async () => {
+        const updated = {
+          ticker: tickerInput.value.trim().toUpperCase(),
+          name: nameInput.value.trim(),
+          units: parseFloat(unitsInput.value) || 0,
+        };
+        const { error } = await supabase
+          .from('investment_holdings')
+          .update(updated)
+          .eq('id', holding.id);
+        if (error) {
+          note.textContent = 'Could not save — please try again.';
+          return;
+        }
+        editingId = null;
+        await loadHoldings();
+      });
+
+      const note = document.createElement('div');
+      note.className = 'holding-edit-note';
+      note.textContent = 'Live ticker↔name lookup: not wired up yet (needs a market-data API key).';
+
+      panel.append(
+        tickerLabel, tickerInput,
+        nameLabel, nameInput,
+        unitsLabel, unitsInput,
+        updateBtn, saveBtn,
+        note
+      );
+      card.append(panel);
+    }
+
+    function buildHoldingCard(holding) {
+      const card = document.createElement('div');
+      card.className = 'holding-card';
+      card.addEventListener('click', () => {
+        editingId = holding.id;
+        renderHoldings();
+      });
+
+      if (editingId === holding.id) {
+        buildEditView(card, holding);
+      } else {
+        buildDisplayView(card, holding);
+      }
       return card;
     }
 
-    HOLDINGS.forEach((h) => holdingsEl.append(buildHoldingCard(h)));
+    loadHoldings();
   </script>
 </body>
 </html>
