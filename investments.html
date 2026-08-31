@@ -148,18 +148,34 @@
     font-size: 22px;
   }
   /* First card only, per explicit request: name-to-price and price-to-
-     position gaps both bumped to 50px (were 14px/10px), and the two
-     dollar figures matched to the ticker's own exact 20px/bold (were
-     22px, already bold via .holding-price/.holding-position above). */
+     position gaps stay 50px (were 14px/10px originally); ticker, price,
+     and position bumped from 20px to 25px (still bold); ticker/price/
+     position and their own labels all centered (were left-aligned,
+     the page-wide default) -- the 50px gap between the two groups is
+     unaffected by centering, since that's a margin on the group as a
+     whole, not an alignment of what's inside it. Price/position's own
+     JS-side element order was also swapped (value before its label,
+     see buildDisplayView) so the small label text now sits BELOW its
+     value instead of above it -- text-align:center here is what keeps
+     both correctly centered under the now-larger value above them. */
   .holdings .holding-card:first-child .holding-name {
     margin-bottom: 50px;
   }
   .holdings .holding-card:first-child .holding-price-row {
     margin-bottom: 50px;
   }
+  .holdings .holding-card:first-child .holding-ticker,
   .holdings .holding-card:first-child .holding-price,
   .holdings .holding-card:first-child .holding-position {
-    font-size: 20px;
+    font-size: 25px;
+  }
+  .holdings .holding-card:first-child .holding-ticker,
+  .holdings .holding-card:first-child .holding-price-row,
+  .holdings .holding-card:first-child .holding-price-label,
+  .holdings .holding-card:first-child .holding-price,
+  .holdings .holding-card:first-child .holding-position-label,
+  .holdings .holding-card:first-child .holding-position {
+    text-align: center;
   }
   .holding-placeholder-note {
     color: var(--placeholder);
@@ -366,10 +382,14 @@
       const price = document.createElement('div');
       price.className = 'holding-price';
       // Fake demo numbers, per explicit request, first card ONLY -- not
-      // real data, not saved anywhere, purely to see bold/20px numbers
+      // real data, not saved anywhere, purely to see bold/25px numbers
       // rendered in these slots instead of the usual "--" placeholder.
       price.textContent = isFirst ? formatMoney(250) : formatMoney(null);
-      priceRow.append(priceLabel, price);
+      // First card only: value comes BEFORE its own label now (was
+      // label-then-value) -- DOM order is what visual stacking order
+      // follows here, so this swap is a real reorder, not just CSS.
+      if (isFirst) priceRow.append(price, priceLabel);
+      else priceRow.append(priceLabel, price);
 
       const positionLabel = document.createElement('div');
       positionLabel.className = 'holding-position-label';
@@ -382,7 +402,9 @@
       note.className = 'holding-placeholder-note';
       note.textContent = 'placeholder — live price not wired yet';
 
-      card.append(ticker, name, priceRow, positionLabel, position, note);
+      // Same value-before-label swap for Position, first card only.
+      const positionGroup = isFirst ? [position, positionLabel] : [positionLabel, position];
+      card.append(ticker, name, priceRow, ...positionGroup, note);
     }
 
     function buildEditView(card, holding) {
