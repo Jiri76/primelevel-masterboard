@@ -313,11 +313,167 @@
     text-align: center;
     padding: 40px 0;
   }
+
+  /* ==========================================================
+     "Add a holding" mechanism -- mirrored from Renewals' own
+     "+" trigger / popover / idle-hide system, per explicit
+     request ("do not change layout or colors, just mirror the
+     mechanism"). Every value below (100px title-to-circle gap,
+     56px circle, 60s popover auto-close, 30s trigger idle-hide,
+     the click-outside race-condition fix) is copied from
+     Renewals' own proven, already-debugged implementation, not
+     redesigned. Only the FIELD COUNT differs (3 fields --
+     Ticker/Company/Units -- vs Renewals' 2, Name/Date), since
+     that's a genuine data-shape difference, not a mechanism
+     change. ========================================================== */
+  .add-wrapper {
+    margin-top: 100px;
+    margin-bottom: 100px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    max-height: 260px;
+    overflow: hidden;
+    transition: max-height 0.25s ease, margin-bottom 0.25s ease;
+  }
+  .add-wrapper.idle-hidden {
+    max-height: 0;
+    margin-bottom: 0;
+  }
+  .add-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 0.5px solid var(--white);
+    background: transparent;
+    color: var(--white);
+    font-size: 31px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.45;
+    user-select: none;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+  .add-trigger:hover {
+    opacity: 1;
+    background: var(--white);
+    color: var(--navy);
+    transform: scale(1.03);
+  }
+  .add-trigger:active { transform: scale(0.94); }
+  .add-wrapper.idle-hidden .add-trigger {
+    opacity: 0;
+  }
+  .add-popover {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, margin-top 0.25s ease, opacity 0.2s ease;
+  }
+  .add-popover.open {
+    max-height: 160px;
+    margin-top: 12px;
+    opacity: 1;
+  }
+  .add-popover-inner {
+    display: flex;
+    flex-direction: column;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .add-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .add-fields {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .add-popover input {
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    padding: 6px 8px;
+    outline: none;
+  }
+  .add-popover input::placeholder { color: var(--placeholder); }
+  /* Fixed widths, not flex-grow -- same reasoning as Renewals' own
+     fields: a grow-to-fill field renders at a different width than a
+     fixed one depending on how many buttons/fields share the row.
+     Ticker/Units narrow (short values), Company gets the rest of the
+     room. */
+  #newHoldingTicker { flex: 0 0 auto; width: 90px; }
+  #newHoldingUnits { flex: 0 0 auto; width: 90px; text-align: center; }
+  #newHoldingName { flex: 1 1 auto; min-width: 0; }
+  .add-save-btn {
+    flex: 0 0 auto;
+    width: 90px;
+    text-align: center;
+    background: transparent;
+    border: 1px solid var(--white);
+    color: var(--white);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    opacity: 0.45;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+  .add-save-btn:hover {
+    opacity: 1;
+    background: var(--white);
+    color: var(--navy);
+    transform: scale(1.02);
+  }
+  .add-save-btn:active {
+    transform: scale(0.96);
+  }
+  .add-error {
+    display: none;
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .add-error.visible {
+    display: block;
+  }
 </style>
 </head>
 <body>
   <div class="container">
     <h1>Investments</h1>
+
+    <div class="add-wrapper">
+      <button class="add-trigger" id="addTrigger" title="Add a holding">+</button>
+      <div class="add-popover" id="addPopover">
+        <div class="add-popover-inner">
+          <div class="add-row">
+            <div class="add-fields">
+              <input id="newHoldingTicker" type="text" placeholder="Ticker" autocomplete="off" />
+              <input id="newHoldingName" type="text" placeholder="Company name" autocomplete="off" />
+              <input id="newHoldingUnits" type="number" min="0" step="any" placeholder="Units" autocomplete="off" />
+            </div>
+            <button id="addHoldingBtn" class="add-save-btn">Save</button>
+          </div>
+          <div class="add-error" id="addHoldingError"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="holdings" id="holdings"></div>
   </div>
 
@@ -333,6 +489,153 @@
     const holdingsEl = document.getElementById('holdings');
     let holdings = [];
     let editingId = null;
+
+    // ==========================================================
+    // "Add a holding" mechanism -- mirrored from Renewals' own "+"
+    // trigger/popover/idle-hide system, per explicit request. The
+    // whole state machine (two separate timers, the click-outside
+    // race-condition fix) is copied faithfully from Renewals' own
+    // already-debugged implementation -- see its own comments for
+    // the full reasoning behind each piece; only reproduced here,
+    // not re-derived. ==========================================================
+    const addTrigger = document.getElementById('addTrigger');
+    const addWrapper = document.querySelector('.add-wrapper');
+    const addPopover = document.getElementById('addPopover');
+    const newTickerInput = document.getElementById('newHoldingTicker');
+    const newNameInput = document.getElementById('newHoldingName');
+    const newUnitsInput = document.getElementById('newHoldingUnits');
+    const addHoldingBtn = document.getElementById('addHoldingBtn');
+    const addHoldingError = document.getElementById('addHoldingError');
+
+    function setAddError(message) {
+      addHoldingError.textContent = message;
+      addHoldingError.classList.toggle('visible', !!message);
+    }
+
+    // The "+" trigger never moves -- opening the popover never shifts it.
+    // Auto-closes after 60s of inactivity so it doesn't sit open forever
+    // if you got distracted mid-entry, and closes on any click outside it
+    // too (see the document mousedown listener further down).
+    let collapseTimer = null;
+    function closeAddPopover() {
+      addPopover.classList.remove('open');
+      newTickerInput.value = '';
+      newNameInput.value = '';
+      newUnitsInput.value = '';
+      setAddError('');
+      clearTimeout(collapseTimer);
+    }
+    function resetCollapseTimer() {
+      clearTimeout(collapseTimer);
+      collapseTimer = setTimeout(() => {
+        closeAddPopover();
+        // The whole page has been idle long enough that even the OPEN
+        // form gave up and closed -- the "+" trigger shouldn't then wait
+        // out its own separate 30s countdown on top of that, it should
+        // disappear immediately alongside the form.
+        hideTriggerNow();
+      }, 60000);
+    }
+    addTrigger.addEventListener('click', () => {
+      if (addPopover.classList.contains('open')) {
+        closeAddPopover();
+        return;
+      }
+      addPopover.classList.add('open');
+      newTickerInput.focus();
+      resetCollapseTimer();
+    });
+
+    // Separate from the popover's own 60s auto-collapse above: the "+"
+    // trigger (and the space it occupies) collapses after 30s of no
+    // clicks anywhere on the page, or immediately on any click outside
+    // the trigger/popover while the popover isn't open. Expands back
+    // the instant anything is clicked while hidden.
+    let hideTriggerTimer = null;
+    function hideTriggerNow() {
+      clearTimeout(hideTriggerTimer);
+      addWrapper.classList.add('idle-hidden');
+    }
+    function scheduleTriggerHide() {
+      clearTimeout(hideTriggerTimer);
+      hideTriggerTimer = setTimeout(() => {
+        if (!addPopover.classList.contains('open')) {
+          hideTriggerNow();
+        }
+      }, 30000);
+    }
+
+    // Race-condition fix, mirrored exactly from Renewals: dismissing an
+    // OPEN popover via an outside click collapses TWO things at once
+    // (the popover's own shrink and the wrapper's own shrink), and the
+    // wrapper's idle-hidden class is set instantly even though the
+    // visual collapse takes ~250ms -- a follow-up click during that
+    // visual tail would otherwise be read as "reveal it", undoing the
+    // dismiss. wrapperIsCollapsing gates the reveal branch until the
+    // wrapper's real transitionend fires, backed by a 350ms fallback
+    // timer in case transitionend never fires for any reason.
+    let wrapperIsCollapsing = false;
+    let wrapperCollapseFallbackTimer = null;
+    function clearWrapperCollapsingGate() {
+      wrapperIsCollapsing = false;
+      clearTimeout(wrapperCollapseFallbackTimer);
+    }
+    addWrapper.addEventListener('transitionend', (e) => {
+      if (e.target === addWrapper && e.propertyName === 'max-height') {
+        clearWrapperCollapsingGate();
+      }
+    });
+
+    // mousedown, not click -- same reasoning as every other "click
+    // outside to dismiss" listener on this project: immune to any
+    // slight drift between mouse-down and mouse-up.
+    document.addEventListener('mousedown', (e) => {
+      const clickedInsideWrapper = addWrapper.contains(e.target);
+
+      if (addWrapper.classList.contains('idle-hidden')) {
+        if (wrapperIsCollapsing) return;
+        addWrapper.classList.remove('idle-hidden');
+        scheduleTriggerHide();
+        return;
+      }
+
+      if (clickedInsideWrapper) {
+        scheduleTriggerHide();
+        return;
+      }
+
+      if (addPopover.classList.contains('open')) {
+        addPopover.style.transition = 'none';
+        closeAddPopover();
+        void addPopover.offsetHeight; // force the no-transition style to actually apply
+        addPopover.style.transition = '';
+        wrapperIsCollapsing = true;
+        clearTimeout(wrapperCollapseFallbackTimer);
+        wrapperCollapseFallbackTimer = setTimeout(clearWrapperCollapsingGate, 350);
+      }
+      hideTriggerNow();
+    });
+    scheduleTriggerHide();
+
+    addHoldingBtn.addEventListener('mousedown', async () => {
+      setAddError('');
+      const ticker = newTickerInput.value.trim().toUpperCase();
+      const name = newNameInput.value.trim();
+      const units = parseFloat(newUnitsInput.value) || 0;
+      if (!ticker || !name) {
+        setAddError('Please enter both a ticker and a company name.');
+        return;
+      }
+      const { error } = await supabase
+        .from('investment_holdings')
+        .insert({ ticker, name, units });
+      if (error) {
+        setAddError('Could not save — please check your connection and try again.');
+        return;
+      }
+      closeAddPopover();
+      await loadHoldings();
+    });
 
     async function loadHoldings() {
       // Real bug found and fixed during live testing: the 3 seed rows
