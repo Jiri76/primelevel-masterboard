@@ -87,6 +87,17 @@
      pre-adjusted. Not yet a real decision either way. */
   .holdings .holding-card:first-child {
     height: 500px;
+    /* padding-top only (left/right/bottom untouched, still 18px like
+       every other card) -- serves BOTH the front's card-top-to-title
+       distance AND the edit panel's own card-top-to-"Ticker" distance
+       at once, since both sit as the very first thing inside this same
+       padding box. Paired with the edit panel's own padding-top being
+       zeroed for this card specifically (see .holding-edit-panel
+       override below) so the two don't stack into 100px. */
+    padding-top: 50px;
+  }
+  .holdings .holding-card:first-child .holding-edit-panel {
+    padding-top: 0;
   }
   .holding-card:hover {
     border-color: var(--white);
