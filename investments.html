@@ -87,14 +87,15 @@
      pre-adjusted. Not yet a real decision either way. */
   .holdings .holding-card:first-child {
     height: 500px;
-    /* padding-top only (left/right/bottom untouched, still 18px like
-       every other card) -- serves BOTH the front's card-top-to-title
+    /* padding-top/left only (right/bottom untouched, still 18px like
+       every other card) -- top serves BOTH the front's card-top-to-title
        distance AND the edit panel's own card-top-to-"Ticker" distance
        at once, since both sit as the very first thing inside this same
        padding box. Paired with the edit panel's own padding-top being
        zeroed for this card specifically (see .holding-edit-panel
        override below) so the two don't stack into 100px. */
     padding-top: 50px;
+    padding-left: 50px;
   }
   .holdings .holding-card:first-child .holding-edit-panel {
     padding-top: 0;
@@ -145,6 +146,20 @@
     color: var(--white);
     font-weight: 700;
     font-size: 22px;
+  }
+  /* First card only, per explicit request: name-to-price and price-to-
+     position gaps both bumped to 50px (were 14px/10px), and the two
+     dollar figures matched to the ticker's own exact 20px/bold (were
+     22px, already bold via .holding-price/.holding-position above). */
+  .holdings .holding-card:first-child .holding-name {
+    margin-bottom: 50px;
+  }
+  .holdings .holding-card:first-child .holding-price-row {
+    margin-bottom: 50px;
+  }
+  .holdings .holding-card:first-child .holding-price,
+  .holdings .holding-card:first-child .holding-position {
+    font-size: 20px;
   }
   .holding-placeholder-note {
     color: var(--placeholder);
@@ -320,9 +335,9 @@
         holdingsEl.innerHTML = '<div class="empty-state">Nothing tracked yet.</div>';
         return;
       }
-      for (const h of holdings) {
-        holdingsEl.append(buildHoldingCard(h));
-      }
+      holdings.forEach((h, i) => {
+        holdingsEl.append(buildHoldingCard(h, i === 0));
+      });
     }
 
     // Live price/position value are both still "--" -- no market-data
@@ -334,7 +349,7 @@
       return n == null ? '—' : `$${n.toFixed(2)}`;
     }
 
-    function buildDisplayView(card, holding) {
+    function buildDisplayView(card, holding, isFirst) {
       const ticker = document.createElement('div');
       ticker.className = 'holding-ticker';
       ticker.textContent = holding.ticker;
@@ -350,7 +365,10 @@
       priceLabel.textContent = 'Price per unit';
       const price = document.createElement('div');
       price.className = 'holding-price';
-      price.textContent = formatMoney(null);
+      // Fake demo numbers, per explicit request, first card ONLY -- not
+      // real data, not saved anywhere, purely to see bold/20px numbers
+      // rendered in these slots instead of the usual "--" placeholder.
+      price.textContent = isFirst ? formatMoney(250) : formatMoney(null);
       priceRow.append(priceLabel, price);
 
       const positionLabel = document.createElement('div');
@@ -358,7 +376,7 @@
       positionLabel.textContent = `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
       const position = document.createElement('div');
       position.className = 'holding-position';
-      position.textContent = formatMoney(null);
+      position.textContent = isFirst ? formatMoney(5000) : formatMoney(null);
 
       const note = document.createElement('div');
       note.className = 'holding-placeholder-note';
@@ -468,7 +486,7 @@
       card.append(panel);
     }
 
-    function buildHoldingCard(holding) {
+    function buildHoldingCard(holding, isFirst) {
       const card = document.createElement('div');
       card.className = 'holding-card';
       card.addEventListener('click', () => {
@@ -479,7 +497,7 @@
       if (editingId === holding.id) {
         buildEditView(card, holding);
       } else {
-        buildDisplayView(card, holding);
+        buildDisplayView(card, holding, isFirst);
       }
       return card;
     }
