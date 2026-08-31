@@ -95,7 +95,15 @@
        zeroed for this card specifically (see .holding-edit-panel
        override below) so the two don't stack into 100px. */
     padding-top: 50px;
-    padding-left: 50px;
+    /* padding-left REMOVED, per direct follow-up: with the ticker/price/
+       position text now required to be genuinely centered (equal left
+       and right padding), the earlier 50px-left-only override directly
+       conflicted with that -- centered text within a lopsided box still
+       looks off-center on screen (measured live: 51px left vs 19px
+       right). Reverting left/right to the same 18px every other card
+       already uses is the simplest symmetric fix; card width is
+       unaffected either way since box-sizing:border-box already
+       guarantees padding never changes the fixed 300px outer width. */
   }
   .holdings .holding-card:first-child .holding-edit-panel {
     padding-top: 0;
