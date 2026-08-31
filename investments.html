@@ -238,10 +238,16 @@
     let editingId = null;
 
     async function loadHoldings() {
+      // Real bug found and fixed during live testing: the 3 seed rows
+      // were all inserted in one batch and share the exact same
+      // created_at timestamp down to the microsecond, so ordering by
+      // created_at alone left their relative order undefined -- a
+      // second, always-unique sort key (id) makes it deterministic.
       const { data, error } = await supabase
         .from('investment_holdings')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true });
       if (error) {
         holdingsEl.innerHTML = '<div class="empty-state">Could not load holdings. Please refresh.</div>';
         return;
