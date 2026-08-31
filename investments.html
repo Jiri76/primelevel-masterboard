@@ -751,12 +751,6 @@
     function buildEditView(card, holding) {
       const panel = document.createElement('div');
       panel.className = 'holding-edit-panel';
-      // Stop a click inside the panel (an input, a button) from also
-      // being read as "click the card" and re-toggling edit mode --
-      // same reasoning as every other click-to-edit surface on this
-      // project.
-      panel.addEventListener('click', (e) => e.stopPropagation());
-
       const tickerLabel = document.createElement('div');
       tickerLabel.className = 'holding-edit-label';
       tickerLabel.textContent = 'Ticker';
@@ -852,14 +846,32 @@
     function buildHoldingCard(holding, isFirst) {
       const card = document.createElement('div');
       card.className = 'holding-card';
-      card.addEventListener('click', () => {
-        editingIds.add(holding.id);
-        renderHoldings();
-      });
 
       if (editingIds.has(holding.id)) {
         buildEditView(card, holding);
       } else {
+        // mousedown, not click -- mirrors Renewals' own
+        // row.addEventListener('mousedown', openEdit) exactly, a real
+        // gap found and closed 2026-09-01. The card sits outside
+        // .add-wrapper, so the SAME document-level mousedown listener
+        // that hides/reveals the "+" trigger also animates the
+        // wrapper's own height (margin-bottom/max-height collapsing),
+        // which shifts every card below it. A plain `click` here
+        // requires mousedown and mouseup to land on the same point --
+        // if that collapse moves this card between the two, the click
+        // can silently fail to register, exactly the class of bug
+        // already fixed once on Renewals' own row-open trigger.
+        // mousedown resolves the whole action in one synchronous pass,
+        // immune to that. Only attached when NOT already editing
+        // (Renewals' equivalent listener is explicitly removed once
+        // editing starts) -- this also removes the need for a
+        // click-inside-the-panel stopPropagation guard, since there's
+        // no "open" listener left on the card for a click inside the
+        // panel to conflict with.
+        card.addEventListener('mousedown', () => {
+          editingIds.add(holding.id);
+          renderHoldings();
+        });
         buildDisplayView(card, holding, isFirst);
       }
       return card;
