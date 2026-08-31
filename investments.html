@@ -80,6 +80,14 @@
     display: flex;
     flex-direction: column;
   }
+  /* TEMPORARY, per explicit request: just the FIRST card at 500px (was
+     600px like the other two) to compare side by side -- edit mode's
+     own spacing (the 100px top/bottom anchors) deliberately left
+     untouched to see what actually happens at this shorter height, not
+     pre-adjusted. Not yet a real decision either way. */
+  .holdings .holding-card:first-child {
+    height: 500px;
+  }
   .holding-card:hover {
     border-color: var(--white);
     transform: scale(1.015);
