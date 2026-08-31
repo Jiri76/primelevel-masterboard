@@ -56,18 +56,24 @@
     justify-content: center;
     gap: 40px;
   }
+  /* Colors switched to match Renewals' own .item exactly, per explicit
+     request -- was white-fill/navy-text (the original Masterboard tile
+     look), now dark input-bg fill/white text/a real border, same as
+     every renewal row. Hover swap (border-color white, scale 1.015) and
+     border are also copied verbatim from Renewals' .item.row-hovered,
+     not just similarly styled. */
   .holding-card {
-    background: var(--white);
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
     border-radius: 10px;
     padding: 18px;
     /* height 600px, per explicit follow-up request (was 300px, itself a
        fix from the original content-driven ~139px). */
     height: 600px;
     cursor: pointer;
-    border: none;
     text-align: left;
     font-family: 'Montserrat', sans-serif;
-    transition: transform 0.1s ease;
+    transition: border-color 0.15s ease, transform 0.1s ease;
     /* Now a real container for two mutually-exclusive views (display vs
        edit), same "one surface toggles in place" pattern as Renewals'
        own .item -- see buildHoldingCard() below. */
@@ -75,19 +81,20 @@
     flex-direction: column;
   }
   .holding-card:hover {
-    transform: scale(1.02);
+    border-color: var(--white);
+    transform: scale(1.015);
   }
   .holding-card:active {
     transform: scale(0.98);
   }
   .holding-ticker {
-    color: var(--navy);
+    color: var(--white);
     font-weight: 700;
     font-size: 20px;
     margin-bottom: 2px;
   }
   .holding-name {
-    color: var(--navy);
+    color: var(--white);
     opacity: 0.6;
     font-size: 13px;
     margin-bottom: 14px;
@@ -111,12 +118,12 @@
     margin-bottom: 1px;
   }
   .holding-price {
-    color: var(--navy);
+    color: var(--white);
     font-weight: 700;
     font-size: 22px;
   }
   .holding-position {
-    color: var(--navy);
+    color: var(--white);
     font-weight: 700;
     font-size: 22px;
   }
@@ -352,14 +359,23 @@
       const updateBtn = document.createElement('button');
       updateBtn.type = 'button';
       updateBtn.textContent = 'Update';
-      updateBtn.addEventListener('click', () => {
+      // mousedown, not click -- same reasoning as Save/Delete below,
+      // mirrored for consistency even though this button doesn't touch
+      // Supabase.
+      updateBtn.addEventListener('mousedown', () => {
         note.textContent = `Preview — not saved yet: ${tickerInput.value.toUpperCase()} · ${nameInput.value} · ${unitsInput.value || 0} unit(s). Live ticker↔name lookup isn't wired up yet — needs a market-data API key first.`;
       });
 
+      // mousedown, not click -- exact same reasoning as Renewals' own
+      // Save/Delete: a layout shift between mousedown and mouseup (e.g.
+      // this row closing/reordering) can move the button out from under
+      // the cursor before a click would fire on mouse-up. mousedown
+      // resolves the action in the same synchronous pass, immune to
+      // that.
       const saveBtn = document.createElement('button');
       saveBtn.type = 'button';
       saveBtn.textContent = 'Save';
-      saveBtn.addEventListener('click', async () => {
+      saveBtn.addEventListener('mousedown', async () => {
         const updated = {
           ticker: tickerInput.value.trim().toUpperCase(),
           name: nameInput.value.trim(),
@@ -377,6 +393,28 @@
         await loadHoldings();
       });
 
+      // Same shared button style as Save -- Renewals deliberately does
+      // NOT give Delete a separate "danger" color, just a different
+      // label, and this mirrors that exactly rather than inventing a
+      // red variant. Immediate delete on click, no confirmation dialog
+      // -- same as Renewals' own Delete, not a stricter behavior
+      // invented for this page.
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('mousedown', async () => {
+        const { error } = await supabase
+          .from('investment_holdings')
+          .delete()
+          .eq('id', holding.id);
+        if (error) {
+          note.textContent = 'Could not delete — please try again.';
+          return;
+        }
+        editingId = null;
+        await loadHoldings();
+      });
+
       const note = document.createElement('div');
       note.className = 'holding-edit-note';
       note.textContent = 'Live ticker↔name lookup: not wired up yet (needs a market-data API key).';
@@ -385,7 +423,7 @@
         tickerLabel, tickerInput,
         nameLabel, nameInput,
         unitsLabel, unitsInput,
-        updateBtn, saveBtn,
+        updateBtn, saveBtn, deleteBtn,
         note
       );
       card.append(panel);
