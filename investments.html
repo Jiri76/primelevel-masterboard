@@ -488,7 +488,15 @@
 
     const holdingsEl = document.getElementById('holdings');
     let holdings = [];
-    let editingId = null;
+    // A Set, not a single id -- per explicit request, mirroring
+    // Renewals' real behavior (confirmed directly from its own code,
+    // not assumed): opening one item's edit panel does NOT close any
+    // other already-open one. Each card only ever closes via its own
+    // explicit Save or Delete. There is deliberately no inactivity
+    // timer here -- confirmed Renewals doesn't have one for existing-
+    // item edit panels either (every setTimeout in that file belongs
+    // only to the "+" add-new popover), so none was invented here.
+    let editingIds = new Set();
 
     // ==========================================================
     // "Add a holding" mechanism -- mirrored from Renewals' own "+"
@@ -779,7 +787,7 @@
           note.textContent = 'Could not save — please try again.';
           return;
         }
-        editingId = null;
+        editingIds.delete(holding.id);
         await loadHoldings();
       });
 
@@ -801,7 +809,7 @@
           note.textContent = 'Could not delete — please try again.';
           return;
         }
-        editingId = null;
+        editingIds.delete(holding.id);
         await loadHoldings();
       });
 
@@ -823,11 +831,11 @@
       const card = document.createElement('div');
       card.className = 'holding-card';
       card.addEventListener('click', () => {
-        editingId = holding.id;
+        editingIds.add(holding.id);
         renderHoldings();
       });
 
-      if (editingId === holding.id) {
+      if (editingIds.has(holding.id)) {
         buildEditView(card, holding);
       } else {
         buildDisplayView(card, holding, isFirst);
