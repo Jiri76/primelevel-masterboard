@@ -171,6 +171,21 @@
     outline: none;
     width: 100%;
   }
+  /* Removes the native up/down spinner arrows on the Units field (type=
+     "number"), per explicit request -- Firefox via appearance:textfield
+     on the input itself, Chrome/Safari via their own vendor-prefixed
+     pseudo-elements (the input still accepts typed numbers and its own
+     min/step validation exactly as before, only the visible arrows are
+     gone). */
+  .holding-edit-panel input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .holding-edit-panel input[type="number"]::-webkit-outer-spin-button,
+  .holding-edit-panel input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
   .holding-edit-panel input::placeholder {
     color: var(--placeholder);
   }
