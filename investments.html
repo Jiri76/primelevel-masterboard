@@ -155,8 +155,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    height: 100%;
+    /* No height:100% -- real bug caught live: with a forced full-card
+       height, flex-start packs children at the top and leaves ALL the
+       leftover space stranded below the last child, past padding-bottom
+       entirely (measured live: a 148px stray gap, not the intended
+       42px). Without a forced height, the panel takes exactly its own
+       content's height, so padding-top/padding-bottom alone reliably
+       control the two fixed 100px distances -- no leftover space left
+       to land in the wrong place. */
     gap: 8px;
     padding: 82px 20px 42px;
   }
@@ -373,24 +379,6 @@
       unitsInput.step = 'any';
       unitsInput.value = holding.units;
 
-      // Update: real action today (re-renders the card's own display
-      // fields live from whatever's currently typed, before Save is
-      // pressed), but NOT the ticker<->name auto-lookup the user
-      // actually asked for -- that needs a genuine live market-data API
-      // key, which only the user can obtain by registering with a
-      // provider (nothing Claude can sign up for on their behalf). Once
-      // that key exists, this button is exactly where the real lookup
-      // call belongs.
-      const updateBtn = document.createElement('button');
-      updateBtn.type = 'button';
-      updateBtn.textContent = 'Update';
-      // mousedown, not click -- same reasoning as Save/Delete below,
-      // mirrored for consistency even though this button doesn't touch
-      // Supabase.
-      updateBtn.addEventListener('mousedown', () => {
-        note.textContent = `Preview — not saved yet: ${tickerInput.value.toUpperCase()} · ${nameInput.value} · ${unitsInput.value || 0} unit(s). Live ticker↔name lookup isn't wired up yet — needs a market-data API key first.`;
-      });
-
       // mousedown, not click -- exact same reasoning as Renewals' own
       // Save/Delete: a layout shift between mousedown and mouseup (e.g.
       // this row closing/reordering) can move the button out from under
@@ -448,7 +436,7 @@
         tickerLabel, tickerInput,
         nameLabel, nameInput,
         unitsLabel, unitsInput,
-        updateBtn, saveBtn, deleteBtn,
+        saveBtn, deleteBtn,
         note
       );
       card.append(panel);
