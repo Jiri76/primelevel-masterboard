@@ -178,12 +178,21 @@
     font-size: 25px;
   }
   .holdings .holding-card:first-child .holding-ticker,
+  .holdings .holding-card:first-child .holding-name,
   .holdings .holding-card:first-child .holding-price-row,
   .holdings .holding-card:first-child .holding-price-label,
   .holdings .holding-card:first-child .holding-price,
   .holdings .holding-card:first-child .holding-position-label,
   .holdings .holding-card:first-child .holding-position {
     text-align: center;
+  }
+  /* Pushes price+position DOWN as one unit (their existing 50px gap
+     between them is untouched -- they move together, not apart), per
+     explicit request. margin-top:auto on price-row absorbs all leftover
+     vertical space at exactly this one point -- same technique already
+     proven on the edit panel's own Save button earlier today. */
+  .holdings .holding-card:first-child .holding-price-row {
+    margin-top: auto;
   }
   .holding-placeholder-note {
     color: var(--placeholder);
