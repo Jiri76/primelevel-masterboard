@@ -199,6 +199,19 @@
     font-size: 11px;
     margin-top: auto;
   }
+  /* First card only, real bug found and fixed: with price-row's own
+     margin-top:auto added above, TWO auto margins existed in the same
+     flex column (this note's pre-existing one, and price-row's new
+     one) -- flexbox splits leftover space EQUALLY between multiple auto
+     margins, not winner-takes-all, so Position ended up only partway
+     down (measured live: 137px from the card's true bottom, not
+     anywhere near 50px). Removing this note's own auto push lets ALL
+     the leftover space concentrate at price-row's single auto margin
+     instead, so Position actually reaches close to the bottom, with
+     this note simply following right after it at a small natural gap. */
+  .holdings .holding-card:first-child .holding-placeholder-note {
+    margin-top: 8px;
+  }
 
   /* Edit panel -- opened by clicking the card, replaces its normal
      display content in place (same interaction model as Renewals' own
