@@ -141,14 +141,24 @@
      card, per explicit request -- centered, same 16px/20px padding
      Renewals' own .item uses, same 8px gap language as its
      .edit-actions group. */
+  /* justify-content: flex-start (not center) -- per explicit request,
+     switched from auto-centered content to two fixed, deliberately
+     computed distances instead: card-top-to-"Ticker" and
+     Delete-button-bottom-to-card-bottom both exactly 100px. Solved, not
+     guessed: card's own 18px padding + this panel's own padding = 100px
+     on each side, with the bottom side also accounting for the real
+     measured height of the note below Delete (28px) and its real gap
+     above it (12px = the 8px flex gap + its own 4px margin-top) --
+     100 - 18 - 28 - 12 = 42px padding-bottom, confirmed by live
+     measurement afterward, not just computed on paper. */
   .holding-edit-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     height: 100%;
     gap: 8px;
-    padding: 16px 20px;
+    padding: 82px 20px 42px;
   }
   /* Field colors/sizing are Renewals' .edit-panel input, verbatim --
      background, border, radius, font-size, padding all identical.
