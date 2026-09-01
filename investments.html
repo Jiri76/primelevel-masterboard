@@ -364,7 +364,9 @@
   .holding-edit-panel input {
     background: var(--navy);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    /* 6px -> 10px, 2026-09-02, per explicit request. Base rule, shared
+       by all three cards -- one change covers all of them. */
+    border-radius: 10px;
     color: var(--white);
     font-family: 'Montserrat', sans-serif;
     font-size: 15px;
