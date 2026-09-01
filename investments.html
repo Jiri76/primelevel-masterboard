@@ -207,6 +207,25 @@
     transform: translateY(-50%);
     margin: 0;
   }
+  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
+     Price row moved UP off the card's true center (was top:50% +
+     translateY(-50%), i.e. genuinely centered) to a fixed top instead,
+     closing the Name-to-Price gap to 100px too -- matching the
+     Price-to-Position gap already closed to 100px. transform:none
+     clears the old translateY(-50%) so it doesn't ALSO shift this.
+     Measured live: top was 225px while centered; needed -16px to bring
+     the gap from 116px to 100px. Position row's own top (below) is
+     moved the SAME -16px in lockstep, per explicit "position moves
+     with it" instruction -- both shift together so their OWN 100px gap
+     to each other stays exactly what it was, while genuinely growing
+     the leftover space below Position at the card's true bottom (the
+     direct, accepted consequence of both moving up together). MSFT
+     explicitly untouched, stays genuinely centered. */
+  .holdings .holding-card:nth-child(1) .holding-price-row,
+  .holdings .holding-card:nth-child(3) .holding-price-row {
+    top: 209px;
+    transform: none;
+  }
   /* Position's own row wrapper (mirrors priceRow), 2026-09-01 -- a
      bare, unstyled div by default so non-demo cards (NVDA) render
      exactly as before wrapping was introduced (just one extra neutral
@@ -242,7 +261,11 @@
      100px. */
   .holdings .holding-card:nth-child(1) .holding-position-row,
   .holdings .holding-card:nth-child(3) .holding-position-row {
-    top: 373px;
+    /* Moved 373px -> 357px, 2026-09-02, in lockstep with Price row's
+       own -16px shift above -- keeps their mutual 100px gap exactly
+       what it was, while both move up together off the card's true
+       center per explicit request. */
+    top: 357px;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
      follow-up request, 2026-09-01 (position was briefly left at 25px
