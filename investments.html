@@ -235,6 +235,21 @@
   .holdings .holding-card:nth-child(-n+3) .holding-position {
     font-size: 30px;
   }
+  /* Price/Position value size reduced 30px -> 25px on AAPL and NVDA
+     ONLY (cards 1 and 3), 2026-09-02, per explicit request -- MSFT
+     (card 2) deliberately stays at 30px. Ticker itself is untouched
+     everywhere (stays 30px on all three cards). Same specificity as
+     the rule above (both are .holdings .holding-card:nth-child(X)
+     .holding-X, 4 class-level selectors each), so this wins purely by
+     coming later in the cascade -- explicit nth-child(1)/nth-child(3)
+     rather than an :odd-style shortcut, so this stays correct and
+     doesn't silently start matching a future 5th/7th card too. */
+  .holdings .holding-card:nth-child(1) .holding-price,
+  .holdings .holding-card:nth-child(1) .holding-position,
+  .holdings .holding-card:nth-child(3) .holding-price,
+  .holdings .holding-card:nth-child(3) .holding-position {
+    font-size: 25px;
+  }
   .holdings .holding-card:nth-child(-n+3) .holding-name,
   .holdings .holding-card:nth-child(-n+3) .holding-price-label,
   .holdings .holding-card:nth-child(-n+3) .holding-position-label {
