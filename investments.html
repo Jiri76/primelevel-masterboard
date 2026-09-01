@@ -87,6 +87,10 @@
      pre-adjusted. Not yet a real decision either way. */
   .holdings .holding-card:first-child {
     height: 500px;
+    /* Positioning context for the price-row's own absolute centering
+       below -- needed so top:50% resolves against THIS card's box,
+       not some further-out ancestor. */
+    position: relative;
     /* padding-top/left only (right/bottom untouched, still 18px like
        every other card) -- top serves BOTH the front's card-top-to-title
        distance AND the edit panel's own card-top-to-"Ticker" distance
@@ -184,8 +188,32 @@
   .holdings .holding-card:first-child .holding-name {
     margin-bottom: 50px;
   }
+  /* Price centered independently at the card's true vertical middle,
+     2026-09-01, per explicit request -- Position stays exactly where
+     it already was, completely decoupled from wherever Price sits now
+     (the user explicitly said Position "doesn't move, it stays where
+     it is" -- an intentional exploratory look, not necessarily final).
+     position:absolute takes Price out of the flex flow entirely, so
+     top:50% + translateY(-50%) can center it precisely regardless of
+     what its siblings are doing -- the standard way to center an
+     element exactly. left/right match the card's own 18px padding so
+     the centered text still lines up with everything else, not the
+     full un-padded card width. */
   .holdings .holding-card:first-child .holding-price-row {
-    margin-bottom: 50px;
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    right: 18px;
+    transform: translateY(-50%);
+    margin: 0;
+  }
+  /* Position's own bottom-anchor, now independent of Price: previously
+     it rode along on price-row's margin-top:auto (since they moved as
+     one glued unit); now that price-row is taken out of the flow
+     entirely, Position needs its OWN auto margin to keep landing in
+     the exact same spot it already occupied. */
+  .holdings .holding-card:first-child .holding-position {
+    margin-top: auto;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
      follow-up request, 2026-09-01 (position was briefly left at 25px
@@ -211,14 +239,6 @@
   .holdings .holding-card:first-child .holding-position {
     text-align: center;
   }
-  /* Pushes price+position DOWN as one unit (their existing 50px gap
-     between them is untouched -- they move together, not apart), per
-     explicit request. Now inherited from the base .holding-price-row
-     rule above (margin-top:auto moved there 2026-09-01 when the
-     placeholder note -- the thing that used to also need this on every
-     OTHER card -- was deleted entirely); no first-child-specific
-     override needed here any more. */
-
   /* Edit panel -- opened by clicking the card, replaces its normal
      display content in place (same interaction model as Renewals' own
      .edit-panel). Renewals' own layout was horizontal (fields, then
