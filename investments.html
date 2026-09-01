@@ -80,13 +80,15 @@
     display: flex;
     flex-direction: column;
   }
-  /* TEMPORARY, per explicit request: just the FIRST card at 500px (was
-     600px like the other two) to compare side by side -- edit mode's
-     own spacing (the 100px top/bottom anchors) deliberately left
-     untouched to see what actually happens at this shorter height, not
-     pre-adjusted. Not yet a real decision either way. */
+  /* Started as just the first card at 500px (was 600px) to compare
+     side by side; extended to all three, then grown to 507px on
+     2026-09-02 once all three converged on identical demo styling --
+     507px is what's needed for Position's own bottom to sit exactly
+     100px from the card's true bottom, matching the two gaps above it
+     (see .holding-price-row / .holding-position-row below). No longer
+     exploratory -- all three cards are now the single, locked design. */
   .holdings .holding-card:nth-child(-n+3) {
-    height: 500px;
+    height: 507px;
     /* Positioning context for the price-row's own absolute centering
        below -- needed so top:50% resolves against THIS card's box,
        not some further-out ancestor. */
@@ -108,22 +110,6 @@
        already uses is the simplest symmetric fix; card width is
        unaffected either way since box-sizing:border-box already
        guarantees padding never changes the fixed 300px outer width. */
-  }
-  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
-     card grown 500px -> 507px so the gap from Position's own bottom to
-     the card's true bottom can also become 100px (matching the two
-     gaps above it), rather than shrinking anything else to fit. The
-     edit panel's own 51px/51px anchors need NO corresponding change --
-     they're governed by `height:100%` + `padding-bottom` + Save's
-     margin-top:auto, a design that's deliberately independent of the
-     card's total height (see the dedicated lesson in
-     webapp-frontend-methodology): the extra 7px just becomes more
-     auto-absorbed leftover space in the panel's own middle, invisible
-     to both fixed anchors. Confirmed live after deploying, not assumed.
-     MSFT stays at the base 500px, untouched. */
-  .holdings .holding-card:nth-child(1),
-  .holdings .holding-card:nth-child(3) {
-    height: 507px;
   }
   .holdings .holding-card:nth-child(-n+3) .holding-edit-panel {
     padding-top: 0;
@@ -204,49 +190,23 @@
   .holdings .holding-card:nth-child(-n+3) .holding-name {
     margin-bottom: 50px;
   }
-  /* Price centered independently at the card's true vertical middle,
-     2026-09-01, per explicit request -- Position stays exactly where
-     it already was, completely decoupled from wherever Price sits now
-     (the user explicitly said Position "doesn't move, it stays where
-     it is" -- an intentional exploratory look, not necessarily final).
-     position:absolute takes Price out of the flex flow entirely, so
-     top:50% + translateY(-50%) can center it precisely regardless of
-     what its siblings are doing -- the standard way to center an
-     element exactly. left/right match the card's own 18px padding so
-     the centered text still lines up with everything else, not the
-     full un-padded card width. */
+  /* Price row's position, 2026-09-02 -- now identical on all three
+     cards after several rounds of iteration: started genuinely centered
+     at the card's true middle (top:50% + translateY(-50%)), then
+     AAPL/NVDA-only got a fixed top instead to close the Name-to-Price
+     gap to exactly 100px (measured live: was 225px centered, 208px hits
+     the target). Extended to MSFT too, 2026-09-02, once all three
+     converged on one identical design -- MSFT no longer stays centered.
+     position:absolute takes Price fully out of the flex flow, so its
+     position is independent of Name/Position's own heights. left/right
+     match the card's own 18px padding so the centered text still lines
+     up with everything else. */
   .holdings .holding-card:nth-child(-n+3) .holding-price-row {
     position: absolute;
-    top: 50%;
+    top: 208px;
     left: 18px;
     right: 18px;
-    transform: translateY(-50%);
     margin: 0;
-  }
-  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
-     Price row moved UP off the card's true center (was top:50% +
-     translateY(-50%), i.e. genuinely centered) to a fixed top instead,
-     closing the Name-to-Price gap to 100px too -- matching the
-     Price-to-Position gap already closed to 100px. transform:none
-     clears the old translateY(-50%) so it doesn't ALSO shift this.
-     Measured live: top was 225px while centered; needed -16px to bring
-     the gap from 116px to 100px. Position row's own top (below) is
-     moved the SAME -16px in lockstep, per explicit "position moves
-     with it" instruction -- both shift together so their OWN 100px gap
-     to each other stays exactly what it was, while genuinely growing
-     the leftover space below Position at the card's true bottom (the
-     direct, accepted consequence of both moving up together). MSFT
-     explicitly untouched, stays genuinely centered. */
-  .holdings .holding-card:nth-child(1) .holding-price-row,
-  .holdings .holding-card:nth-child(3) .holding-price-row {
-    /* Fine-tuned 209px -> 208px after live measurement showed 101px/
-       99px, 1px off target on each side -- moving Price row up by 1
-       more px reduces the Name gap by 1 AND grows the Position gap by
-       1 at the same time (both math off the same shared edge,
-       priceLabel's own bottom), landing both at exactly 100px with
-       this one adjustment. */
-    top: 208px;
-    transform: none;
   }
   /* Position's own row wrapper (mirrors priceRow), 2026-09-01 -- a
      bare, unstyled div by default so non-demo cards (NVDA) render
@@ -258,60 +218,29 @@
      positionRow for the full story (flexbox silently shrank Name to
      2px to make room, because its overflow:hidden makes its flex
      "automatic minimum size" 0 per spec). */
+  /* Position row's top, 2026-09-02 -- now identical on all three cards.
+     Was fine-tuned to 389px when Price was still centered and every
+     card shared the same 30px Price/Position font; once Price moved to
+     a fixed top (208px, above) and Price/Position dropped to 25px, this
+     needed its own re-measurement to keep the mutual 100px gap to Price
+     -- landed at 357px. Extended from AAPL/NVDA-only to all three,
+     2026-09-02, once MSFT converged on the same design. */
   .holdings .holding-card:nth-child(-n+3) .holding-position-row {
     position: absolute;
     left: 18px;
     right: 18px;
-    /* Fine-tuned 391px -> 389px after live measurement showed the gap
-       landing at 115px, 2px over the 113px target. This value now
-       governs MSFT only in practice (see the nth-child(1)/(3) override
-       below) -- MSFT's own Price/Position stayed at 30px while AAPL/
-       NVDA's dropped to 25px, so this same 389px still produces MSFT's
-       original ~113px gap there, untouched, per explicit "leave
-       Microsoft alone" request. */
-    top: 389px;
-  }
-  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
-     gap from Price's own bottom to Position's top closed further, to
-     exactly 100px -- MSFT explicitly left alone. Same specificity as
-     the rule above (wins by coming later in the cascade). The smaller
-     25px Price/Position font on these two cards (vs MSFT's 30px)
-     already meant priceRow's own height -- and therefore where its
-     bottom edge lands -- differs from MSFT's, so this needed its own
-     independently measured value, not just a proportional guess:
-     measured live at 116px with top:389px, reduced by 16px to hit
-     100px. */
-  .holdings .holding-card:nth-child(1) .holding-position-row,
-  .holdings .holding-card:nth-child(3) .holding-position-row {
-    /* Moved 373px -> 357px, 2026-09-02, in lockstep with Price row's
-       own -16px shift above -- keeps their mutual 100px gap exactly
-       what it was, while both move up together off the card's true
-       center per explicit request. */
     top: 357px;
   }
-  /* Ticker/price/position all bumped 25px -> 30px per explicit
-     follow-up request, 2026-09-01 (position was briefly left at 25px
-     as an intermediate step, then corrected to match the other two).
-     Name/price-label/position-label bumped from their base sizes
-     (13px/11px/11px) to a shared 15px, same request. */
-  .holdings .holding-card:nth-child(-n+3) .holding-ticker,
-  .holdings .holding-card:nth-child(-n+3) .holding-price,
-  .holdings .holding-card:nth-child(-n+3) .holding-position {
+  /* Ticker stays 30px on all three cards. */
+  .holdings .holding-card:nth-child(-n+3) .holding-ticker {
     font-size: 30px;
   }
-  /* Price/Position value size reduced 30px -> 25px on AAPL and NVDA
-     ONLY (cards 1 and 3), 2026-09-02, per explicit request -- MSFT
-     (card 2) deliberately stays at 30px. Ticker itself is untouched
-     everywhere (stays 30px on all three cards). Same specificity as
-     the rule above (both are .holdings .holding-card:nth-child(X)
-     .holding-X, 4 class-level selectors each), so this wins purely by
-     coming later in the cascade -- explicit nth-child(1)/nth-child(3)
-     rather than an :odd-style shortcut, so this stays correct and
-     doesn't silently start matching a future 5th/7th card too. */
-  .holdings .holding-card:nth-child(1) .holding-price,
-  .holdings .holding-card:nth-child(1) .holding-position,
-  .holdings .holding-card:nth-child(3) .holding-price,
-  .holdings .holding-card:nth-child(3) .holding-position {
+  /* Price/Position value size, 2026-09-02 -- now 25px on all three
+     cards (was 30px everywhere, then 25px on AAPL/NVDA only with MSFT
+     briefly left at 30px for comparison; extended to MSFT once all
+     three converged on one identical design). */
+  .holdings .holding-card:nth-child(-n+3) .holding-price,
+  .holdings .holding-card:nth-child(-n+3) .holding-position {
     font-size: 25px;
   }
   .holdings .holding-card:nth-child(-n+3) .holding-name,
@@ -437,30 +366,22 @@
     align-self: flex-start;
     margin-bottom: -4px;
   }
-  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
-     Ticker/Company name/Units labels bumped 11px -> 15px, matching the
-     input values' own 15px size. Left-alignment with the navy input
-     boxes below needed no change -- confirmed live beforehand that
+  /* Ticker/Company name/Units labels bumped 11px -> 15px, matching the
+     input values' own 15px size, 2026-09-02 -- now on all three cards
+     (started AAPL/NVDA-only, extended to MSFT once all three converged
+     on one identical design). Left-alignment with the navy input boxes
+     below needed no change -- confirmed live beforehand that
      align-self:flex-start already puts both at the exact same left
-     edge (182px), font-size doesn't affect that. MSFT explicitly
-     untouched. */
-  .holdings .holding-card:nth-child(1) .holding-edit-label,
-  .holdings .holding-card:nth-child(3) .holding-edit-label {
+     edge, font-size doesn't affect that. */
+  .holdings .holding-card:nth-child(-n+3) .holding-edit-label {
     font-size: 15px;
   }
-  /* 2nd card (MSFT) ONLY, per explicit follow-up request 2026-09-01 --
-     deliberately NOT applied to the 1st card (AAPL) any more, so the
-     two can sit side by side for comparison: AAPL's navy TICKER INPUT
-     stays at its original 69px from the card top; MSFT's is pulled up
-     to 51px by offsetting just the "Ticker" label (the panel's own
-     first child -- Company/Units labels are untouched) up by 18px,
-     its own measured height+gap contribution. Doesn't disturb either
-     card's Delete anchor -- that's governed independently by the
-     panel's padding-bottom + Save's margin-top:auto, unaffected by how
-     much space the fixed content above uses. */
-  .holdings .holding-card:nth-child(2) .holding-edit-panel > .holding-edit-label:first-child {
-    margin-top: -18px;
-  }
+  /* NOTE: MSFT briefly had its own -18px offset here (pulling just the
+     "Ticker" label up so its navy input box sat at 51px from the card
+     top, deliberately different from AAPL/NVDA's 69px, for a live
+     side-by-side comparison) -- removed 2026-09-02 once the user chose
+     to make all three cards identical on that point too, landing on
+     AAPL/NVDA's original (unoffset) 69px for all three. */
   /* Was a static "Live ticker<->name lookup..." info note shown at all
      times; deleted entirely per explicit request, 2026-09-01. The div
      itself is kept (renamed to reflect its real remaining purpose) --
