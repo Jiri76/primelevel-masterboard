@@ -383,17 +383,17 @@
   .holdings .holding-card:nth-child(-n+3) .holding-edit-label {
     font-size: 15px;
   }
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request -- MSFT/NVDA
-     untouched. Every internal gap in the edit panel bumped up from the
-     panel's shared base (label-to-own-input 4px -> 5px, input-to-next-
-     label 8px -> 10px, Save-to-Delete 8px -> 10px), while the two OUTER
-     anchors (card-top-to-Ticker, Delete-bottom-to-card-bottom) stay
-     locked at exactly 50px -- everything in between just absorbs a
-     little less of the panel's own leftover auto-space (currently
-     ~149px slack before Save) to make room, verified live afterward.
-     The panel's own `gap: 8px` is the shared baseline every adjacent
-     pair already gets; these are ADDITIVE margins on top of that gap,
-     not replacements for it:
+  /* Every internal gap in the edit panel bumped up from the panel's
+     shared base (label-to-own-input 4px -> 5px, input-to-next-label 8px
+     -> 10px, Save-to-Delete 8px -> 10px), while the two OUTER anchors
+     (card-top-to-Ticker, Delete-bottom-to-card-bottom) stay locked at
+     exactly 50px -- everything in between just absorbs a little less of
+     the panel's own leftover auto-space (currently ~149px slack before
+     Save) to make room, verified live afterward. Started AAPL-only,
+     extended to MSFT/NVDA on the same day once the user saw it and
+     asked for all three to match. The panel's own `gap: 8px` is the
+     shared baseline every adjacent pair already gets; these are
+     ADDITIVE margins on top of that gap, not replacements for it:
      - label's own -4px margin-bottom (8-4=4 baseline) becomes -3px
        (8-3=5) -- see .holding-edit-label's own -4px above.
      - a NEW +2px margin-bottom on every input (8+2=10) closes the
@@ -403,13 +403,13 @@
        via :nth-of-type since Save/Delete share one class) closes the
        Save-to-Delete gap (8+2=10) without touching Save's own existing
        margin-top:auto (a different property, no conflict). */
-  .holdings .holding-card:nth-child(1) .holding-edit-label {
+  .holdings .holding-card:nth-child(-n+3) .holding-edit-label {
     margin-bottom: -3px;
   }
-  .holdings .holding-card:nth-child(1) .holding-edit-panel input {
+  .holdings .holding-card:nth-child(-n+3) .holding-edit-panel input {
     margin-bottom: 2px;
   }
-  .holdings .holding-card:nth-child(1) .holding-edit-panel button:nth-of-type(2) {
+  .holdings .holding-card:nth-child(-n+3) .holding-edit-panel button:nth-of-type(2) {
     margin-top: 2px;
   }
   /* NOTE: MSFT briefly had its own -18px offset here (pulling just the
