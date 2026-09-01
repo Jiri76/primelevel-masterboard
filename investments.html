@@ -107,6 +107,13 @@
   }
   .holdings .holding-card:first-child .holding-edit-panel {
     padding-top: 0;
+    /* Bottom padding trimmed 42px -> 32px, 2026-09-01, to make Delete's
+       own distance from the card's true bottom match the top's
+       measured 51px (card-top to "Ticker" label) exactly -- measured
+       live at 61px before this fine-tune, needed -10px. Fine-tuned by
+       measurement, not guessed -- same approach as every other
+       symmetric-padding request on this card. */
+    padding-bottom: 32px;
   }
   .holding-card:hover {
     border-color: var(--white);
