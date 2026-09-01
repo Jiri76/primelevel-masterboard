@@ -416,14 +416,22 @@
     opacity: 0.45;
     transition: opacity 0.15s ease, transform 0.1s ease;
   }
-  .holding-edit-panel button:hover {
+  /* :not(:disabled) added 2026-09-02, alongside the new Save/Delete
+     loading state -- without it, a disabled button (mid-request) could
+     still show its hover/active brightening if the cursor happened to
+     sit over it, misleadingly implying it's still interactive when a
+     disabled button in fact receives no pointer events at all. */
+  .holding-edit-panel button:hover:not(:disabled) {
     opacity: 1;
     background: var(--white);
     color: var(--navy);
     transform: scale(1.02);
   }
-  .holding-edit-panel button:active {
+  .holding-edit-panel button:active:not(:disabled) {
     transform: scale(0.96);
+  }
+  .holding-edit-panel button:disabled {
+    cursor: not-allowed;
   }
   .holding-edit-label {
     color: var(--placeholder);
@@ -1024,7 +1032,26 @@
       // padding-bottom, so Delete's distance from the card's bottom
       // edge stays fixed regardless of how tall the fields above are.
       saveBtn.style.marginTop = 'auto';
+      // Real bug found and fixed 2026-09-02: no loading-state feedback
+      // existed at all here -- the button just sat there, completely
+      // unchanged, for the whole Supabase round trip. On a normal-speed
+      // network that's invisible; the moment the request takes even a
+      // few hundred ms, it looks exactly like "did my click even
+      // register?" and the natural reaction is to click again -- this
+      // matches the standing "instant feedback for an async button
+      // action" lesson already applied elsewhere in this project
+      // (Renewals' own "Sending..." state) but never wired up here.
+      // Both buttons disabled synchronously, before the `await`, so a
+      // second click physically can't do anything (a disabled button
+      // doesn't receive mousedown at all) instead of firing a second,
+      // redundant request. Restored on failure so it's never left
+      // stuck; the success path doesn't need restoring since
+      // loadHoldings() rebuilds the card fresh from scratch anyway.
       saveBtn.addEventListener('mousedown', async () => {
+        saveBtn.disabled = true;
+        deleteBtn.disabled = true;
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
         const updated = {
           ticker: tickerInput.value.trim().toUpperCase(),
           name: nameInput.value.trim(),
@@ -1037,6 +1064,9 @@
         if (error) {
           note.textContent = 'Could not save — please try again.';
           note.classList.add('visible');
+          saveBtn.disabled = false;
+          deleteBtn.disabled = false;
+          saveBtn.textContent = originalText;
           return;
         }
         editingIds.delete(holding.id);
@@ -1053,6 +1083,10 @@
       deleteBtn.type = 'button';
       deleteBtn.textContent = 'Delete';
       deleteBtn.addEventListener('mousedown', async () => {
+        saveBtn.disabled = true;
+        deleteBtn.disabled = true;
+        const originalText = deleteBtn.textContent;
+        deleteBtn.textContent = 'Deleting...';
         const { error } = await supabase
           .from('investment_holdings')
           .delete()
@@ -1060,6 +1094,9 @@
         if (error) {
           note.textContent = 'Could not delete — please try again.';
           note.classList.add('visible');
+          saveBtn.disabled = false;
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = originalText;
           return;
         }
         editingIds.delete(holding.id);
