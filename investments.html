@@ -407,7 +407,10 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     font-size: 15px;
-    border-radius: 6px;
+    /* 6px -> 10px, 2026-09-02, per explicit request -- now matches the
+       input fields' own 10px, so every rounded corner in the edit
+       panel is the same radius. */
+    border-radius: 10px;
     padding: 6px 12px;
     cursor: pointer;
     opacity: 0.45;
