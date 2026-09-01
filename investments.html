@@ -88,7 +88,14 @@
      (see .holding-price-row / .holding-position-row below). No longer
      exploratory -- all three cards are now the single, locked design. */
   .holdings .holding-card:nth-child(-n+3) {
-    height: 507px;
+    /* 507px -> 510px, 2026-09-02, per explicit request: the leftover
+       gap from Position's own bottom to the card's true bottom edge
+       (was 97px, pure leftover space) rounded up to a clean 100px,
+       matching the two 100px "main lines" gaps above it. Position's
+       own top is a fixed absolute value (unaffected by card height),
+       so growing the card by exactly the shortfall (+3px) lands this
+       gap on 100px with no other change needed. */
+    height: 510px;
     /* Positioning context for the price-row's own absolute centering
        below -- needed so top:50% resolves against THIS card's box,
        not some further-out ancestor. */
