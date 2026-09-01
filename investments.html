@@ -133,11 +133,19 @@
   /* Two stacked numbers now, not one -- per explicit request: line 3 is
      the instrument's own live price per unit, line 4 is the position's
      total value (price x units). Both still show "--" until a real
-     price source is wired up (see the placeholder note below) -- a
-     position value computed from a fake price would be actively
-     misleading, not just incomplete. */
+     price source is wired up -- a position value computed from a fake
+     price would be actively misleading, not just incomplete. (The
+     on-card "placeholder — live price not wired yet" note that used to
+     say this explicitly was deleted per explicit request, 2026-09-01.) */
   .holding-price-row {
     margin-bottom: 10px;
+    /* Was only on the first card's own override below -- moved here,
+       2026-09-01, when the placeholder note (which used to be the
+       margin-top:auto anchor for every OTHER card) was deleted
+       entirely. Without this, MSFT/NVDA's price+position block would
+       just sit under the name instead of staying pinned to the card's
+       bottom. */
+    margin-top: auto;
   }
   .holding-price-label,
   .holding-position-label {
@@ -172,10 +180,24 @@
   .holdings .holding-card:first-child .holding-price-row {
     margin-bottom: 50px;
   }
+  /* Ticker/price bumped 25px -> 30px per explicit follow-up request,
+     2026-09-01; position deliberately stays at 25px (not bumped along
+     with the other two) -- kept as its own explicit rule rather than
+     folded into the base 22px so it doesn't silently regress if the
+     30px rule above ever changes again. Name/price-label/position-
+     label bumped from their base sizes (13px/11px/11px) to a shared
+     15px, same request. */
   .holdings .holding-card:first-child .holding-ticker,
-  .holdings .holding-card:first-child .holding-price,
+  .holdings .holding-card:first-child .holding-price {
+    font-size: 30px;
+  }
   .holdings .holding-card:first-child .holding-position {
     font-size: 25px;
+  }
+  .holdings .holding-card:first-child .holding-name,
+  .holdings .holding-card:first-child .holding-price-label,
+  .holdings .holding-card:first-child .holding-position-label {
+    font-size: 15px;
   }
   .holdings .holding-card:first-child .holding-ticker,
   .holdings .holding-card:first-child .holding-name,
@@ -188,30 +210,11 @@
   }
   /* Pushes price+position DOWN as one unit (their existing 50px gap
      between them is untouched -- they move together, not apart), per
-     explicit request. margin-top:auto on price-row absorbs all leftover
-     vertical space at exactly this one point -- same technique already
-     proven on the edit panel's own Save button earlier today. */
-  .holdings .holding-card:first-child .holding-price-row {
-    margin-top: auto;
-  }
-  .holding-placeholder-note {
-    color: var(--placeholder);
-    font-size: 11px;
-    margin-top: auto;
-  }
-  /* First card only, real bug found and fixed: with price-row's own
-     margin-top:auto added above, TWO auto margins existed in the same
-     flex column (this note's pre-existing one, and price-row's new
-     one) -- flexbox splits leftover space EQUALLY between multiple auto
-     margins, not winner-takes-all, so Position ended up only partway
-     down (measured live: 137px from the card's true bottom, not
-     anywhere near 50px). Removing this note's own auto push lets ALL
-     the leftover space concentrate at price-row's single auto margin
-     instead, so Position actually reaches close to the bottom, with
-     this note simply following right after it at a small natural gap. */
-  .holdings .holding-card:first-child .holding-placeholder-note {
-    margin-top: 3px;
-  }
+     explicit request. Now inherited from the base .holding-price-row
+     rule above (margin-top:auto moved there 2026-09-01 when the
+     placeholder note -- the thing that used to also need this on every
+     OTHER card -- was deleted entirely); no first-child-specific
+     override needed here any more. */
 
   /* Edit panel -- opened by clicking the card, replaces its normal
      display content in place (same interaction model as Renewals' own
@@ -324,7 +327,7 @@
   }
   .holding-edit-note {
     color: var(--placeholder);
-    font-size: 11px;
+    font-size: 15px;
     text-align: center;
     margin-top: 4px;
   }
@@ -768,13 +771,9 @@
       position.className = 'holding-position';
       position.textContent = isFirst ? formatMoney(5000) : formatMoney(null);
 
-      const note = document.createElement('div');
-      note.className = 'holding-placeholder-note';
-      note.textContent = 'placeholder — live price not wired yet';
-
       // Same value-before-label swap for Position, first card only.
       const positionGroup = isFirst ? [position, positionLabel] : [positionLabel, position];
-      card.append(ticker, name, priceRow, ...positionGroup, note);
+      card.append(ticker, name, priceRow, ...positionGroup);
     }
 
     function buildEditView(card, holding) {
