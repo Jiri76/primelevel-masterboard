@@ -207,13 +207,20 @@
     transform: translateY(-50%);
     margin: 0;
   }
-  /* Position's own bottom-anchor, now independent of Price: previously
-     it rode along on price-row's margin-top:auto (since they moved as
-     one glued unit); now that price-row is taken out of the flow
-     entirely, Position needs its OWN auto margin to keep landing in
-     the exact same spot it already occupied. */
+  /* Position's own top, 2026-09-01 -- changed from margin-top:auto to
+     a fixed, measured value per explicit request: the gap from Price's
+     own bottom ("Price per unit" label) to Position's top ($5000) must
+     equal the gap from Name's bottom ("Apple Inc.") to Price's own top
+     ($250) -- measured live at 113px. Since Price is absolutely
+     positioned (out of the flex flow entirely), margin-top:auto on
+     Position could only ever reference the flow's own leftover space,
+     never Price's actual rendered position -- it was pure coincidence
+     that it produced a different gap (147px) before. Measured directly
+     (name bottom 109px, price-label bottom 278px from card top) and
+     solved for the fixed margin that lands Position's top at exactly
+     278+113=391px from card top: 391 - nameBottom(109) = 282px. */
   .holdings .holding-card:nth-child(-n+2) .holding-position {
-    margin-top: auto;
+    margin-top: 282px;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
      follow-up request, 2026-09-01 (position was briefly left at 25px
