@@ -85,7 +85,7 @@
      own spacing (the 100px top/bottom anchors) deliberately left
      untouched to see what actually happens at this shorter height, not
      pre-adjusted. Not yet a real decision either way. */
-  .holdings .holding-card:first-child {
+  .holdings .holding-card:nth-child(-n+2) {
     height: 500px;
     /* Positioning context for the price-row's own absolute centering
        below -- needed so top:50% resolves against THIS card's box,
@@ -109,7 +109,7 @@
        unaffected either way since box-sizing:border-box already
        guarantees padding never changes the fixed 300px outer width. */
   }
-  .holdings .holding-card:first-child .holding-edit-panel {
+  .holdings .holding-card:nth-child(-n+2) .holding-edit-panel {
     padding-top: 0;
     /* Bottom padding trimmed 42px -> 32px, 2026-09-01, to make Delete's
        own distance from the card's true bottom match the top's
@@ -185,7 +185,7 @@
      see buildDisplayView) so the small label text now sits BELOW its
      value instead of above it -- text-align:center here is what keeps
      both correctly centered under the now-larger value above them. */
-  .holdings .holding-card:first-child .holding-name {
+  .holdings .holding-card:nth-child(-n+2) .holding-name {
     margin-bottom: 50px;
   }
   /* Price centered independently at the card's true vertical middle,
@@ -199,7 +199,7 @@
      element exactly. left/right match the card's own 18px padding so
      the centered text still lines up with everything else, not the
      full un-padded card width. */
-  .holdings .holding-card:first-child .holding-price-row {
+  .holdings .holding-card:nth-child(-n+2) .holding-price-row {
     position: absolute;
     top: 50%;
     left: 18px;
@@ -212,7 +212,7 @@
      one glued unit); now that price-row is taken out of the flow
      entirely, Position needs its OWN auto margin to keep landing in
      the exact same spot it already occupied. */
-  .holdings .holding-card:first-child .holding-position {
+  .holdings .holding-card:nth-child(-n+2) .holding-position {
     margin-top: auto;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
@@ -220,23 +220,23 @@
      as an intermediate step, then corrected to match the other two).
      Name/price-label/position-label bumped from their base sizes
      (13px/11px/11px) to a shared 15px, same request. */
-  .holdings .holding-card:first-child .holding-ticker,
-  .holdings .holding-card:first-child .holding-price,
-  .holdings .holding-card:first-child .holding-position {
+  .holdings .holding-card:nth-child(-n+2) .holding-ticker,
+  .holdings .holding-card:nth-child(-n+2) .holding-price,
+  .holdings .holding-card:nth-child(-n+2) .holding-position {
     font-size: 30px;
   }
-  .holdings .holding-card:first-child .holding-name,
-  .holdings .holding-card:first-child .holding-price-label,
-  .holdings .holding-card:first-child .holding-position-label {
+  .holdings .holding-card:nth-child(-n+2) .holding-name,
+  .holdings .holding-card:nth-child(-n+2) .holding-price-label,
+  .holdings .holding-card:nth-child(-n+2) .holding-position-label {
     font-size: 15px;
   }
-  .holdings .holding-card:first-child .holding-ticker,
-  .holdings .holding-card:first-child .holding-name,
-  .holdings .holding-card:first-child .holding-price-row,
-  .holdings .holding-card:first-child .holding-price-label,
-  .holdings .holding-card:first-child .holding-price,
-  .holdings .holding-card:first-child .holding-position-label,
-  .holdings .holding-card:first-child .holding-position {
+  .holdings .holding-card:nth-child(-n+2) .holding-ticker,
+  .holdings .holding-card:nth-child(-n+2) .holding-name,
+  .holdings .holding-card:nth-child(-n+2) .holding-price-row,
+  .holdings .holding-card:nth-child(-n+2) .holding-price-label,
+  .holdings .holding-card:nth-child(-n+2) .holding-price,
+  .holdings .holding-card:nth-child(-n+2) .holding-position-label,
+  .holdings .holding-card:nth-child(-n+2) .holding-position {
     text-align: center;
   }
   /* Edit panel -- opened by clicking the card, replaces its normal
@@ -347,6 +347,18 @@
     font-size: 11px;
     align-self: flex-start;
     margin-bottom: -4px;
+  }
+  /* Demo cards (1st/2nd) only, per explicit request 2026-09-01: pull
+     just the "Ticker" label (the panel's own first child -- Company/
+     Units labels are untouched) up by 18px, exactly its own measured
+     height+gap contribution, so the navy TICKER INPUT itself starts at
+     51px from the card top, matching the front view's ticker, the
+     "Ticker" label's own old position, and Delete's bottom gap. Doesn't
+     disturb Delete's own 51px anchor -- that's governed independently
+     by the panel's padding-bottom + Save's margin-top:auto, unaffected
+     by how much space the fixed content above uses. */
+  .holdings .holding-card:nth-child(-n+2) .holding-edit-panel > .holding-edit-label:first-child {
+    margin-top: -18px;
   }
   /* Was a static "Live ticker<->name lookup..." info note shown at all
      times; deleted entirely per explicit request, 2026-09-01. The div
@@ -760,8 +772,15 @@
         holdingsEl.innerHTML = '<div class="empty-state">Nothing tracked yet.</div>';
         return;
       }
+      // demoIndex: 0 for the 1st card, 1 for the 2nd, null for every
+      // other one -- both the 1st and 2nd card now get the full "demo"
+      // treatment (bumped font sizes, centered text, fake price/
+      // position numbers), 2026-09-01, per explicit request ("make the
+      // second card look exactly like the first"). CSS mirrors this:
+      // every selector that used to say :first-child now says
+      // :nth-child(-n+2) instead.
       holdings.forEach((h, i) => {
-        holdingsEl.append(buildHoldingCard(h, i === 0));
+        holdingsEl.append(buildHoldingCard(h, i < 2 ? i : null));
       });
     }
 
@@ -774,7 +793,18 @@
       return n == null ? '—' : `$${n.toFixed(2)}`;
     }
 
-    function buildDisplayView(card, holding, isFirst) {
+    // Fake demo numbers for the 1st and 2nd cards only -- not real
+    // data, not saved anywhere, purely so the bumped/centered styling
+    // has real-looking numbers to show instead of "--". Deliberately
+    // different between the two cards (not both $250/$5000) so they
+    // read as two distinct demo entries, not a copy-paste accident.
+    const DEMO_PRICE_POSITION = [
+      { price: 250, position: 5000 },
+      { price: 420, position: 8400 },
+    ];
+
+    function buildDisplayView(card, holding, demoIndex) {
+      const isDemo = demoIndex != null;
       const ticker = document.createElement('div');
       ticker.className = 'holding-ticker';
       ticker.textContent = holding.ticker;
@@ -790,14 +820,11 @@
       priceLabel.textContent = 'Price per unit';
       const price = document.createElement('div');
       price.className = 'holding-price';
-      // Fake demo numbers, per explicit request, first card ONLY -- not
-      // real data, not saved anywhere, purely to see bold/25px numbers
-      // rendered in these slots instead of the usual "--" placeholder.
-      price.textContent = isFirst ? formatMoney(250) : formatMoney(null);
-      // First card only: value comes BEFORE its own label now (was
+      price.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].price) : formatMoney(null);
+      // Demo cards only: value comes BEFORE its own label now (was
       // label-then-value) -- DOM order is what visual stacking order
       // follows here, so this swap is a real reorder, not just CSS.
-      if (isFirst) priceRow.append(price, priceLabel);
+      if (isDemo) priceRow.append(price, priceLabel);
       else priceRow.append(priceLabel, price);
 
       const positionLabel = document.createElement('div');
@@ -805,10 +832,10 @@
       positionLabel.textContent = `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
       const position = document.createElement('div');
       position.className = 'holding-position';
-      position.textContent = isFirst ? formatMoney(5000) : formatMoney(null);
+      position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
 
-      // Same value-before-label swap for Position, first card only.
-      const positionGroup = isFirst ? [position, positionLabel] : [positionLabel, position];
+      // Same value-before-label swap for Position, demo cards only.
+      const positionGroup = isDemo ? [position, positionLabel] : [positionLabel, position];
       card.append(ticker, name, priceRow, ...positionGroup);
     }
 
@@ -912,7 +939,7 @@
       card.append(panel);
     }
 
-    function buildHoldingCard(holding, isFirst) {
+    function buildHoldingCard(holding, demoIndex) {
       const card = document.createElement('div');
       card.className = 'holding-card';
 
@@ -941,7 +968,7 @@
           editingIds.add(holding.id);
           renderHoldings();
         });
-        buildDisplayView(card, holding, isFirst);
+        buildDisplayView(card, holding, demoIndex);
       }
       return card;
     }
