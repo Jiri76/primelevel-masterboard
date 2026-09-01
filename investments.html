@@ -532,11 +532,18 @@
     margin-bottom: 40px;
     padding-top: 2px;
     padding-bottom: 2px;
-    /* 260px -> 560px, 2026-09-02 -- the popover now holds a full
+    /* 260px -> 600px, 2026-09-02 -- the popover now holds a full
        510px-tall card (see .add-popover-inner below) instead of a
-       ~50px horizontal bar; generous headroom above the real content
-       height, same reasoning as the original 260px had for the bar. */
-    max-height: 560px;
+       ~50px horizontal bar. Must fit: padding-top(2) + trigger(56) +
+       popover margin-top(12) + popover's own open max-height(520) +
+       padding-bottom(2) = 592px needed. A too-small cap here silently
+       clips the wrapper's own box (even though overflow:hidden still
+       *paints* the overflowing card, since the browser only clips at
+       the wrapper's true box edge) -- an earlier 560px value was 32px
+       short and ate into the 40px margin-bottom gap below, shrinking
+       the real on-screen gap to the holdings grid to ~20px. Verified
+       live via getBoundingClientRect() after this fix. */
+    max-height: 600px;
     overflow: hidden;
     transition: max-height 0.25s ease, margin-bottom 0.25s ease;
   }
