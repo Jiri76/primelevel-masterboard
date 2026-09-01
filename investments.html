@@ -283,13 +283,21 @@
   .holdings .holding-card:nth-child(1) .holding-name {
     color: var(--gold);
   }
-  /* Price/Position value size, 2026-09-02 -- now 25px on all three
-     cards (was 30px everywhere, then 25px on AAPL/NVDA only with MSFT
-     briefly left at 30px for comparison; extended to MSFT once all
-     three converged on one identical design). */
+  /* Price/Position value size -- 25px on MSFT/NVDA. */
   .holdings .holding-card:nth-child(-n+3) .holding-price,
   .holdings .holding-card:nth-child(-n+3) .holding-position {
     font-size: 25px;
+  }
+  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: Price/
+     Position value size bumped +5px, 25px -> 30px -- MSFT/NVDA
+     untouched, stay at 25px. This makes both rows taller, which shifts
+     absolute downstream measurements (the 100px Price-to-Position gap,
+     the 2px value-to-label gaps) -- not compensated here since this
+     request was specifically about font size alone; re-measured live
+     and reported to the user afterward rather than assumed unchanged. */
+  .holdings .holding-card:nth-child(1) .holding-price,
+  .holdings .holding-card:nth-child(1) .holding-position {
+    font-size: 30px;
   }
   .holdings .holding-card:nth-child(-n+3) .holding-name,
   .holdings .holding-card:nth-child(-n+3) .holding-price-label,
