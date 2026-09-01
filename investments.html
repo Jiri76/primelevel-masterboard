@@ -632,8 +632,24 @@
     // mousedown, not click -- same reasoning as every other "click
     // outside to dismiss" listener on this project: immune to any
     // slight drift between mouse-down and mouse-up.
+    //
+    // Real bug found and fixed 2026-09-01, present in Renewals' own
+    // original mechanism too (checked directly -- its .add-wrapper CSS
+    // is identical, so this was copied faithfully, not introduced
+    // here): .add-wrapper is a bare block element with no width set,
+    // so it stretches to the FULL container width -- confirmed live,
+    // 1000px wide -- even though the visible circle is only 56px of
+    // that. Checking `addWrapper.contains(e.target)` therefore treats
+    // any click landing anywhere in that ~470px-wide invisible band on
+    // EITHER side of the circle as "inside", so it only resets the
+    // idle timer instead of dismissing -- exactly matching the report
+    // "close to the button it doesn't disappear, far away it does".
+    // Scope the check to what's actually visible instead: the trigger
+    // circle itself, or the popover's own real content when it's open
+    // (its own box is 0-height while closed, so it can never match a
+    // real click then).
     document.addEventListener('mousedown', (e) => {
-      const clickedInsideWrapper = addWrapper.contains(e.target);
+      const clickedInsideWrapper = addTrigger.contains(e.target) || addPopover.contains(e.target);
 
       if (addWrapper.classList.contains('idle-hidden')) {
         if (wrapperIsCollapsing) return;
