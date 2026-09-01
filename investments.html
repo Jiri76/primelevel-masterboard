@@ -236,27 +236,21 @@
     position: absolute;
     left: 18px;
     right: 18px;
-    top: 357px;
-  }
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: 2px gap added
-     between each value and its own label directly below it ($250.00 to
-     "Price per unit", $5000.00 to "Position (0 units)") -- matching the
-     existing 2px gap between the ticker and "Apple Inc.". MSFT/NVDA
-     untouched (still 0px, values sit flush against their own labels).
-     Growing price-row by 2px (margin-bottom on .holding-price) pushes
-     its own bottom edge down 2px, which would have shrunk the Price-
-     to-Position "main lines" gap from 100px to 98px if left alone --
-     compensated by moving position-row's own top down the same 2px
-     (357px -> 359px, AAPL only) so that gap stays exactly 100px, per
-     explicit request ("still make sure you have the one hundred gap
-     between the main lines"). The bottom gap (Position to card bottom)
-     is deliberately left to drift -- explicitly not a concern here. */
-  .holdings .holding-card:nth-child(1) .holding-price,
-  .holdings .holding-card:nth-child(1) .holding-position {
-    margin-bottom: 2px;
-  }
-  .holdings .holding-card:nth-child(1) .holding-position-row {
+    /* 357px -> 359px, 2026-09-02, extended from AAPL-only to all three
+       cards once MSFT/NVDA converged on the same 2px value-to-label
+       gap (below) -- +2px compensates for Price row growing 2px taller,
+       keeping the Price-to-Position "main lines" gap exactly 100px on
+       all three. */
     top: 359px;
+  }
+  /* 2px gap between each value and its own label directly below it
+     ($250.00 to "Price per unit", $5000.00 to "Position (...)") --
+     matching the ticker-to-name 2px gap. Started AAPL-only, extended to
+     all three cards, 2026-09-02, once MSFT/NVDA converged on the same
+     design. */
+  .holdings .holding-card:nth-child(-n+3) .holding-price,
+  .holdings .holding-card:nth-child(-n+3) .holding-position {
+    margin-bottom: 2px;
   }
   /* Ticker, 30px on all three cards. Was briefly bumped to 35px on
      AAPL only (2026-09-02), then explicitly reverted so all three
@@ -264,15 +258,13 @@
   .holdings .holding-card:nth-child(-n+3) .holding-ticker {
     font-size: 30px;
   }
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: Ticker and
-     Company name recolored from white to gold (var(--gold), same
-     #B29B68 as the "Investments" page title) -- MSFT/NVDA untouched.
-     Company name's own existing opacity (0.6, from the base
-     .holding-name rule) is deliberately left alone, not reset to 1 --
-     the request was specifically to keep whatever shade it already
-     is, just swap the underlying color from white to gold. */
-  .holdings .holding-card:nth-child(1) .holding-ticker,
-  .holdings .holding-card:nth-child(1) .holding-name {
+  /* Ticker and Company name colored gold (var(--gold), same #B29B68 as
+     the "Investments" page title) -- started AAPL-only, extended to all
+     three cards, 2026-09-02, once MSFT/NVDA converged on the same
+     design. Company name's own existing opacity (0.6, from the base
+     .holding-name rule) is left alone throughout, not reset to 1. */
+  .holdings .holding-card:nth-child(-n+3) .holding-ticker,
+  .holdings .holding-card:nth-child(-n+3) .holding-name {
     color: var(--gold);
   }
   /* "Apple Inc." font-weight was briefly bumped to bold (700) on AAPL
@@ -280,25 +272,9 @@
      the override is removed entirely rather than set back to 400
      explicitly, so it just falls back to the base .holding-name rule,
      matching MSFT/NVDA exactly again. */
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: a thin 2px
-     divider line sitting in the Name-to-Price gap, vertically centered
-     in that ~101px gap (measured live: name bottom 108px, price top
-     209px, so the true center is 158.5px from the card top). Solid
-     var(--gold) (the same token as the ticker/name color), explicitly
-     NOT at the 0.6 opacity "Apple Inc." uses. Runs the full width,
-     left:18px/right:18px matching the card's own padding -- same
-     left/right span every other centered element (price-row etc.)
-     already uses -- not a short centered accent, per explicit
-     follow-up ("run this line across... left to right"). */
-  .holdings .holding-card:nth-child(1) .holding-divider {
-    position: absolute;
-    left: 18px;
-    right: 18px;
-    top: 158.5px;
-    height: 2px;
-    background: var(--gold);
-    transform: translateY(-50%);
-  }
+  /* A thin 2px gold divider line was briefly added in the Name-to-Price
+     gap on AAPL only, 2026-09-02, then removed entirely per explicit
+     follow-up request -- no divider on any card now. */
   /* Price/Position value size, 25px on all three cards. Was briefly
      bumped to 30px on AAPL only (2026-09-02), then explicitly reverted
      back to match MSFT/NVDA exactly -- the user asked for "30, matching
@@ -946,7 +922,11 @@
       // wording. text-align:center (already applied to this class for
       // all three cards) re-centers the shorter text automatically --
       // no separate centering logic needed, confirmed live afterward.
-      priceLabel.textContent = demoIndex === 0 ? 'Price' : 'Price per unit';
+      // Shortened "Price per unit" -> "Price" -- started AAPL-only,
+      // extended to all three demo cards, 2026-09-02, once MSFT/NVDA
+      // converged on the same design. text-align:center re-centers the
+      // shorter text automatically.
+      priceLabel.textContent = isDemo ? 'Price' : 'Price per unit';
       const price = document.createElement('div');
       price.className = 'holding-price';
       price.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].price) : formatMoney(null);
@@ -958,10 +938,9 @@
 
       const positionLabel = document.createElement('div');
       positionLabel.className = 'holding-position-label';
-      // AAPL (demoIndex 0) ONLY, same request: shortened "Position (N
-      // units)" -> "Position", dropping the unit count entirely for
-      // this card. MSFT/NVDA keep the full wording with the real count.
-      positionLabel.textContent = demoIndex === 0 ? 'Position' : `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
+      // Shortened "Position (N units)" -> "Position", dropping the unit
+      // count entirely -- same extension, all three demo cards now.
+      positionLabel.textContent = isDemo ? 'Position' : `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
       const position = document.createElement('div');
       position.className = 'holding-position';
       position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
@@ -984,15 +963,6 @@
       const positionGroup = isDemo ? [position, positionLabel] : [positionLabel, position];
       positionRow.append(...positionGroup);
       card.append(ticker, name, priceRow, positionRow);
-
-      // AAPL (demoIndex 0) ONLY, 2026-09-02, per explicit request: a
-      // thin gold divider line in the Name-to-Price gap. See the
-      // .holding-divider CSS rule for the actual positioning/sizing.
-      if (demoIndex === 0) {
-        const divider = document.createElement('div');
-        divider.className = 'holding-divider';
-        card.append(divider);
-      }
     }
 
     function buildEditView(card, holding) {
