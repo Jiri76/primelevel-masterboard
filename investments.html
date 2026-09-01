@@ -283,21 +283,20 @@
   .holdings .holding-card:nth-child(1) .holding-name {
     color: var(--gold);
   }
-  /* Price/Position value size -- 25px on MSFT/NVDA. */
+  /* Price/Position value size, 25px on all three cards. Was briefly
+     bumped to 30px on AAPL only (2026-09-02), then explicitly reverted
+     back to match MSFT/NVDA exactly -- the user asked for "30, matching
+     Microsoft and Nvidia," but MSFT/NVDA were actually at 25px, not 30,
+     at the time; reverting AAPL back to this same shared rule (rather
+     than a literal 30px) is what genuinely matches them, confirmed
+     live. The 2px value-to-own-label gaps (set via margin-bottom on
+     .holding-price/.holding-position, unrelated to font-size) and the
+     359px Position row top (tuned for this exact 25px + 2px-gap
+     combination) both still apply correctly now that AAPL is back to
+     the same font size they were calibrated for. */
   .holdings .holding-card:nth-child(-n+3) .holding-price,
   .holdings .holding-card:nth-child(-n+3) .holding-position {
     font-size: 25px;
-  }
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: Price/
-     Position value size bumped +5px, 25px -> 30px -- MSFT/NVDA
-     untouched, stay at 25px. This makes both rows taller, which shifts
-     absolute downstream measurements (the 100px Price-to-Position gap,
-     the 2px value-to-label gaps) -- not compensated here since this
-     request was specifically about font size alone; re-measured live
-     and reported to the user afterward rather than assumed unchanged. */
-  .holdings .holding-card:nth-child(1) .holding-price,
-  .holdings .holding-card:nth-child(1) .holding-position {
-    font-size: 30px;
   }
   .holdings .holding-card:nth-child(-n+3) .holding-name,
   .holdings .holding-card:nth-child(-n+3) .holding-price-label,
