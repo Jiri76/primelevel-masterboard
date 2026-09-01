@@ -210,7 +210,11 @@
      up with everything else. */
   .holdings .holding-card:nth-child(-n+3) .holding-price-row {
     position: absolute;
-    top: 208px;
+    /* Fine-tuned 208px -> 207px, 2026-09-02, after live measurement
+       showed the Name-to-Price gap landing at 101px, 1px over target.
+       Position row's own top (below) moved the same -1px in lockstep
+       to hold its own 100px gap to Price exactly. */
+    top: 207px;
     left: 18px;
     right: 18px;
     margin: 0;
@@ -240,8 +244,10 @@
        cards once MSFT/NVDA converged on the same 2px value-to-label
        gap (below) -- +2px compensates for Price row growing 2px taller,
        keeping the Price-to-Position "main lines" gap exactly 100px on
-       all three. */
-    top: 359px;
+       all three. Fine-tuned once more, 359px -> 358px, 2026-09-02, in
+       lockstep with Price row's own -1px fix above -- keeps this gap
+       exactly 100px still. */
+    top: 358px;
   }
   /* 2px gap between each value and its own label directly below it
      ($250.00 to "Price per unit", $5000.00 to "Position (...)") --
