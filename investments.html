@@ -275,15 +275,11 @@
   .holdings .holding-card:nth-child(1) .holding-name {
     color: var(--gold);
   }
-  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: "Apple Inc."
-     font-weight normal (400) -> bold (700) -- its own font-size (15px)
-     and the 2px gap to the ticker above it are both left completely
-     untouched, exactly as the user asked ("still maintaining... was at
-     fifteen pixels size and still two pixels gap"). MSFT/NVDA's
-     .holding-name stays at the base 400 weight, unaffected. */
-  .holdings .holding-card:nth-child(1) .holding-name {
-    font-weight: 700;
-  }
+  /* "Apple Inc." font-weight was briefly bumped to bold (700) on AAPL
+     only, 2026-09-02, then explicitly reverted back to normal (400) --
+     the override is removed entirely rather than set back to 400
+     explicitly, so it just falls back to the base .holding-name rule,
+     matching MSFT/NVDA exactly again. */
   /* Price/Position value size, 25px on all three cards. Was briefly
      bumped to 30px on AAPL only (2026-09-02), then explicitly reverted
      back to match MSFT/NVDA exactly -- the user asked for "30, matching
