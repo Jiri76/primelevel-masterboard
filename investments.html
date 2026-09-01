@@ -566,7 +566,20 @@
         hideTriggerNow();
       }, 60000);
     }
-    addTrigger.addEventListener('click', () => {
+    // mousedown, not click -- real bug found and fixed 2026-09-01. The
+    // trigger has `:active { transform: scale(0.94) }`, which starts
+    // shrinking the circle's own hit region the INSTANT a press lands,
+    // before release. A precise, dead-center automated click never
+    // notices this (the shrink is centered, so the middle point stays
+    // covered) -- but a real hand pressing near the circle's EDGE, with
+    // the ordinary few-pixel drift between press and release a mouse or
+    // finger has, can have the release land just outside the
+    // now-6%-smaller hit area. mousedown resolves the whole toggle in
+    // the same synchronous instant the press lands, before any shrink
+    // transition has even started -- same reasoning as every other
+    // "click strands due to a layout/geometry shift mid-press" fix on
+    // this project.
+    addTrigger.addEventListener('mousedown', () => {
       if (addPopover.classList.contains('open')) {
         closeAddPopover();
         return;
