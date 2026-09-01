@@ -769,6 +769,7 @@
     const addTrigger = document.getElementById('addTrigger');
     const addWrapper = document.querySelector('.add-wrapper');
     const addPopover = document.getElementById('addPopover');
+    const addPopoverInner = document.querySelector('.add-popover-inner');
     const newTickerInput = document.getElementById('newHoldingTicker');
     const newNameInput = document.getElementById('newHoldingName');
     const newUnitsInput = document.getElementById('newHoldingUnits');
@@ -876,7 +877,20 @@
         closeAddPopover();
         return;
       }
+      // Pop open instantly, 2026-09-02 -- real request: the card was
+      // growing/sliding down over the CSS transition's 250ms (the same
+      // max-height transition that gives the wrapper's own idle-hide and
+      // the outside-click-dismiss their smooth collapse), which read as
+      // an unwanted "sliding from the top" reveal. The card should just
+      // appear the instant the trigger is pressed. Same no-transition/
+      // reflow/restore trick already used for the outside-click dismiss
+      // below -- force this one open-moment to skip the transition,
+      // then restore it so a later CLOSE (toggle, outside click, 60s
+      // idle) still collapses smoothly, which nothing asked to change.
+      addPopover.style.transition = 'none';
       addPopover.classList.add('open');
+      void addPopover.offsetHeight; // force the no-transition style to actually apply
+      addPopover.style.transition = '';
       newTickerInput.focus();
       resetCollapseTimer();
     });
@@ -940,8 +954,19 @@
     // circle itself, or the popover's own real content when it's open
     // (its own box is 0-height while closed, so it can never match a
     // real click then).
+    //
+    // Same exact bug recurred one level deeper, found and fixed
+    // 2026-09-02: this fix originally checked `addPopover.contains(...)`
+    // -- but .add-popover ITSELF is the same kind of bare, unconstrained
+    // box (display:flex, no width set), so when open it still spans the
+    // FULL ~960px content width even though the real visible card
+    // (.add-popover-inner) is only 300px, centered, in the middle of it.
+    // A click 5cm to either side of the card was landing in that same
+    // invisible band and silently swallowed as "inside" -- reported live
+    // as "I click outside and nothing happens, have to click 2-3 times".
+    // Scoped to .add-popover-inner (the actual 300px card) instead.
     document.addEventListener('mousedown', (e) => {
-      const clickedInsideWrapper = addTrigger.contains(e.target) || addPopover.contains(e.target);
+      const clickedInsideWrapper = addTrigger.contains(e.target) || addPopoverInner.contains(e.target);
 
       if (addWrapper.classList.contains('idle-hidden')) {
         if (wrapperIsCollapsing) return;
