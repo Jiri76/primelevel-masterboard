@@ -238,6 +238,26 @@
     right: 18px;
     top: 357px;
   }
+  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: 2px gap added
+     between each value and its own label directly below it ($250.00 to
+     "Price per unit", $5000.00 to "Position (0 units)") -- matching the
+     existing 2px gap between the ticker and "Apple Inc.". MSFT/NVDA
+     untouched (still 0px, values sit flush against their own labels).
+     Growing price-row by 2px (margin-bottom on .holding-price) pushes
+     its own bottom edge down 2px, which would have shrunk the Price-
+     to-Position "main lines" gap from 100px to 98px if left alone --
+     compensated by moving position-row's own top down the same 2px
+     (357px -> 359px, AAPL only) so that gap stays exactly 100px, per
+     explicit request ("still make sure you have the one hundred gap
+     between the main lines"). The bottom gap (Position to card bottom)
+     is deliberately left to drift -- explicitly not a concern here. */
+  .holdings .holding-card:nth-child(1) .holding-price,
+  .holdings .holding-card:nth-child(1) .holding-position {
+    margin-bottom: 2px;
+  }
+  .holdings .holding-card:nth-child(1) .holding-position-row {
+    top: 359px;
+  }
   /* Ticker stays 30px on all three cards. */
   .holdings .holding-card:nth-child(-n+3) .holding-ticker {
     font-size: 30px;
