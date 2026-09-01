@@ -99,8 +99,14 @@
        at once, since both sit as the very first thing inside this same
        padding box. Paired with the edit panel's own padding-top being
        zeroed for this card specifically (see .holding-edit-panel
-       override below) so the two don't stack into 100px. */
-    padding-top: 50px;
+       override below) so the two don't stack into 100px. Trimmed
+       50px -> 49px, 2026-09-02, per explicit request to bring both of
+       those shared distances from 51px down to exactly 50px, matching
+       Delete's own bottom anchor at the same 50px (see
+       .holding-edit-panel below). One value change here covers BOTH
+       the front-view ticker gap and the edit-panel label gap at once,
+       since they've shared this same padding-top all along. */
+    padding-top: 49px;
     /* padding-left REMOVED, per direct follow-up: with the ticker/price/
        position text now required to be genuinely centered (equal left
        and right padding), the earlier 50px-left-only override directly
@@ -116,10 +122,11 @@
     /* Bottom padding trimmed 42px -> 32px, 2026-09-01, to make Delete's
        own distance from the card's true bottom match the top's
        measured 51px (card-top to "Ticker" label) exactly -- measured
-       live at 61px before this fine-tune, needed -10px. Fine-tuned by
-       measurement, not guessed -- same approach as every other
-       symmetric-padding request on this card. */
-    padding-bottom: 32px;
+       live at 61px before this fine-tune, needed -10px. Trimmed once
+       more, 32px -> 31px, 2026-09-02, matching the top's own move from
+       51px to 50px (see padding-top above) -- fine-tuned by
+       measurement both times, not guessed. */
+    padding-bottom: 31px;
   }
   .holding-card:hover {
     border-color: var(--white);
