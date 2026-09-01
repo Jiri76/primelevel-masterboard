@@ -925,7 +925,12 @@
       priceRow.className = 'holding-price-row';
       const priceLabel = document.createElement('div');
       priceLabel.className = 'holding-price-label';
-      priceLabel.textContent = 'Price per unit';
+      // AAPL (demoIndex 0) ONLY, 2026-09-02, per explicit request:
+      // shortened "Price per unit" -> "Price". MSFT/NVDA keep the full
+      // wording. text-align:center (already applied to this class for
+      // all three cards) re-centers the shorter text automatically --
+      // no separate centering logic needed, confirmed live afterward.
+      priceLabel.textContent = demoIndex === 0 ? 'Price' : 'Price per unit';
       const price = document.createElement('div');
       price.className = 'holding-price';
       price.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].price) : formatMoney(null);
@@ -937,7 +942,10 @@
 
       const positionLabel = document.createElement('div');
       positionLabel.className = 'holding-position-label';
-      positionLabel.textContent = `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
+      // AAPL (demoIndex 0) ONLY, same request: shortened "Position (N
+      // units)" -> "Position", dropping the unit count entirely for
+      // this card. MSFT/NVDA keep the full wording with the real count.
+      positionLabel.textContent = demoIndex === 0 ? 'Position' : `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
       const position = document.createElement('div');
       position.className = 'holding-position';
       position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
