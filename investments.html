@@ -512,23 +512,31 @@
   }
 
   /* ==========================================================
-     "Add a holding" mechanism -- mirrored from Renewals' own
-     "+" trigger / popover / idle-hide system, per explicit
-     request ("do not change layout or colors, just mirror the
-     mechanism"). Every value below (100px title-to-circle gap,
-     56px circle, 60s popover auto-close, 30s trigger idle-hide,
-     the click-outside race-condition fix) is copied from
-     Renewals' own proven, already-debugged implementation, not
-     redesigned. Only the FIELD COUNT differs (3 fields --
-     Ticker/Company/Units -- vs Renewals' 2, Name/Date), since
-     that's a genuine data-shape difference, not a mechanism
-     change. ========================================================== */
+     "Add a holding" mechanism -- the TRIGGER (circle) and its whole
+     timer/dismiss state machine are still mirrored from Renewals' own
+     proven implementation, untouched. The POPOVER's own internal
+     content was completely rebuilt 2026-09-02, per explicit request:
+     was a horizontal bar (fields side by side + Save), now it's a
+     vertical card that mirrors a real holding card's OWN edit mode
+     exactly -- same colors/padding/fonts/gaps, just without a Delete
+     button (nothing to delete for a brand-new entry) and with Save
+     landing where Delete currently sits (50px from the card's own
+     bottom), per explicit request ("mirror it with one difference").
+     ========================================================== */
   .add-wrapper {
     margin-top: 100px;
-    margin-bottom: 100px;
+    /* 100px -> 40px, 2026-09-02, per explicit request: the gap from the
+       add-card down to the first real holding card below it should
+       match the holdings grid's own inter-card gap (40px, the locked
+       layout spec), not the site's separate 100px title-rhythm value. */
+    margin-bottom: 40px;
     padding-top: 2px;
     padding-bottom: 2px;
-    max-height: 260px;
+    /* 260px -> 560px, 2026-09-02 -- the popover now holds a full
+       510px-tall card (see .add-popover-inner below) instead of a
+       ~50px horizontal bar; generous headroom above the real content
+       height, same reasoning as the original 260px had for the bar. */
+    max-height: 560px;
     overflow: hidden;
     transition: max-height 0.25s ease, margin-bottom 0.25s ease;
   }
@@ -570,53 +578,93 @@
     margin-top: 0;
     opacity: 0;
     overflow: hidden;
+    /* Centered, same as the trigger circle above it -- the popover
+       itself has no fixed width, but its one child (.add-popover-inner,
+       a real 300px card) centers via margin:0 auto, same principle. */
+    display: flex;
+    justify-content: center;
     transition: max-height 0.25s ease, margin-top 0.25s ease, opacity 0.2s ease;
   }
   .add-popover.open {
-    max-height: 160px;
+    /* 160px -> 520px, 2026-09-02, matching the new card's real 510px
+       height plus a small safety margin. */
+    max-height: 520px;
     margin-top: 12px;
     opacity: 1;
   }
+  /* Rebuilt 2026-09-02 to mirror .holding-card's own edit-mode
+     appearance EXACTLY -- same background/border/radius/size/padding
+     as a real card. These values are intentionally DUPLICATED from
+     .holding-card's own resolved styling (300px wide, 510px tall,
+     padding 49px 18px 18px 18px -- see .holding-card and its
+     :nth-child(-n+3) override above) rather than inherited via shared
+     selectors, since this element lives outside .holdings and can't
+     naturally match those ancestor-scoped rules. If the real cards'
+     edit-mode styling changes again, this needs updating to match. */
   .add-popover-inner {
+    width: 300px;
+    height: 510px;
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 49px 18px 18px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
   }
-  .add-row {
+  /* Mirrors .holding-edit-panel exactly (same duplication reasoning as
+     above) -- flex column, height:100% so Save's own margin-top:auto
+     (set inline in JS, matching the real Save button) can push it down
+     to sit flush with padding-bottom, landing at the same 50px-from-
+     card-bottom spot Delete currently occupies on a real card, since
+     Save is now the only button in this flow. */
+  .add-form {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-  }
-  .add-fields {
-    display: flex;
-    align-items: center;
+    height: 100%;
     gap: 8px;
+    padding: 0 20px 31px;
   }
-  .add-popover input {
+  /* Mirrors .holding-edit-label exactly, including its 2026-09-02 size/
+     gap bump (11px->15px, -4px->-3px margin) -- duplicated here for the
+     same ancestor-scoping reason as above. */
+  .add-form label {
+    color: var(--placeholder);
+    font-size: 15px;
+    align-self: flex-start;
+    margin-bottom: -3px;
+  }
+  /* Mirrors .holding-edit-panel input exactly, including its 2px
+     margin-bottom bump. */
+  .add-form input {
     background: var(--navy);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 10px;
     color: var(--white);
     font-family: 'Montserrat', sans-serif;
     font-size: 15px;
     padding: 6px 8px;
     outline: none;
+    width: 100%;
+    margin-bottom: 2px;
   }
-  .add-popover input::placeholder { color: var(--placeholder); }
-  /* Fixed widths, not flex-grow -- same reasoning as Renewals' own
-     fields: a grow-to-fill field renders at a different width than a
-     fixed one depending on how many buttons/fields share the row.
-     Ticker/Units narrow (short values), Company gets the rest of the
-     room. */
-  #newHoldingTicker { flex: 0 0 auto; width: 90px; }
-  #newHoldingUnits { flex: 0 0 auto; width: 90px; text-align: center; }
-  #newHoldingName { flex: 1 1 auto; min-width: 0; }
+  .add-form input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .add-form input[type="number"]::-webkit-outer-spin-button,
+  .add-form input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .add-form input::placeholder { color: var(--placeholder); }
+  /* Mirrors .holding-edit-panel button exactly -- same colors, 10px
+     radius, hover/active/disabled states (including the same
+     :not(:disabled) guard the real Save/Delete buttons use, now that
+     this Save gets the identical instant-loading-state treatment). */
   .add-save-btn {
-    flex: 0 0 auto;
-    width: 90px;
+    width: 100%;
     text-align: center;
     background: transparent;
     border: 1px solid var(--white);
@@ -624,26 +672,33 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     font-size: 15px;
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 6px 12px;
     cursor: pointer;
     opacity: 0.45;
     transition: opacity 0.15s ease, transform 0.1s ease;
   }
-  .add-save-btn:hover {
+  .add-save-btn:hover:not(:disabled) {
     opacity: 1;
     background: var(--white);
     color: var(--navy);
     transform: scale(1.02);
   }
-  .add-save-btn:active {
+  .add-save-btn:active:not(:disabled) {
     transform: scale(0.96);
   }
+  .add-save-btn:disabled {
+    cursor: not-allowed;
+  }
+  /* Mirrors .holding-edit-error exactly -- hidden by default (an empty
+     but visible div would still reserve its own line-height), shown
+     only on a real save failure. */
   .add-error {
     display: none;
     color: var(--red);
-    font-size: 13px;
-    margin-top: 6px;
+    font-size: 15px;
+    text-align: center;
+    margin-top: 4px;
   }
   .add-error.visible {
     display: block;
@@ -658,15 +713,16 @@
       <button class="add-trigger" id="addTrigger" title="Add a holding">+</button>
       <div class="add-popover" id="addPopover">
         <div class="add-popover-inner">
-          <div class="add-row">
-            <div class="add-fields">
-              <input id="newHoldingTicker" type="text" placeholder="Ticker" autocomplete="off" />
-              <input id="newHoldingName" type="text" placeholder="Company name" autocomplete="off" />
-              <input id="newHoldingUnits" type="number" min="0" step="any" placeholder="Units" autocomplete="off" />
-            </div>
-            <button id="addHoldingBtn" class="add-save-btn">Save</button>
+          <div class="add-form">
+            <label for="newHoldingTicker">Ticker</label>
+            <input id="newHoldingTicker" type="text" placeholder="e.g. AAPL" autocomplete="off" />
+            <label for="newHoldingName">Company name</label>
+            <input id="newHoldingName" type="text" placeholder="e.g. Apple Inc." autocomplete="off" />
+            <label for="newHoldingUnits">Units</label>
+            <input id="newHoldingUnits" type="number" min="0" step="any" placeholder="0" autocomplete="off" />
+            <button id="addHoldingBtn" class="add-save-btn" type="button">Save</button>
+            <div class="add-error" id="addHoldingError"></div>
           </div>
-          <div class="add-error" id="addHoldingError"></div>
         </div>
       </div>
     </div>
@@ -711,6 +767,12 @@
     const newUnitsInput = document.getElementById('newHoldingUnits');
     const addHoldingBtn = document.getElementById('addHoldingBtn');
     const addHoldingError = document.getElementById('addHoldingError');
+    // margin-top:auto -- same trick the real Save button uses inline:
+    // absorbs all leftover vertical space right here, pushing Save (now
+    // the last thing in the form, no Delete after it) down to sit flush
+    // against the form's own padding-bottom -- lands at the same 50px-
+    // from-card-bottom spot Delete occupies on a real card.
+    addHoldingBtn.style.marginTop = 'auto';
 
     function setAddError(message) {
       addHoldingError.textContent = message;
@@ -728,6 +790,13 @@
       newNameInput.value = '';
       newUnitsInput.value = '';
       setAddError('');
+      // Reset Save's own loading state too, 2026-09-02 -- otherwise a
+      // successful save (which calls this via the success path) would
+      // leave the button disabled/"Saving..." the NEXT time the
+      // popover is reopened, since the button itself isn't recreated,
+      // only hidden and shown again.
+      addHoldingBtn.disabled = false;
+      addHoldingBtn.textContent = 'Save';
       clearTimeout(collapseTimer);
     }
     function resetCollapseTimer() {
@@ -741,6 +810,47 @@
         hideTriggerNow();
       }, 60000);
     }
+
+    // Real behavioral gap found and fixed 2026-09-02, per explicit
+    // request to match Renewals' own new-item form exactly: Renewals
+    // resets its 60s auto-close timer on every keystroke/focus in its
+    // fields, not just on the initial trigger click -- Investments'
+    // own fields had NONE of this, so a user genuinely still filling in
+    // the (3-field, one more than Renewals' 2) form past the 60s mark
+    // could have it auto-close out from under them mid-entry. Mirrored
+    // verbatim from Renewals' own `nameInput`/`dateInput` 'input' and
+    // 'focus' listeners.
+    newTickerInput.addEventListener('input', resetCollapseTimer);
+    newNameInput.addEventListener('input', resetCollapseTimer);
+    newUnitsInput.addEventListener('input', resetCollapseTimer);
+    newTickerInput.addEventListener('focus', resetCollapseTimer);
+    newNameInput.addEventListener('focus', resetCollapseTimer);
+    newUnitsInput.addEventListener('focus', resetCollapseTimer);
+
+    // Same request: Enter moves straight to the next field, and submits
+    // from the last one -- mirrored verbatim from Renewals' own
+    // nameInput/dateInput keydown handlers. Calls saveNewHolding()
+    // directly rather than addHoldingBtn.click() (which Renewals uses)
+    // -- Investments' Save is a `mousedown` listener, not `click`, for
+    // the same click/mousedown-drift reasons documented throughout this
+    // project, so a synthetic .click() wouldn't actually reach it; the
+    // shared save function (below) is called from both places instead.
+    newTickerInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      newNameInput.focus();
+    });
+    newNameInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      newUnitsInput.focus();
+    });
+    newUnitsInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      saveNewHolding();
+    });
+
     // mousedown, not click -- real bug found and fixed 2026-09-01. The
     // trigger has `:active { transform: scale(0.94) }`, which starts
     // shrinking the circle's own hit region the INSTANT a press lands,
@@ -851,7 +961,19 @@
     });
     scheduleTriggerHide();
 
-    addHoldingBtn.addEventListener('mousedown', async () => {
+    // Named function, not an inline listener, 2026-09-02 -- needs to be
+    // callable from two places: the button's own `mousedown` AND the
+    // Units field's Enter key (see above), same as Renewals' own
+    // addBtn.click()-from-Enter pattern, just adapted since this
+    // project's Save buttons are `mousedown`-based, not `click`-based.
+    // Same instant-loading-state fix as the real Save/Delete buttons --
+    // disabled synchronously before the `await` so a second trigger
+    // (another click, or hitting Enter again) can't fire a duplicate
+    // insert, text swaps to "Saving...", restored on validation/save
+    // failure so it's never left stuck (the success path doesn't need
+    // restoring -- Save vanishes along with the whole popover on
+    // success anyway).
+    async function saveNewHolding() {
       setAddError('');
       const ticker = newTickerInput.value.trim().toUpperCase();
       const name = newNameInput.value.trim();
@@ -860,16 +982,22 @@
         setAddError('Please enter both a ticker and a company name.');
         return;
       }
+      addHoldingBtn.disabled = true;
+      const originalText = addHoldingBtn.textContent;
+      addHoldingBtn.textContent = 'Saving...';
       const { error } = await supabase
         .from('investment_holdings')
         .insert({ ticker, name, units });
       if (error) {
         setAddError('Could not save — please check your connection and try again.');
+        addHoldingBtn.disabled = false;
+        addHoldingBtn.textContent = originalText;
         return;
       }
       closeAddPopover();
       await loadHoldings();
-    });
+    }
+    addHoldingBtn.addEventListener('mousedown', saveNewHolding);
 
     async function loadHoldings() {
       // Real bug found and fixed during live testing: the 3 seed rows
