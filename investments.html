@@ -392,6 +392,17 @@
     align-self: flex-start;
     margin-bottom: -4px;
   }
+  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
+     Ticker/Company name/Units labels bumped 11px -> 15px, matching the
+     input values' own 15px size. Left-alignment with the navy input
+     boxes below needed no change -- confirmed live beforehand that
+     align-self:flex-start already puts both at the exact same left
+     edge (182px), font-size doesn't affect that. MSFT explicitly
+     untouched. */
+  .holdings .holding-card:nth-child(1) .holding-edit-label,
+  .holdings .holding-card:nth-child(3) .holding-edit-label {
+    font-size: 15px;
+  }
   /* 2nd card (MSFT) ONLY, per explicit follow-up request 2026-09-01 --
      deliberately NOT applied to the 1st card (AAPL) any more, so the
      two can sit side by side for comparison: AAPL's navy TICKER INPUT
