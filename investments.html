@@ -281,22 +281,23 @@
      explicitly, so it just falls back to the base .holding-name rule,
      matching MSFT/NVDA exactly again. */
   /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: a thin 2px
-     divider line sitting in the Name-to-Price gap, centered both
-     horizontally (on the card) and vertically (in that ~101px gap --
-     measured live: name bottom 108px, price top 209px, so the true
-     center is 158.5px from the card top). Solid var(--gold) (the same
-     token as the ticker/name color), explicitly NOT at the 0.6 opacity
-     "Apple Inc." uses -- the user was explicit about that distinction.
-     60px wide is a deliberate, moderate choice (not asked for a
-     specific width) -- easy to widen/narrow on request. */
+     divider line sitting in the Name-to-Price gap, vertically centered
+     in that ~101px gap (measured live: name bottom 108px, price top
+     209px, so the true center is 158.5px from the card top). Solid
+     var(--gold) (the same token as the ticker/name color), explicitly
+     NOT at the 0.6 opacity "Apple Inc." uses. Runs the full width,
+     left:18px/right:18px matching the card's own padding -- same
+     left/right span every other centered element (price-row etc.)
+     already uses -- not a short centered accent, per explicit
+     follow-up ("run this line across... left to right"). */
   .holdings .holding-card:nth-child(1) .holding-divider {
     position: absolute;
-    left: 50%;
+    left: 18px;
+    right: 18px;
     top: 158.5px;
-    width: 60px;
     height: 2px;
     background: var(--gold);
-    transform: translate(-50%, -50%);
+    transform: translateY(-50%);
   }
   /* Price/Position value size, 25px on all three cards. Was briefly
      bumped to 30px on AAPL only (2026-09-02), then explicitly reverted
