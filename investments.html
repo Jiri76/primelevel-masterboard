@@ -242,6 +242,17 @@
   .holdings .holding-card:nth-child(-n+3) .holding-ticker {
     font-size: 30px;
   }
+  /* AAPL (card 1) ONLY, 2026-09-02, per explicit request: Ticker and
+     Company name recolored from white to gold (var(--gold), same
+     #B29B68 as the "Investments" page title) -- MSFT/NVDA untouched.
+     Company name's own existing opacity (0.6, from the base
+     .holding-name rule) is deliberately left alone, not reset to 1 --
+     the request was specifically to keep whatever shade it already
+     is, just swap the underlying color from white to gold. */
+  .holdings .holding-card:nth-child(1) .holding-ticker,
+  .holdings .holding-card:nth-child(1) .holding-name {
+    color: var(--gold);
+  }
   /* Price/Position value size, 2026-09-02 -- now 25px on all three
      cards (was 30px everywhere, then 25px on AAPL/NVDA only with MSFT
      briefly left at 30px for comparison; extended to MSFT once all
