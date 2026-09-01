@@ -87,7 +87,7 @@
      100px from the card's true bottom, matching the two gaps above it
      (see .holding-price-row / .holding-position-row below). No longer
      exploratory -- all three cards are now the single, locked design. */
-  .holdings .holding-card:nth-child(-n+3) {
+  .holdings .holding-card {
     /* 507px -> 510px, 2026-09-02, per explicit request: the leftover
        gap from Position's own bottom to the card's true bottom edge
        (was 97px, pure leftover space) rounded up to a clean 100px,
@@ -124,7 +124,7 @@
        unaffected either way since box-sizing:border-box already
        guarantees padding never changes the fixed 300px outer width. */
   }
-  .holdings .holding-card:nth-child(-n+3) .holding-edit-panel {
+  .holdings .holding-card .holding-edit-panel {
     padding-top: 0;
     /* Bottom padding trimmed 42px -> 32px, 2026-09-01, to make Delete's
        own distance from the card's true bottom match the top's
@@ -201,7 +201,7 @@
      see buildDisplayView) so the small label text now sits BELOW its
      value instead of above it -- text-align:center here is what keeps
      both correctly centered under the now-larger value above them. */
-  .holdings .holding-card:nth-child(-n+3) .holding-name {
+  .holdings .holding-card .holding-name {
     margin-bottom: 50px;
   }
   /* Price row's position, 2026-09-02 -- now identical on all three
@@ -215,7 +215,7 @@
      position is independent of Name/Position's own heights. left/right
      match the card's own 18px padding so the centered text still lines
      up with everything else. */
-  .holdings .holding-card:nth-child(-n+3) .holding-price-row {
+  .holdings .holding-card .holding-price-row {
     position: absolute;
     /* Fine-tuned 208px -> 207px, 2026-09-02, after live measurement
        showed the Name-to-Price gap landing at 101px, 1px over target.
@@ -243,7 +243,7 @@
      needed its own re-measurement to keep the mutual 100px gap to Price
      -- landed at 357px. Extended from AAPL/NVDA-only to all three,
      2026-09-02, once MSFT converged on the same design. */
-  .holdings .holding-card:nth-child(-n+3) .holding-position-row {
+  .holdings .holding-card .holding-position-row {
     position: absolute;
     left: 18px;
     right: 18px;
@@ -261,14 +261,14 @@
      matching the ticker-to-name 2px gap. Started AAPL-only, extended to
      all three cards, 2026-09-02, once MSFT/NVDA converged on the same
      design. */
-  .holdings .holding-card:nth-child(-n+3) .holding-price,
-  .holdings .holding-card:nth-child(-n+3) .holding-position {
+  .holdings .holding-card .holding-price,
+  .holdings .holding-card .holding-position {
     margin-bottom: 2px;
   }
   /* Ticker, 30px on all three cards. Was briefly bumped to 35px on
      AAPL only (2026-09-02), then explicitly reverted so all three
      genuinely match again. */
-  .holdings .holding-card:nth-child(-n+3) .holding-ticker {
+  .holdings .holding-card .holding-ticker {
     font-size: 30px;
   }
   /* Ticker and Company name colored gold (var(--gold), same #B29B68 as
@@ -276,8 +276,8 @@
      three cards, 2026-09-02, once MSFT/NVDA converged on the same
      design. Company name's own existing opacity (0.6, from the base
      .holding-name rule) is left alone throughout, not reset to 1. */
-  .holdings .holding-card:nth-child(-n+3) .holding-ticker,
-  .holdings .holding-card:nth-child(-n+3) .holding-name {
+  .holdings .holding-card .holding-ticker,
+  .holdings .holding-card .holding-name {
     color: var(--gold);
   }
   /* "Apple Inc." font-weight was briefly bumped to bold (700) on AAPL
@@ -299,22 +299,22 @@
      359px Position row top (tuned for this exact 25px + 2px-gap
      combination) both still apply correctly now that AAPL is back to
      the same font size they were calibrated for. */
-  .holdings .holding-card:nth-child(-n+3) .holding-price,
-  .holdings .holding-card:nth-child(-n+3) .holding-position {
+  .holdings .holding-card .holding-price,
+  .holdings .holding-card .holding-position {
     font-size: 25px;
   }
-  .holdings .holding-card:nth-child(-n+3) .holding-name,
-  .holdings .holding-card:nth-child(-n+3) .holding-price-label,
-  .holdings .holding-card:nth-child(-n+3) .holding-position-label {
+  .holdings .holding-card .holding-name,
+  .holdings .holding-card .holding-price-label,
+  .holdings .holding-card .holding-position-label {
     font-size: 15px;
   }
-  .holdings .holding-card:nth-child(-n+3) .holding-ticker,
-  .holdings .holding-card:nth-child(-n+3) .holding-name,
-  .holdings .holding-card:nth-child(-n+3) .holding-price-row,
-  .holdings .holding-card:nth-child(-n+3) .holding-price-label,
-  .holdings .holding-card:nth-child(-n+3) .holding-price,
-  .holdings .holding-card:nth-child(-n+3) .holding-position-label,
-  .holdings .holding-card:nth-child(-n+3) .holding-position {
+  .holdings .holding-card .holding-ticker,
+  .holdings .holding-card .holding-name,
+  .holdings .holding-card .holding-price-row,
+  .holdings .holding-card .holding-price-label,
+  .holdings .holding-card .holding-price,
+  .holdings .holding-card .holding-position-label,
+  .holdings .holding-card .holding-position {
     text-align: center;
   }
   /* Edit panel -- opened by clicking the card, replaces its normal
@@ -446,7 +446,7 @@
      below needed no change -- confirmed live beforehand that
      align-self:flex-start already puts both at the exact same left
      edge, font-size doesn't affect that. */
-  .holdings .holding-card:nth-child(-n+3) .holding-edit-label {
+  .holdings .holding-card .holding-edit-label {
     font-size: 15px;
   }
   /* Every internal gap in the edit panel bumped up from the panel's
@@ -469,13 +469,13 @@
        via :nth-of-type since Save/Delete share one class) closes the
        Save-to-Delete gap (8+2=10) without touching Save's own existing
        margin-top:auto (a different property, no conflict). */
-  .holdings .holding-card:nth-child(-n+3) .holding-edit-label {
+  .holdings .holding-card .holding-edit-label {
     margin-bottom: -3px;
   }
-  .holdings .holding-card:nth-child(-n+3) .holding-edit-panel input {
+  .holdings .holding-card .holding-edit-panel input {
     margin-bottom: 2px;
   }
-  .holdings .holding-card:nth-child(-n+3) .holding-edit-panel button:nth-of-type(2) {
+  .holdings .holding-card .holding-edit-panel button:nth-of-type(2) {
     margin-top: 2px;
   }
   /* NOTE: MSFT briefly had its own -18px offset here (pulling just the
@@ -603,11 +603,11 @@
      appearance EXACTLY -- same background/border/radius/size/padding
      as a real card. These values are intentionally DUPLICATED from
      .holding-card's own resolved styling (300px wide, 510px tall,
-     padding 49px 18px 18px 18px -- see .holding-card and its
-     :nth-child(-n+3) override above) rather than inherited via shared
-     selectors, since this element lives outside .holdings and can't
-     naturally match those ancestor-scoped rules. If the real cards'
-     edit-mode styling changes again, this needs updating to match. */
+     padding 49px 18px 18px 18px -- see .holding-card above, now a
+     single unscoped rule applying to every card) rather than inherited
+     via shared selectors, since this element lives outside .holdings
+     and can't naturally match those rules. If the real cards' edit-mode
+     styling changes again, this needs updating to match. */
   .add-popover-inner {
     width: 300px;
     height: 510px;
@@ -1057,13 +1057,15 @@
         return;
       }
       // demoIndex: 0 for the 1st card, 1 for the 2nd, 2 for the 3rd,
-      // null for every other one -- all three of the first cards now
-      // get the full "demo" treatment (bumped font sizes, centered
-      // text, fake price/position numbers). Started as 1st+2nd only,
-      // extended to the 3rd (NVDA) on 2026-09-02 per explicit request
-      // ("make NVIDIA look exactly the same as Apple"). CSS mirrors
-      // this: every selector that used to say :first-child now says
-      // :nth-child(-n+3).
+      // null for every other one -- these 3 original holdings (always
+      // first, since they're the oldest by created_at) get fake
+      // DEMO_PRICE_POSITION numbers in place of live pricing, which
+      // isn't wired up yet. That's now the ONLY thing demoIndex still
+      // affects (see buildDisplayView's own comment) -- layout, colors,
+      // fonts and label wording are unconditional, every .holding-card
+      // gets the one locked design regardless of demoIndex, real bug
+      // found and fixed 2026-09-02 when adding a genuine 4th holding
+      // exposed that layout was still demo-only too.
       holdings.forEach((h, i) => {
         holdingsEl.append(buildHoldingCard(h, i < 3 ? i : null));
       });
@@ -1089,6 +1091,21 @@
       { price: 130, position: 3900 },
     ];
 
+    // Real bug found and fixed 2026-09-02: adding a genuine 4th holding
+    // via the "+" card exposed that this function still forked on
+    // `isDemo` for LAYOUT (label wording, and value-before-label DOM
+    // order) as well as for the number source -- so a real new card
+    // rendered with the old long labels, the old label-first order, and
+    // NONE of the now-universal CSS (see .holding-card above, no longer
+    // :nth-child(-n+3)-scoped) lined up with it, producing exactly the
+    // "unstyled, wrong layout" card reported live. Labels/order are now
+    // unconditional -- every card gets the one locked design. `isDemo`
+    // now controls ONLY what's genuinely still demo-only: the fake
+    // DEMO_PRICE_POSITION numbers standing in for live pricing (not
+    // wired up yet -- see the note above formatMoney) on these
+    // specific 3 original holdings. A real new holding honestly shows
+    // "--" instead, same as it always would have once live pricing
+    // exists for everyone.
     function buildDisplayView(card, holding, demoIndex) {
       const isDemo = demoIndex != null;
       const ticker = document.createElement('div');
@@ -1103,51 +1120,33 @@
       priceRow.className = 'holding-price-row';
       const priceLabel = document.createElement('div');
       priceLabel.className = 'holding-price-label';
-      // AAPL (demoIndex 0) ONLY, 2026-09-02, per explicit request:
-      // shortened "Price per unit" -> "Price". MSFT/NVDA keep the full
-      // wording. text-align:center (already applied to this class for
-      // all three cards) re-centers the shorter text automatically --
-      // no separate centering logic needed, confirmed live afterward.
-      // Shortened "Price per unit" -> "Price" -- started AAPL-only,
-      // extended to all three demo cards, 2026-09-02, once MSFT/NVDA
-      // converged on the same design. text-align:center re-centers the
-      // shorter text automatically.
-      priceLabel.textContent = isDemo ? 'Price' : 'Price per unit';
+      priceLabel.textContent = 'Price';
       const price = document.createElement('div');
       price.className = 'holding-price';
       price.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].price) : formatMoney(null);
-      // Demo cards only: value comes BEFORE its own label now (was
-      // label-then-value) -- DOM order is what visual stacking order
-      // follows here, so this swap is a real reorder, not just CSS.
-      if (isDemo) priceRow.append(price, priceLabel);
-      else priceRow.append(priceLabel, price);
+      priceRow.append(price, priceLabel);
 
       const positionLabel = document.createElement('div');
       positionLabel.className = 'holding-position-label';
-      // Shortened "Position (N units)" -> "Position", dropping the unit
-      // count entirely -- same extension, all three demo cards now.
-      positionLabel.textContent = isDemo ? 'Position' : `Position (${holding.units} unit${holding.units === 1 ? '' : 's'})`;
+      positionLabel.textContent = 'Position';
       const position = document.createElement('div');
       position.className = 'holding-position';
       position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
 
-      // Same value-before-label swap for Position, demo cards only.
       // Wrapped in its own row div (mirroring priceRow), 2026-09-01 --
-      // needed so demo cards can position the whole group with a single
-      // absolute `top`, exactly like priceRow already does, rather than
-      // fighting flexbox over it. (A first attempt used a plain fixed
-      // margin-top on the bare .holding-position element while it was
-      // still a flex-flow sibling -- real bug found live: that fixed
-      // margin, combined with .holding-name's overflow:hidden making
-      // its flex "automatic minimum size" 0 per spec, made flexbox
-      // silently shrink Name down to 2px tall to make everything else
-      // fit, rather than anything visibly erroring. Taking Position out
-      // of the flow entirely, same as Price, sidesteps that whole class
-      // of bug.)
+      // needed so the group can be positioned with a single absolute
+      // `top`, rather than fighting flexbox over it. (A first attempt
+      // used a plain fixed margin-top on the bare .holding-position
+      // element while it was still a flex-flow sibling -- real bug
+      // found live: that fixed margin, combined with .holding-name's
+      // overflow:hidden making its flex "automatic minimum size" 0 per
+      // spec, made flexbox silently shrink Name down to 2px tall to
+      // make everything else fit, rather than anything visibly
+      // erroring. Taking Position out of the flow entirely, same as
+      // Price, sidesteps that whole class of bug.)
       const positionRow = document.createElement('div');
       positionRow.className = 'holding-position-row';
-      const positionGroup = isDemo ? [position, positionLabel] : [positionLabel, position];
-      positionRow.append(...positionGroup);
+      positionRow.append(position, positionLabel);
       card.append(ticker, name, priceRow, positionRow);
     }
 
