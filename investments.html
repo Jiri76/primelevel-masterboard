@@ -207,20 +207,21 @@
     transform: translateY(-50%);
     margin: 0;
   }
-  /* Position's own top, 2026-09-01 -- changed from margin-top:auto to
-     a fixed, measured value per explicit request: the gap from Price's
-     own bottom ("Price per unit" label) to Position's top ($5000) must
-     equal the gap from Name's bottom ("Apple Inc.") to Price's own top
-     ($250) -- measured live at 113px. Since Price is absolutely
-     positioned (out of the flex flow entirely), margin-top:auto on
-     Position could only ever reference the flow's own leftover space,
-     never Price's actual rendered position -- it was pure coincidence
-     that it produced a different gap (147px) before. Measured directly
-     (name bottom 109px, price-label bottom 278px from card top) and
-     solved for the fixed margin that lands Position's top at exactly
-     278+113=391px from card top: 391 - nameBottom(109) = 282px. */
-  .holdings .holding-card:nth-child(-n+2) .holding-position {
-    margin-top: 282px;
+  /* Position's own row wrapper (mirrors priceRow), 2026-09-01 -- a
+     bare, unstyled div by default so non-demo cards (NVDA) render
+     exactly as before wrapping was introduced (just one extra neutral
+     block level, no visual change). Demo cards get an absolute `top`
+     override below, computed from a clean live measurement -- NOT a
+     fixed margin-top while still flex-flow, which was tried first and
+     found to be a real bug: see the JS comment above buildDisplayView's
+     positionRow for the full story (flexbox silently shrank Name to
+     2px to make room, because its overflow:hidden makes its flex
+     "automatic minimum size" 0 per spec). */
+  .holdings .holding-card:nth-child(-n+2) .holding-position-row {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 391px;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
      follow-up request, 2026-09-01 (position was briefly left at 25px
@@ -843,8 +844,23 @@
       position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
 
       // Same value-before-label swap for Position, demo cards only.
+      // Wrapped in its own row div (mirroring priceRow), 2026-09-01 --
+      // needed so demo cards can position the whole group with a single
+      // absolute `top`, exactly like priceRow already does, rather than
+      // fighting flexbox over it. (A first attempt used a plain fixed
+      // margin-top on the bare .holding-position element while it was
+      // still a flex-flow sibling -- real bug found live: that fixed
+      // margin, combined with .holding-name's overflow:hidden making
+      // its flex "automatic minimum size" 0 per spec, made flexbox
+      // silently shrink Name down to 2px tall to make everything else
+      // fit, rather than anything visibly erroring. Taking Position out
+      // of the flow entirely, same as Price, sidesteps that whole class
+      // of bug.)
+      const positionRow = document.createElement('div');
+      positionRow.className = 'holding-position-row';
       const positionGroup = isDemo ? [position, positionLabel] : [positionLabel, position];
-      card.append(ticker, name, priceRow, ...positionGroup);
+      positionRow.append(...positionGroup);
+      card.append(ticker, name, priceRow, positionRow);
     }
 
     function buildEditView(card, holding) {
