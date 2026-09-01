@@ -223,7 +223,13 @@
      explicitly untouched, stays genuinely centered. */
   .holdings .holding-card:nth-child(1) .holding-price-row,
   .holdings .holding-card:nth-child(3) .holding-price-row {
-    top: 209px;
+    /* Fine-tuned 209px -> 208px after live measurement showed 101px/
+       99px, 1px off target on each side -- moving Price row up by 1
+       more px reduces the Name gap by 1 AND grows the Position gap by
+       1 at the same time (both math off the same shared edge,
+       priceLabel's own bottom), landing both at exactly 100px with
+       this one adjustment. */
+    top: 208px;
     transform: none;
   }
   /* Position's own row wrapper (mirrors priceRow), 2026-09-01 -- a
