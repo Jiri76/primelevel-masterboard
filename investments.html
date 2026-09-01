@@ -180,19 +180,15 @@
   .holdings .holding-card:first-child .holding-price-row {
     margin-bottom: 50px;
   }
-  /* Ticker/price bumped 25px -> 30px per explicit follow-up request,
-     2026-09-01; position deliberately stays at 25px (not bumped along
-     with the other two) -- kept as its own explicit rule rather than
-     folded into the base 22px so it doesn't silently regress if the
-     30px rule above ever changes again. Name/price-label/position-
-     label bumped from their base sizes (13px/11px/11px) to a shared
-     15px, same request. */
+  /* Ticker/price/position all bumped 25px -> 30px per explicit
+     follow-up request, 2026-09-01 (position was briefly left at 25px
+     as an intermediate step, then corrected to match the other two).
+     Name/price-label/position-label bumped from their base sizes
+     (13px/11px/11px) to a shared 15px, same request. */
   .holdings .holding-card:first-child .holding-ticker,
-  .holdings .holding-card:first-child .holding-price {
-    font-size: 30px;
-  }
+  .holdings .holding-card:first-child .holding-price,
   .holdings .holding-card:first-child .holding-position {
-    font-size: 25px;
+    font-size: 30px;
   }
   .holdings .holding-card:first-child .holding-name,
   .holdings .holding-card:first-child .holding-price-label,
