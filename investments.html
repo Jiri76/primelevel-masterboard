@@ -222,8 +222,27 @@
     left: 18px;
     right: 18px;
     /* Fine-tuned 391px -> 389px after live measurement showed the gap
-       landing at 115px, 2px over the 113px target. */
+       landing at 115px, 2px over the 113px target. This value now
+       governs MSFT only in practice (see the nth-child(1)/(3) override
+       below) -- MSFT's own Price/Position stayed at 30px while AAPL/
+       NVDA's dropped to 25px, so this same 389px still produces MSFT's
+       original ~113px gap there, untouched, per explicit "leave
+       Microsoft alone" request. */
     top: 389px;
+  }
+  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
+     gap from Price's own bottom to Position's top closed further, to
+     exactly 100px -- MSFT explicitly left alone. Same specificity as
+     the rule above (wins by coming later in the cascade). The smaller
+     25px Price/Position font on these two cards (vs MSFT's 30px)
+     already meant priceRow's own height -- and therefore where its
+     bottom edge lands -- differs from MSFT's, so this needed its own
+     independently measured value, not just a proportional guess:
+     measured live at 116px with top:389px, reduced by 16px to hit
+     100px. */
+  .holdings .holding-card:nth-child(1) .holding-position-row,
+  .holdings .holding-card:nth-child(3) .holding-position-row {
+    top: 373px;
   }
   /* Ticker/price/position all bumped 25px -> 30px per explicit
      follow-up request, 2026-09-01 (position was briefly left at 25px
