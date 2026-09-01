@@ -109,6 +109,22 @@
        unaffected either way since box-sizing:border-box already
        guarantees padding never changes the fixed 300px outer width. */
   }
+  /* AAPL/NVDA (cards 1 and 3) ONLY, 2026-09-02, per explicit request:
+     card grown 500px -> 507px so the gap from Position's own bottom to
+     the card's true bottom can also become 100px (matching the two
+     gaps above it), rather than shrinking anything else to fit. The
+     edit panel's own 51px/51px anchors need NO corresponding change --
+     they're governed by `height:100%` + `padding-bottom` + Save's
+     margin-top:auto, a design that's deliberately independent of the
+     card's total height (see the dedicated lesson in
+     webapp-frontend-methodology): the extra 7px just becomes more
+     auto-absorbed leftover space in the panel's own middle, invisible
+     to both fixed anchors. Confirmed live after deploying, not assumed.
+     MSFT stays at the base 500px, untouched. */
+  .holdings .holding-card:nth-child(1),
+  .holdings .holding-card:nth-child(3) {
+    height: 507px;
+  }
   .holdings .holding-card:nth-child(-n+3) .holding-edit-panel {
     padding-top: 0;
     /* Bottom padding trimmed 42px -> 32px, 2026-09-01, to make Delete's
