@@ -321,11 +321,24 @@
     align-self: flex-start;
     margin-bottom: -4px;
   }
-  .holding-edit-note {
-    color: var(--placeholder);
+  /* Was a static "Live ticker<->name lookup..." info note shown at all
+     times; deleted entirely per explicit request, 2026-09-01. The div
+     itself is kept (renamed to reflect its real remaining purpose) --
+     it was also doing double duty as the Save/Delete failure message,
+     which still needs somewhere to render. display:none by default so
+     it reserves zero space normally (an empty-but-visible div would
+     still reserve its own line-height -- see the standing lesson in
+     webapp-frontend-methodology); .visible shown only on a real error,
+     same pattern as .add-error below. */
+  .holding-edit-error {
+    display: none;
+    color: var(--red);
     font-size: 15px;
     text-align: center;
     margin-top: 4px;
+  }
+  .holding-edit-error.visible {
+    display: block;
   }
 
   .empty-state {
@@ -825,6 +838,7 @@
           .eq('id', holding.id);
         if (error) {
           note.textContent = 'Could not save — please try again.';
+          note.classList.add('visible');
           return;
         }
         editingIds.delete(holding.id);
@@ -847,15 +861,19 @@
           .eq('id', holding.id);
         if (error) {
           note.textContent = 'Could not delete — please try again.';
+          note.classList.add('visible');
           return;
         }
         editingIds.delete(holding.id);
         await loadHoldings();
       });
 
+      // Starts empty and hidden -- only ever shown on a real save/
+      // delete failure now. The static "Live ticker<->name lookup..."
+      // info text this div used to always display was deleted entirely
+      // per explicit request, 2026-09-01.
       const note = document.createElement('div');
-      note.className = 'holding-edit-note';
-      note.textContent = 'Live ticker↔name lookup: not wired up yet (needs a market-data API key).';
+      note.className = 'holding-edit-error';
 
       panel.append(
         tickerLabel, tickerInput,
