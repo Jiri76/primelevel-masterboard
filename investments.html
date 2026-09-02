@@ -317,11 +317,13 @@
   .holdings .holding-card .holding-position {
     text-align: center;
   }
-  /* "Not supported by KuCoin" state, 2026-09-02 -- per explicit
-     request: a crypto ticker (contains "-") KuCoin genuinely doesn't
-     list used to render as the exact same plain "--" as "hasn't
-     loaded yet", indistinguishable from a real bug. Mirrors this
-     project's own established red/15px/centered error-text styling
+  /* "Ticker not found" / "Not supported by KuCoin" state, 2026-09-02 --
+     per explicit request: a ticker (crypto or stock) that genuinely
+     doesn't price used to render as the exact same plain "--" as
+     "hasn't loaded yet", indistinguishable from a real bug. One shared
+     class for both -- see applyPriceDisplay's own comment for how the
+     message text itself differs by ticker type. Mirrors this project's
+     own established red/15px/centered error-text styling
      (.holding-edit-error, .add-error) exactly, rather than inventing a
      new one. Extra .holding-card/.holding-price/.holding-position
      class repetition (4 classes total) is deliberate, not accidental
@@ -1155,13 +1157,24 @@
     // the raw value directly here, not through `?? null`, is what keeps
     // that distinction alive; `?? null` would collapse both cases to
     // the same thing.
+    //
+    // Extended 2026-09-02, per explicit follow-up request, to cover an
+    // unmatched STOCK ticker too -- was still a plain "--" until now,
+    // same reasoning as the crypto case: a red, explicit "Ticker not
+    // found" is more honest than a blank dash that looks identical to
+    // "hasn't loaded yet" or a genuine $0 position. Different wording
+    // per case (crypto names KuCoin specifically, since that's the one
+    // real exchange this app ever checks; a stock isn't tied to one
+    // named source the same way) but identical styling -- both route
+    // through the same .unsupported class.
     function applyPriceDisplay(ticker, units, priceEl, positionEl) {
       const price = livePrices[ticker];
-      const unsupported = price === null && isCryptoTicker(ticker);
-      priceEl.textContent = unsupported ? 'Not supported by KuCoin' : formatMoney(price ?? null);
-      priceEl.classList.toggle('unsupported', unsupported);
-      positionEl.textContent = unsupported ? 'Not supported by KuCoin' : formatMoney(price != null ? price * units : null);
-      positionEl.classList.toggle('unsupported', unsupported);
+      const notFound = price === null;
+      const message = notFound ? (isCryptoTicker(ticker) ? 'Not supported by KuCoin' : 'Ticker not found') : null;
+      priceEl.textContent = message ?? formatMoney(price ?? null);
+      priceEl.classList.toggle('unsupported', notFound);
+      positionEl.textContent = message ?? formatMoney(price != null ? price * units : null);
+      positionEl.classList.toggle('unsupported', notFound);
     }
 
     // Real bug found and fixed 2026-09-02: adding a genuine 4th holding
