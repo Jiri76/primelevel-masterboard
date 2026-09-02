@@ -745,9 +745,27 @@
     const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
     const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    // Edge Function proxying Finnhub's free-tier quote endpoint -- see
+    // its own source (supabase/functions/get-quotes) for the full
+    // reasoning. Keeps the Finnhub API key server-side (a Supabase
+    // secret), never in this page's own client-side JS.
+    const QUOTES_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/get-quotes`;
 
     const holdingsEl = document.getElementById('holdings');
     let holdings = [];
+    // ticker -> last known live price (number) or null (no price
+    // available yet, or Finnhub couldn't price that symbol). Persists
+    // across renderHoldings() rebuilds (e.g. opening a card's edit
+    // panel) so those don't blank out prices already fetched --
+    // buildDisplayView reads from this directly instead of always
+    // starting at "--".
+    let livePrices = {};
+    // holding.id -> { priceEl, positionEl }, repopulated on every
+    // renderHoldings() call -- lets refreshPrices() update the numbers
+    // already on screen in place, without a full re-render (which would
+    // otherwise blow away focus/scroll and, worse, any OTHER card's open
+    // edit panel elsewhere in the list).
+    let displayEls = new Map();
     // A Set, not a single id -- per explicit request, mirroring
     // Renewals' real behavior (confirmed directly from its own code,
     // not assumed): opening one item's edit panel does NOT close any
@@ -1048,66 +1066,44 @@
       }
       holdings = data;
       renderHoldings();
+      // Refresh on every reload -- covers the real page-load case AND
+      // every mutation that already calls loadHoldings() (add/save/
+      // delete), so a newly added or renamed holding gets a real price
+      // immediately rather than waiting out the rest of the 60s cycle.
+      // Deliberately not awaited -- rendering shouldn't block on it.
+      refreshPrices();
     }
 
     function renderHoldings() {
       holdingsEl.innerHTML = '';
+      displayEls.clear();
       if (!holdings.length) {
         holdingsEl.innerHTML = '<div class="empty-state">Nothing tracked yet.</div>';
         return;
       }
-      // demoIndex: 0 for the 1st card, 1 for the 2nd, 2 for the 3rd,
-      // null for every other one -- these 3 original holdings (always
-      // first, since they're the oldest by created_at) get fake
-      // DEMO_PRICE_POSITION numbers in place of live pricing, which
-      // isn't wired up yet. That's now the ONLY thing demoIndex still
-      // affects (see buildDisplayView's own comment) -- layout, colors,
-      // fonts and label wording are unconditional, every .holding-card
-      // gets the one locked design regardless of demoIndex, real bug
-      // found and fixed 2026-09-02 when adding a genuine 4th holding
-      // exposed that layout was still demo-only too.
-      holdings.forEach((h, i) => {
-        holdingsEl.append(buildHoldingCard(h, i < 3 ? i : null));
+      holdings.forEach((h) => {
+        holdingsEl.append(buildHoldingCard(h));
       });
     }
 
-    // Live price/position value are both still "--" -- no market-data
-    // source is wired up yet (a real decision, not an oversight: the
-    // user chose a live API lookup for the ticker<->name/price feature,
-    // which needs an actual API key registered with a provider before
-    // it can be built for real -- see the note in the edit panel).
     function formatMoney(n) {
       return n == null ? '—' : `$${n.toFixed(2)}`;
     }
 
-    // Fake demo numbers for the 1st and 2nd cards only -- not real
-    // data, not saved anywhere, purely so the bumped/centered styling
-    // has real-looking numbers to show instead of "--". Deliberately
-    // different between the two cards (not both $250/$5000) so they
-    // read as two distinct demo entries, not a copy-paste accident.
-    const DEMO_PRICE_POSITION = [
-      { price: 250, position: 5000 },
-      { price: 420, position: 8400 },
-      { price: 130, position: 3900 },
-    ];
-
     // Real bug found and fixed 2026-09-02: adding a genuine 4th holding
-    // via the "+" card exposed that this function still forked on
-    // `isDemo` for LAYOUT (label wording, and value-before-label DOM
-    // order) as well as for the number source -- so a real new card
-    // rendered with the old long labels, the old label-first order, and
-    // NONE of the now-universal CSS (see .holding-card above, no longer
-    // :nth-child(-n+3)-scoped) lined up with it, producing exactly the
-    // "unstyled, wrong layout" card reported live. Labels/order are now
-    // unconditional -- every card gets the one locked design. `isDemo`
-    // now controls ONLY what's genuinely still demo-only: the fake
-    // DEMO_PRICE_POSITION numbers standing in for live pricing (not
-    // wired up yet -- see the note above formatMoney) on these
-    // specific 3 original holdings. A real new holding honestly shows
-    // "--" instead, same as it always would have once live pricing
-    // exists for everyone.
-    function buildDisplayView(card, holding, demoIndex) {
-      const isDemo = demoIndex != null;
+    // via the "+" card exposed that this function used to fork on a
+    // `demoIndex` for LAYOUT (label wording, value-before-label DOM
+    // order) as well as for the price source -- so a real new card
+    // rendered with old long labels, label-first order, and none of the
+    // now-universal CSS (see .holding-card above, no longer
+    // :nth-child(-n+3)-scoped) lined up with it. Layout is now
+    // unconditional for every card. The number source is ALSO now
+    // unconditional, 2026-09-02: live pricing is wired up for real (a
+    // Finnhub-backed Edge Function, see QUOTES_FUNCTION_URL/
+    // refreshPrices below) -- the 3 original holdings' old hardcoded
+    // DEMO_PRICE_POSITION numbers are gone, every holding, old or new,
+    // shows its own real price now.
+    function buildDisplayView(card, holding) {
       const ticker = document.createElement('div');
       ticker.className = 'holding-ticker';
       ticker.textContent = holding.ticker;
@@ -1123,7 +1119,13 @@
       priceLabel.textContent = 'Price';
       const price = document.createElement('div');
       price.className = 'holding-price';
-      price.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].price) : formatMoney(null);
+      // Reads whatever's already cached in livePrices (from a previous
+      // refresh) rather than always starting blank -- so rebuilding
+      // this card (e.g. because some OTHER card's edit panel just
+      // opened/closed, which re-renders the whole list) doesn't wipe
+      // out a price already fetched a moment ago.
+      const cachedPrice = livePrices[holding.ticker] ?? null;
+      price.textContent = formatMoney(cachedPrice);
       priceRow.append(price, priceLabel);
 
       const positionLabel = document.createElement('div');
@@ -1131,7 +1133,7 @@
       positionLabel.textContent = 'Position';
       const position = document.createElement('div');
       position.className = 'holding-position';
-      position.textContent = isDemo ? formatMoney(DEMO_PRICE_POSITION[demoIndex].position) : formatMoney(null);
+      position.textContent = formatMoney(cachedPrice != null ? cachedPrice * holding.units : null);
 
       // Wrapped in its own row div (mirroring priceRow), 2026-09-01 --
       // needed so the group can be positioned with a single absolute
@@ -1148,7 +1150,42 @@
       positionRow.className = 'holding-position-row';
       positionRow.append(position, positionLabel);
       card.append(ticker, name, priceRow, positionRow);
+      displayEls.set(holding.id, { priceEl: price, positionEl: position });
     }
+
+    // Refreshes live prices for every current holding in one batched
+    // call to the Edge Function (one HTTP round trip regardless of how
+    // many holdings there are, rather than one per ticker), then
+    // updates the DOM directly for whichever cards are currently in
+    // display mode -- NOT via renderHoldings(), so a card someone has
+    // open for editing elsewhere in the list is left completely alone.
+    // Called once after every loadHoldings() (covers page load and
+    // every add/save/delete) and on a 60s repeating timer below, per
+    // explicit request -- see the chat decision on refresh cadence
+    // (60 calls/minute Finnhub free-tier limit vs. holdings-count x
+    // refreshes-per-minute actually used, nowhere close for any
+    // realistic number of holdings).
+    async function refreshPrices() {
+      if (!holdings.length) return;
+      const tickers = [...new Set(holdings.map((h) => h.ticker))];
+      let quotes;
+      try {
+        const res = await fetch(`${QUOTES_FUNCTION_URL}?symbols=${tickers.join(',')}`);
+        if (!res.ok) return; // leave livePrices as they were -- a failed refresh shouldn't blank out the last known prices
+        quotes = await res.json();
+      } catch {
+        return; // network hiccup -- try again on the next 60s tick, same reasoning as above
+      }
+      Object.assign(livePrices, quotes);
+      for (const holding of holdings) {
+        const els = displayEls.get(holding.id);
+        if (!els) continue; // this holding's card isn't in display mode right now (its edit panel is open) -- nothing on screen to update
+        const price = livePrices[holding.ticker] ?? null;
+        els.priceEl.textContent = formatMoney(price);
+        els.positionEl.textContent = formatMoney(price != null ? price * holding.units : null);
+      }
+    }
+    setInterval(refreshPrices, 60000);
 
     function buildEditView(card, holding) {
       const panel = document.createElement('div');
@@ -1279,7 +1316,7 @@
       card.append(panel);
     }
 
-    function buildHoldingCard(holding, demoIndex) {
+    function buildHoldingCard(holding) {
       const card = document.createElement('div');
       card.className = 'holding-card';
 
@@ -1308,7 +1345,7 @@
           editingIds.add(holding.id);
           renderHoldings();
         });
-        buildDisplayView(card, holding, demoIndex);
+        buildDisplayView(card, holding);
       }
       return card;
     }
