@@ -317,6 +317,23 @@
   .holdings .holding-card .holding-position {
     text-align: center;
   }
+  /* "Not supported by KuCoin" state, 2026-09-02 -- per explicit
+     request: a crypto ticker (contains "-") KuCoin genuinely doesn't
+     list used to render as the exact same plain "--" as "hasn't
+     loaded yet", indistinguishable from a real bug. Mirrors this
+     project's own established red/15px/centered error-text styling
+     (.holding-edit-error, .add-error) exactly, rather than inventing a
+     new one. Extra .holding-card/.holding-price/.holding-position
+     class repetition (4 classes total) is deliberate, not accidental
+     -- needed to outrank the 25px/bold rule just above by specificity,
+     since a plain 2-class ".holding-price.unsupported" would lose to
+     it regardless of source order. */
+  .holdings .holding-card .holding-price.unsupported,
+  .holdings .holding-card .holding-position.unsupported {
+    color: var(--red);
+    font-size: 15px;
+    font-weight: 400;
+  }
   /* Edit panel -- opened by clicking the card, replaces its normal
      display content in place (same interaction model as Renewals' own
      .edit-panel). Renewals' own layout was horizontal (fields, then
@@ -1093,8 +1110,58 @@
     // "$25051.00". en-US + explicit min/max fraction digits locks the
     // format to exactly 2 decimal places (never 3+, never a bare whole
     // number), same as toFixed always did, just with the comma added.
+    // maximumFractionDigits: 6 (was a fixed 2), 2026-09-02 -- real bug
+    // found and reported live: WILD-USDT's actual KuCoin price,
+    // $0.01511, was rounding to a flat "$0.02" -- correct arithmetic
+    // for 2 decimal places, but a ~33% distortion for a token priced in
+    // fractions of a cent, genuinely misleading, not just imprecise.
+    // toLocaleString only uses as many decimals as a number actually
+    // has, up to the max -- it never PADS extra trailing zeros beyond
+    // minimumFractionDigits, so this is a strict precision improvement
+    // for small numbers with zero effect on normal-range ones:
+    // 325.13 -> still "325.13" (unchanged), 25051 -> still "25,051.00"
+    // (unchanged), but 0.01511 -> "0.01511" (was "0.02"). Applies to
+    // every holding, not just crypto -- a cheap penny stock would hit
+    // the exact same rounding problem.
     function formatMoney(n) {
-      return n == null ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return n == null ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
+    }
+
+    // A ticker containing "-" (e.g. "WILD-USDT") is a crypto pair,
+    // looked up on KuCoin specifically -- see the Edge Function's own
+    // comment for the full reasoning (and the real bare-"BTC"-collides-
+    // with-an-unrelated-ETF bug that made the "-USDT" suffix mandatory
+    // in the first place).
+    function isCryptoTicker(ticker) {
+      return ticker.includes('-');
+    }
+
+    // Sets the Price/Position text (and the "unsupported" styling) for
+    // one holding, shared between buildDisplayView's initial render and
+    // refreshPrices' live update below so the two can never drift out
+    // of sync with each other.
+    //
+    // Real UX gap found and fixed 2026-09-02, per explicit request: a
+    // crypto ticker KuCoin genuinely doesn't list used to render as the
+    // exact same plain "--" as "hasn't fetched yet" -- indistinguishable
+    // from a real bug, no way to tell "wrong ticker" from "still
+    // loading" apart. The key: livePrices[ticker] is `undefined` before
+    // the FIRST refreshPrices() call ever completes for this ticker
+    // (still loading -- stays a plain "--", correctly, so a normal page
+    // load doesn't flash an error for an instant), but explicitly
+    // `null` once a real fetch has completed and genuinely found
+    // nothing (Finnhub's own quotes object always sets every requested
+    // ticker's key, never omits one -- see the Edge Function). Reading
+    // the raw value directly here, not through `?? null`, is what keeps
+    // that distinction alive; `?? null` would collapse both cases to
+    // the same thing.
+    function applyPriceDisplay(ticker, units, priceEl, positionEl) {
+      const price = livePrices[ticker];
+      const unsupported = price === null && isCryptoTicker(ticker);
+      priceEl.textContent = unsupported ? 'Not supported by KuCoin' : formatMoney(price ?? null);
+      priceEl.classList.toggle('unsupported', unsupported);
+      positionEl.textContent = unsupported ? 'Not supported by KuCoin' : formatMoney(price != null ? price * units : null);
+      positionEl.classList.toggle('unsupported', unsupported);
     }
 
     // Real bug found and fixed 2026-09-02: adding a genuine 4th holding
@@ -1126,13 +1193,6 @@
       priceLabel.textContent = 'Price';
       const price = document.createElement('div');
       price.className = 'holding-price';
-      // Reads whatever's already cached in livePrices (from a previous
-      // refresh) rather than always starting blank -- so rebuilding
-      // this card (e.g. because some OTHER card's edit panel just
-      // opened/closed, which re-renders the whole list) doesn't wipe
-      // out a price already fetched a moment ago.
-      const cachedPrice = livePrices[holding.ticker] ?? null;
-      price.textContent = formatMoney(cachedPrice);
       priceRow.append(price, priceLabel);
 
       const positionLabel = document.createElement('div');
@@ -1140,7 +1200,12 @@
       positionLabel.textContent = 'Position';
       const position = document.createElement('div');
       position.className = 'holding-position';
-      position.textContent = formatMoney(cachedPrice != null ? cachedPrice * holding.units : null);
+      // Reads whatever's already cached in livePrices (from a previous
+      // refresh) rather than always starting blank -- so rebuilding
+      // this card (e.g. because some OTHER card's edit panel just
+      // opened/closed, which re-renders the whole list) doesn't wipe
+      // out a price already fetched a moment ago.
+      applyPriceDisplay(holding.ticker, holding.units, price, position);
 
       // Wrapped in its own row div (mirroring priceRow), 2026-09-01 --
       // needed so the group can be positioned with a single absolute
@@ -1187,9 +1252,7 @@
       for (const holding of holdings) {
         const els = displayEls.get(holding.id);
         if (!els) continue; // this holding's card isn't in display mode right now (its edit panel is open) -- nothing on screen to update
-        const price = livePrices[holding.ticker] ?? null;
-        els.priceEl.textContent = formatMoney(price);
-        els.positionEl.textContent = formatMoney(price != null ? price * holding.units : null);
+        applyPriceDisplay(holding.ticker, holding.units, els.priceEl, els.positionEl);
       }
     }
     setInterval(refreshPrices, 60000);
