@@ -735,12 +735,14 @@
     flex-wrap: wrap;
     justify-content: center;
     max-width: 900px;
-    gap: 8px 16px;
+    /* 8px 16px -> 10px 20px, per explicit request. */
+    gap: 10px 20px;
   }
   .portfolio-legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    /* 6px -> 10px, per explicit request. */
+    gap: 10px;
     font-family: 'Montserrat', sans-serif;
     /* 14px -> 15px, per explicit request. */
     font-size: 15px;
