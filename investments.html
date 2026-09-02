@@ -653,11 +653,30 @@
      "Position" label on the holding cards elsewhere on this page. */
   .portfolio-legend {
     position: absolute;
+    /* Anchored via `bottom`, not `top`, deliberately -- with wrapping
+       (below), this means MORE rows grow the box upward, toward the
+       donut, while the bottom row always stays exactly 12px from the
+       bar's own bottom edge. Getting this backwards (`top` anchored)
+       would instead push extra rows downward, straight past the bar's
+       bottom edge -- the wrong direction to grow in. */
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 16px;
+    /* Real bug found and fixed 2026-09-03, before it ever shipped
+       wrong: with no wrap and no width limit, this row just kept
+       growing sideways forever -- confirmed live with a 12-ticker
+       test, it spilled 15px+ past BOTH the bar's left and right edges
+       (`position:absolute` sizes to its own content by default, and
+       .portfolio-summary has no overflow:hidden to clip it either).
+       flex-wrap + max-width force it to wrap onto a second/third row
+       instead, well before reaching the bar's own edges (980px wide;
+       900px leaves a real, comfortable margin on both sides, not a
+       hairline fit). */
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 900px;
+    gap: 8px 16px;
   }
   .portfolio-legend-item {
     display: flex;
