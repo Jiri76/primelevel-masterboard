@@ -576,12 +576,19 @@
   }
 
   .add-wrapper {
-    margin-top: 100px;
-    /* 100px -> 40px, 2026-09-02, per explicit request: the gap from the
-       add-card down to the first real holding card below it should
-       match the holdings grid's own inter-card gap (40px, the locked
-       layout spec), not the site's separate 100px title-rhythm value. */
-    margin-bottom: 40px;
+    /* 100px -> 98px, 2026-09-03, per explicit request: the resting
+       bar-to-"+" gap was measuring 102px (100 margin + this element's
+       own 2px padding-top, added earlier for hover-scale headroom so
+       the circle doesn't clip against overflow:hidden -- see the
+       Renewals project memory for the original bug this fixes).
+       Trimming the MARGIN by that same 2px (not the padding, which
+       still exists to protect the hover pop) lands the resting gap
+       back on an exact 100px without reintroducing the clip. */
+    margin-top: 98px;
+    /* 40px -> 38px, same reasoning and same day: the "+"-to-holdings
+       gap was measuring 42px (40 margin + this element's own 2px
+       padding-bottom). Trimmed for the identical reason. */
+    margin-bottom: 38px;
     padding-top: 2px;
     padding-bottom: 2px;
     /* 260px -> 600px, 2026-09-02 -- the popover now holds a full
