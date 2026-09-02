@@ -619,12 +619,22 @@
     width: 500px;
     height: 500px;
     /* Added 2026-09-03, alongside .portfolio-summary's own
-       align-items: flex-start change above: an explicit 50px gap from
-       the bar's top edge, replacing flex auto-centering now that the
-       space below the donut is deliberately taller (holds the legend
-       too) than the space above it -- see .portfolio-summary's own
-       comment for the full reasoning. */
-    margin-top: 50px;
+       align-items: flex-start change above: an explicit gap from the
+       bar's top edge, replacing flex auto-centering now that the space
+       below the donut is deliberately taller (holds the legend too)
+       than the space above it -- see .portfolio-summary's own comment
+       for the full reasoning.
+       50px -> 49px, same day, real sub-pixel bug found and fixed via
+       live measurement: the bar's own 0.5px border renders as a full
+       1px on this display (confirmed via getComputedStyle, the same
+       sub-pixel-rounds-up-to-1px behavior already documented in
+       [[primelevel-renewals-project]]'s own border-thinness note) --
+       that 1px sits OUTSIDE this margin, between the bar's true outer
+       edge and its content box, so a 50px margin measured 51px when
+       checked against the bar's own getBoundingClientRect() (which
+       reports the OUTER edge). 49px + the 1px border lands the
+       real, visually-measured gap on exactly 50px. */
+    margin-top: 49px;
   }
   .portfolio-summary-text {
     position: absolute;
@@ -685,8 +695,14 @@
        other two 50px gaps (top-of-bar to donut, donut-bottom to
        legend-top) exactly, so all three read as one consistent rhythm
        instead of the legend sitting noticeably tighter against the
-       bottom than the donut sits against everything else. */
-    bottom: 50px;
+       bottom than the donut sits against everything else.
+       50px -> 49px, same day, same real sub-pixel fix as
+       .portfolio-donut's own margin-top above: the bar's 0.5px border
+       renders as a genuine 1px (confirmed via getComputedStyle), which
+       sits outside this offset, between the legend and the bar's TRUE
+       outer edge -- 49px + that 1px border lands the real,
+       visually-measured gap on exactly 50px. */
+    bottom: 49px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
