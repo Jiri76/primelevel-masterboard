@@ -638,7 +638,23 @@
   }
   .portfolio-summary-text {
     position: absolute;
-    top: 50%;
+    /* top: 50% -> 299px, 2026-09-03, real bug found and fixed via live
+       measurement, not eyeballing: 50% centers this text on the BAR's
+       own midpoint (669px tall -> 334.5px), which stopped being the
+       same point as the DONUT's own midpoint once the donut became
+       explicitly top-anchored (49px margin-top, see .portfolio-donut)
+       instead of flex-auto-centered, for the 50/50/50 gap fix earlier
+       -- confirmed live, a real 34.5px mismatch, the text sitting
+       visibly below the donut's true center. 299px is the donut's own
+       real center, measured from the bar's CONTENT edge (inside the
+       1px rendered border): border(1px) + donut's margin-top(49px) +
+       half the donut's own height(250px) = 300px from the bar's OUTER
+       edge, minus that same 1px border since `top` on an absolutely
+       positioned child measures from the padding/content edge, not the
+       outer border edge -> 299px. If the donut's own size/margin-top
+       ever changes again, this needs recalculating to match -- it's
+       not derived automatically from the donut's own position. */
+    top: 299px;
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
