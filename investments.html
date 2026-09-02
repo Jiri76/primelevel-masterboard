@@ -609,6 +609,25 @@
   .add-wrapper.idle-hidden {
     max-height: 0;
     margin-bottom: 0;
+    /* Added 2026-09-03, real bug found and fixed via direct
+       measurement (this environment doesn't reliably let the
+       max-height transition settle on its own -- had to force it with
+       style.transition='none' to see the true final state, not a
+       mid-transition snapshot): even with max-height:0, the wrapper's
+       own padding-top/padding-bottom (2px each, kept for hover-scale
+       headroom in the RESTING state -- see .add-wrapper's own comment)
+       still rendered as a genuine 4px residual box, per the established
+       "padding renders regardless of collapsed max-height" lesson.
+       That left the hidden-state bar-to-holdings gap at 102px (98
+       margin-top + 4px leftover padding), not the intended 100px.
+       Zeroing padding here is safe -- the trigger is invisible and
+       non-interactive in this state (opacity:0 below), so there's no
+       hover pop left to protect. margin-top overridden to exactly
+       100px (the resting state's own margin-top, 98px, is 2px short on
+       its own once padding no longer makes up the difference here). */
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 100px;
   }
   .add-trigger {
     display: flex;
