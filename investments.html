@@ -568,7 +568,13 @@
      radius), per explicit request. */
   .portfolio-summary {
     width: 980px;
-    height: 300px;
+    /* 300px -> 600px, 2026-09-03, per explicit request: more room
+       needed for the upcoming pie chart. Height only -- width, margin
+       (the 100px/100px surrounding gaps), and colors are all untouched,
+       and don't need to be: they're independent of this element's own
+       height (margin-collapsing with h1/.add-wrapper works the same
+       regardless of how tall this box is). */
+    height: 600px;
     margin: 0 auto;
     background: var(--input-bg);
     border: 0.5px solid var(--border);
