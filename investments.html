@@ -642,6 +642,39 @@
   .portfolio-daily-change.positive { color: var(--green); }
   .portfolio-daily-change.negative { color: var(--red); }
 
+  /* Legend, 2026-09-03 -- per explicit request: the donut's slice
+     colors meant nothing without this. Sits in the bar's own leftover
+     ~50px margin below the 500px donut (600px bar height, 500px donut,
+     split evenly top/bottom by .portfolio-summary's flex centering) --
+     positioned via its own absolute bottom offset so it's independent
+     of the donut/text centering above it, not fighting either for
+     space. gray placeholder text/small dot, matching the same quiet,
+     secondary-information style already used for every "Price"/
+     "Position" label on the holding cards elsewhere on this page. */
+  .portfolio-legend {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+  }
+  .portfolio-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: var(--placeholder);
+    white-space: nowrap;
+  }
+  .portfolio-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+  }
+
   .add-wrapper {
     /* 100px -> 98px, 2026-09-03, per explicit request: the resting
        bar-to-"+" gap was measuring 102px (100 margin + this element's
@@ -1392,6 +1425,7 @@
     let portfolioDonutEl = null;
     let portfolioTotalValueEl = null;
     let portfolioDailyChangeEl = null;
+    let portfolioLegendEl = null;
 
     // Built once, lazily, the first time updatePortfolioSummary() runs
     // -- same "shell built once, content updated in place on every
@@ -1411,7 +1445,18 @@
       portfolioDailyChangeEl.className = 'portfolio-daily-change';
       textWrap.append(portfolioTotalValueEl, portfolioDailyChangeEl);
 
-      portfolioSummaryEl.append(portfolioDonutEl, textWrap);
+      // Legend, 2026-09-03 -- per explicit request: the donut's colors
+      // (gold/orange/gray/...) meant nothing on their own, no way to
+      // tell which slice was which holding. Sits in the bar's own
+      // leftover 50px margin below the 500px donut (600px bar - 500px
+      // donut, split evenly top/bottom by the flex centering) --
+      // positioned independently via its own absolute bottom offset, a
+      // sibling of textWrap, not inside it, so it doesn't get pulled
+      // into the donut-hole centering that positions the two figures.
+      portfolioLegendEl = document.createElement('div');
+      portfolioLegendEl.className = 'portfolio-legend';
+
+      portfolioSummaryEl.append(portfolioDonutEl, textWrap, portfolioLegendEl);
     }
 
     // "+$142.30" / "-$142.30" -- a real minus sign prefixed before the
@@ -1444,6 +1489,10 @@
       let totalValue = 0;
       let totalChange = 0;
       let totalPrevValue = 0;
+      // Each segment now carries its own ticker, 2026-09-03, so the
+      // legend built below can label each slice by the exact same
+      // color it's drawn with -- was just a bare value, no way to say
+      // which slice belonged to which holding.
       const segments = [];
       for (const h of holdings) {
         const quote = livePrices[h.ticker];
@@ -1454,7 +1503,7 @@
           totalChange += quote.change * h.units;
           totalPrevValue += (quote.price - quote.change) * h.units;
         }
-        if (value > 0) segments.push(value);
+        if (value > 0) segments.push({ ticker: h.ticker, value });
       }
 
       const R = 160, STROKE = 40, CX = 200, CY = 200;
@@ -1476,21 +1525,35 @@
       // rotate(-90) starts the first slice at 12 o'clock, the standard
       // pie/donut convention, instead of SVG's own 3-o'clock zero angle.
       let offset = 0;
-      segments.forEach((value, i) => {
+      portfolioLegendEl.innerHTML = '';
+      segments.forEach(({ ticker, value }, i) => {
         const fraction = totalValue > 0 ? value / totalValue : 0;
         const dash = fraction * circumference;
+        const color = PORTFOLIO_SUMMARY_PALETTE[i % PORTFOLIO_SUMMARY_PALETTE.length];
         const slice = document.createElementNS(SVG_NS, 'circle');
         slice.setAttribute('cx', CX);
         slice.setAttribute('cy', CY);
         slice.setAttribute('r', R);
         slice.setAttribute('fill', 'none');
-        slice.setAttribute('stroke', PORTFOLIO_SUMMARY_PALETTE[i % PORTFOLIO_SUMMARY_PALETTE.length]);
+        slice.setAttribute('stroke', color);
         slice.setAttribute('stroke-width', STROKE);
         slice.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
         slice.setAttribute('stroke-dashoffset', -offset);
         slice.setAttribute('transform', `rotate(-90 ${CX} ${CY})`);
         portfolioDonutEl.appendChild(slice);
         offset += dash;
+
+        // Legend item: a small dot in the SAME color this slice was
+        // just drawn with, plus its ticker -- built in the same loop
+        // as the slice itself so the two can never drift out of sync
+        // (same color source, same order, computed once).
+        const item = document.createElement('span');
+        item.className = 'portfolio-legend-item';
+        const dot = document.createElement('span');
+        dot.className = 'portfolio-legend-dot';
+        dot.style.background = color;
+        item.append(dot, document.createTextNode(ticker));
+        portfolioLegendEl.appendChild(item);
       });
 
       portfolioTotalValueEl.textContent = formatMoneyTotal(totalValue);
