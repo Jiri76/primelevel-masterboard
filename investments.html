@@ -579,7 +579,57 @@
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
+    /* Content added 2026-09-03 -- the donut (flex-centered) and the
+       text overlay (position:absolute, taken out of flex flow so it
+       doesn't fight the donut for centering) share this same
+       position:relative box. Recommended over the user's original
+       "chart on one side, numbers on the other" split: a donut with
+       the numbers centered in its own hole reads as one focal point
+       instead of splitting attention across the bar, and is the
+       established pattern real portfolio apps use for exactly this. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
+  .portfolio-donut {
+    width: 400px;
+    height: 400px;
+  }
+  .portfolio-summary-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .portfolio-total-value {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    /* 40px, explicit starting value per direct request. */
+    font-size: 40px;
+    color: var(--white);
+  }
+  /* 20px -- Claude's own starting choice (not yet given a value by the
+     user), roughly half the total-value size, matching the same
+     value-to-label size ratios already used elsewhere on this page
+     (e.g. ticker 30px / name 15px) -- a reasonable default to tune from
+     live, not a guess made in isolation. Bold, same weight as every
+     other numeric value on this page (ticker, price, position). */
+  .portfolio-daily-change {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-top: 8px;
+  }
+  /* Green/red = today's change direction ONLY, using the exact same
+     tokens as everywhere else on this page/site -- per explicit
+     request. Deliberately the only two places these colors appear in
+     this whole summary bar (donut slices use a separate palette, see
+     the JS, specifically so a slice's color is never mistaken for an
+     up/down signal). */
+  .portfolio-daily-change.positive { color: var(--green); }
+  .portfolio-daily-change.negative { color: var(--red); }
 
   .add-wrapper {
     /* 100px -> 98px, 2026-09-03, per explicit request: the resting
@@ -1234,11 +1284,18 @@
     // real exchange this app ever checks; a stock isn't tied to one
     // named source the same way) but identical styling -- both route
     // through the same .unsupported class.
+    // livePrices[ticker] shape changed 2026-09-03 (was a bare price
+    // number, now { price, change } | null | undefined) -- the Edge
+    // Function now also returns each holding's daily $ change, for the
+    // portfolio summary bar below. `quote` here plays exactly the role
+    // the old bare `price` variable did for the undefined/null/found
+    // three-way distinction -- only the "found" case's shape changed.
     function applyPriceDisplay(ticker, units, priceEl, positionEl) {
-      const price = livePrices[ticker];
-      const notFound = price === null;
+      const quote = livePrices[ticker];
+      const notFound = quote === null;
       const message = notFound ? (isCryptoTicker(ticker) ? 'Not supported by KuCoin' : 'Ticker not found') : null;
-      priceEl.textContent = message ?? formatMoney(price ?? null);
+      const price = quote ? quote.price : null;
+      priceEl.textContent = message ?? formatMoney(price);
       priceEl.classList.toggle('unsupported', notFound);
       positionEl.textContent = message ?? formatMoney(price != null ? price * units : null);
       positionEl.classList.toggle('unsupported', notFound);
@@ -1305,6 +1362,124 @@
       displayEls.set(holding.id, { priceEl: price, positionEl: position });
     }
 
+    // Portfolio summary bar (the top card): total value, today's $/%
+    // change, and an allocation donut -- per explicit request, built
+    // after the user approved Claude's own recommendation of a donut
+    // with the numbers centered in its own hole over the originally-
+    // described side-by-side split (see chat: reads as one focal point
+    // instead of splitting attention, and is the pattern real portfolio
+    // apps already use for this).
+    //
+    // Slice palette deliberately excludes var(--green)/var(--red) --
+    // those two are reserved, here, to mean ONLY "today's change is up/
+    // down" (the daily-change text below). A slice happening to render
+    // green could otherwise be misread as "this holding is up today",
+    // an entirely different fact a donut slice can't actually express.
+    const PORTFOLIO_SUMMARY_PALETTE = ['#B29B68', '#D9A441', '#8A93A3', '#8A7550', 'rgba(249,249,250,0.5)'];
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const portfolioSummaryEl = document.getElementById('portfolioSummary');
+    let portfolioDonutEl = null;
+    let portfolioTotalValueEl = null;
+    let portfolioDailyChangeEl = null;
+
+    // Built once, lazily, the first time updatePortfolioSummary() runs
+    // -- same "shell built once, content updated in place on every
+    // refresh" pattern as displayEls/buildDisplayView above, so this
+    // never fights a concurrent DOM rebuild elsewhere on the page.
+    function buildPortfolioSummaryShell() {
+      if (portfolioDonutEl) return;
+      portfolioDonutEl = document.createElementNS(SVG_NS, 'svg');
+      portfolioDonutEl.setAttribute('viewBox', '0 0 400 400');
+      portfolioDonutEl.setAttribute('class', 'portfolio-donut');
+
+      const textWrap = document.createElement('div');
+      textWrap.className = 'portfolio-summary-text';
+      portfolioTotalValueEl = document.createElement('div');
+      portfolioTotalValueEl.className = 'portfolio-total-value';
+      portfolioDailyChangeEl = document.createElement('div');
+      portfolioDailyChangeEl.className = 'portfolio-daily-change';
+      textWrap.append(portfolioTotalValueEl, portfolioDailyChangeEl);
+
+      portfolioSummaryEl.append(portfolioDonutEl, textWrap);
+    }
+
+    // "+$142.30" / "-$142.30" -- a real minus sign prefixed before the
+    // $ (not formatMoney's own bare "$-142.30", which reads oddly),
+    // matching how a signed currency figure conventionally displays.
+    function formatSignedMoney(n) {
+      const sign = n < 0 ? '−' : '+';
+      return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function updatePortfolioSummary() {
+      buildPortfolioSummaryShell();
+
+      // Only holdings with a real, resolved price (quote is a real
+      // object, not null/undefined) count toward the total or the
+      // donut -- an unpriced holding has no known value to include,
+      // same reasoning as its own card showing "--"/an error instead
+      // of a number.
+      let totalValue = 0;
+      let totalChange = 0;
+      let totalPrevValue = 0;
+      const segments = [];
+      for (const h of holdings) {
+        const quote = livePrices[h.ticker];
+        if (!quote) continue;
+        const value = quote.price * h.units;
+        totalValue += value;
+        if (quote.change != null) {
+          totalChange += quote.change * h.units;
+          totalPrevValue += (quote.price - quote.change) * h.units;
+        }
+        if (value > 0) segments.push(value);
+      }
+
+      const R = 160, STROKE = 40, CX = 200, CY = 200;
+      const circumference = 2 * Math.PI * R;
+      portfolioDonutEl.innerHTML = '';
+      // Faint full-circle track underneath every slice, same border
+      // color as every other card outline on this page -- so an empty
+      // portfolio (0 segments) still shows a visible ring, not a blank
+      // square.
+      const track = document.createElementNS(SVG_NS, 'circle');
+      track.setAttribute('cx', CX);
+      track.setAttribute('cy', CY);
+      track.setAttribute('r', R);
+      track.setAttribute('fill', 'none');
+      track.setAttribute('stroke', 'var(--border)');
+      track.setAttribute('stroke-width', STROKE);
+      portfolioDonutEl.appendChild(track);
+
+      // rotate(-90) starts the first slice at 12 o'clock, the standard
+      // pie/donut convention, instead of SVG's own 3-o'clock zero angle.
+      let offset = 0;
+      segments.forEach((value, i) => {
+        const fraction = totalValue > 0 ? value / totalValue : 0;
+        const dash = fraction * circumference;
+        const slice = document.createElementNS(SVG_NS, 'circle');
+        slice.setAttribute('cx', CX);
+        slice.setAttribute('cy', CY);
+        slice.setAttribute('r', R);
+        slice.setAttribute('fill', 'none');
+        slice.setAttribute('stroke', PORTFOLIO_SUMMARY_PALETTE[i % PORTFOLIO_SUMMARY_PALETTE.length]);
+        slice.setAttribute('stroke-width', STROKE);
+        slice.setAttribute('stroke-dasharray', `${dash} ${circumference - dash}`);
+        slice.setAttribute('stroke-dashoffset', -offset);
+        slice.setAttribute('transform', `rotate(-90 ${CX} ${CY})`);
+        portfolioDonutEl.appendChild(slice);
+        offset += dash;
+      });
+
+      portfolioTotalValueEl.textContent = formatMoney(totalValue);
+      const isUp = totalChange >= 0;
+      const changePct = totalPrevValue > 0 ? (totalChange / totalPrevValue) * 100 : 0;
+      portfolioDailyChangeEl.textContent =
+        `${formatSignedMoney(totalChange)} · ${isUp ? '+' : '−'}${Math.abs(changePct).toFixed(2)}%`;
+      portfolioDailyChangeEl.classList.toggle('positive', isUp);
+      portfolioDailyChangeEl.classList.toggle('negative', !isUp);
+    }
+
     // Refreshes live prices for every current holding in one batched
     // call to the Edge Function (one HTTP round trip regardless of how
     // many holdings there are, rather than one per ticker), then
@@ -1334,6 +1509,7 @@
         if (!els) continue; // this holding's card isn't in display mode right now (its edit panel is open) -- nothing on screen to update
         applyPriceDisplay(holding.ticker, holding.units, els.priceEl, els.positionEl);
       }
+      updatePortfolioSummary();
     }
     setInterval(refreshPrices, 60000);
 

@@ -7,11 +7,18 @@
 // here via Deno.env.get, never sent to or readable by the browser.
 //
 // GET /functions/v1/get-quotes?symbols=AAPL,MSFT,WILD-USDT
-// -> { "AAPL": 254.32, "MSFT": 421.1, "WILD-USDT": 0.01508 }
+// -> { "AAPL": { "price": 254.32, "change": 1.2 }, "MSFT": { "price": 421.1, "change": -3.4 }, "WILD-USDT": null }
 // A symbol Finnhub can't price (bad ticker, or a genuine API error for
 // that one symbol) comes back as `null` rather than failing the whole
 // batch -- one bad holding shouldn't block the other real ones from
 // refreshing.
+//
+// `change`, 2026-09-03: added for the portfolio summary bar's daily
+// change figure. Finnhub's own /quote response already includes this
+// (`d`, the day's $ change) on the exact same call already being made
+// for `c` (price) -- no second request, no extra Finnhub-rate-limit
+// cost. `change` is null whenever Finnhub doesn't report one (rare, but
+// possible), independent of whether `price` itself resolved.
 //
 // Crypto, 2026-09-02: a ticker containing "-" (e.g. "WILD-USDT") is
 // treated as a crypto pair and looked up on KuCoin specifically
@@ -55,7 +62,12 @@ const CORS_HEADERS = {
 // real holdings list this page will ever have.
 const MAX_SYMBOLS = 20;
 
-async function fetchFinnhubPrice(finnhubSymbol: string, apiKey: string): Promise<number | null> {
+interface Quote {
+  price: number;
+  change: number | null;
+}
+
+async function fetchFinnhubQuote(finnhubSymbol: string, apiKey: string): Promise<Quote | null> {
   try {
     const res = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${apiKey}`
@@ -65,7 +77,9 @@ async function fetchFinnhubPrice(finnhubSymbol: string, apiKey: string): Promise
     // `c` is current price. Finnhub returns `c: 0` (not an HTTP error)
     // for a symbol it doesn't recognize -- treated as "no real price
     // available" here, same as any other null.
-    return typeof data.c === "number" && data.c > 0 ? data.c : null;
+    if (typeof data.c !== "number" || data.c <= 0) return null;
+    const change = typeof data.d === "number" ? data.d : null;
+    return { price: data.c, change };
   } catch {
     return null;
   }
@@ -110,13 +124,13 @@ Deno.serve(async (req: Request) => {
   const results = await Promise.all(
     symbols.map(async (symbol) => {
       const finnhubSymbol = symbol.includes("-") ? `KUCOIN:${symbol}` : symbol;
-      const price = await fetchFinnhubPrice(finnhubSymbol, apiKey);
-      return [symbol, price] as const;
+      const quote = await fetchFinnhubQuote(finnhubSymbol, apiKey);
+      return [symbol, quote] as const;
     })
   );
 
-  const quotes: Record<string, number | null> = {};
-  for (const [symbol, price] of results) quotes[symbol] = price;
+  const quotes: Record<string, Quote | null> = {};
+  for (const [symbol, quote] of results) quotes[symbol] = quote;
 
   return new Response(JSON.stringify(quotes), {
     headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
