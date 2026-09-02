@@ -574,21 +574,37 @@
        and don't need to be: they're independent of this element's own
        height (margin-collapsing with h1/.add-wrapper works the same
        regardless of how tall this box is). */
-    height: 600px;
+    /* 600px -> 669px, 2026-09-03, per explicit request: three equal
+       50px gaps (top-of-bar to donut, donut-bottom to legend,
+       legend-bottom to bottom-of-bar), measured and confirmed live
+       before this change (the ACTUAL top gap was 50px, not the
+       initially-guessed 20px) -- 50 + 500 (donut) + 50 + 19 (legend,
+       15px font single line) + 50 = 669px exactly, not a round number
+       chosen for its own sake. */
+    height: 669px;
     margin: 0 auto;
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
-    /* Content added 2026-09-03 -- the donut (flex-centered) and the
-       text overlay (position:absolute, taken out of flex flow so it
-       doesn't fight the donut for centering) share this same
-       position:relative box. Recommended over the user's original
-       "chart on one side, numbers on the other" split: a donut with
-       the numbers centered in its own hole reads as one focal point
-       instead of splitting attention across the bar, and is the
-       established pattern real portfolio apps use for exactly this. */
+    /* Content added 2026-09-03 -- the donut and the text overlay
+       (position:absolute, taken out of flex flow so it doesn't fight
+       the donut for centering) share this same position:relative box.
+       Recommended over the user's original "chart on one side, numbers
+       on the other" split: a donut with the numbers centered in its
+       own hole reads as one focal point instead of splitting attention
+       across the bar, and is the established pattern real portfolio
+       apps use for exactly this.
+       align-items: flex-start (was center), same day as the height
+       change above -- the donut's OWN vertical position is now an
+       explicit 50px margin-top (see .portfolio-donut) instead of
+       flex-auto-centered, needed once there's deliberately MORE
+       reserved space below it (the legend) than above -- flex
+       centering alone can't produce three independently-equal gaps,
+       only "equal space above and below the flex item itself".
+       justify-content:center is untouched -- still centers the donut
+       horizontally exactly as before, this change is vertical-only. */
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     position: relative;
   }
@@ -596,14 +612,19 @@
     /* 400px -> 500px, per explicit request. Only the rendered box size
        changes -- the SVG's own viewBox (and the ring/stroke math inside
        it, see updatePortfolioSummary) stays "0 0 400 400", so this just
-       scales the whole drawing up uniformly, no redrawing needed. Still
-       comfortably centered inside the 600px-tall bar (50px above/below,
-       via .portfolio-summary's own flex centering, unchanged). The
+       scales the whole drawing up uniformly, no redrawing needed. The
        total-value/daily-change text stays centered too, automatically
        -- it's positioned via its own absolute 50%/50% against
        .portfolio-summary's box, not sized relative to the donut. */
     width: 500px;
     height: 500px;
+    /* Added 2026-09-03, alongside .portfolio-summary's own
+       align-items: flex-start change above: an explicit 50px gap from
+       the bar's top edge, replacing flex auto-centering now that the
+       space below the donut is deliberately taller (holds the legend
+       too) than the space above it -- see .portfolio-summary's own
+       comment for the full reasoning. */
+    margin-top: 50px;
   }
   .portfolio-summary-text {
     position: absolute;
@@ -643,14 +664,15 @@
   .portfolio-daily-change.negative { color: var(--red); }
 
   /* Legend, 2026-09-03 -- per explicit request: the donut's slice
-     colors meant nothing without this. Sits in the bar's own leftover
-     ~50px margin below the 500px donut (600px bar height, 500px donut,
-     split evenly top/bottom by .portfolio-summary's flex centering) --
-     positioned via its own absolute bottom offset so it's independent
-     of the donut/text centering above it, not fighting either for
-     space. gray placeholder text/small dot, matching the same quiet,
-     secondary-information style already used for every "Price"/
-     "Position" label on the holding cards elsewhere on this page. */
+     colors meant nothing without this. Positioned via its own absolute
+     bottom offset (see below) so it's independent of the donut's own
+     explicit top-anchored position above it, not fighting it for
+     space -- together the two produce the three equal 50px gaps (bar
+     top -> donut, donut bottom -> legend, legend bottom -> bar bottom)
+     the bar's own height (669px) was specifically sized to fit. gray
+     placeholder text/small dot, matching the same quiet, secondary-
+     information style already used for every "Price"/"Position" label
+     on the holding cards elsewhere on this page. */
   .portfolio-legend {
     position: absolute;
     /* Anchored via `bottom`, not `top`, deliberately -- with wrapping
@@ -658,8 +680,13 @@
        donut, while the bottom row always stays exactly 12px from the
        bar's own bottom edge. Getting this backwards (`top` anchored)
        would instead push extra rows downward, straight past the bar's
-       bottom edge -- the wrong direction to grow in. */
-    bottom: 12px;
+       bottom edge -- the wrong direction to grow in.
+       12px -> 50px, 2026-09-03, per explicit request: matches the
+       other two 50px gaps (top-of-bar to donut, donut-bottom to
+       legend-top) exactly, so all three read as one consistent rhythm
+       instead of the legend sitting noticeably tighter against the
+       bottom than the donut sits against everything else. */
+    bottom: 50px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
