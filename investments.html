@@ -1494,8 +1494,13 @@
       portfolioTotalValueEl.textContent = formatMoneyTotal(totalValue);
       const isUp = totalChange >= 0;
       const changePct = totalPrevValue > 0 ? (totalChange / totalPrevValue) * 100 : 0;
+      // "$22.34(+3.18%)" -- value directly followed by the percentage
+      // in parentheses, no separator between them, 2026-09-03 per
+      // explicit request matching a real reference screenshot (a
+      // trading app's own PNL line) -- was a middle-dot separator
+      // ("+$17.43 · +0.05%"), reported as reading unclearly.
       portfolioDailyChangeEl.textContent =
-        `${formatSignedMoney(totalChange)} · ${isUp ? '+' : '−'}${Math.abs(changePct).toFixed(2)}%`;
+        `${formatSignedMoney(totalChange)}(${isUp ? '+' : '−'}${Math.abs(changePct).toFixed(2)}%)`;
       portfolioDailyChangeEl.classList.toggle('positive', isUp);
       portfolioDailyChangeEl.classList.toggle('negative', !isUp);
     }
