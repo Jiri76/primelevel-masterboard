@@ -542,6 +542,39 @@
      landing where Delete currently sits (50px from the card's own
      bottom), per explicit request ("mirror it with one difference").
      ========================================================== */
+
+  /* Portfolio summary bar, 2026-09-03 -- structural shell only, per
+     explicit request ("just only build the card... nothing else,"
+     content -- total value, 24h change, allocation pie -- is a
+     deliberate later step, same one-proven-step-at-a-time working
+     style this whole project already follows).
+     Carries NO margin of its own on purpose: h1's own existing
+     `margin: 0 0 100px` and .add-wrapper's own existing
+     `margin-top: 100px` (both untouched, see above/below) already
+     sandwich this element and collapse cleanly into a 100px gap on
+     each side (standard adjacent-sibling margin collapsing -- the
+     browser takes the larger of two touching margins, not the sum),
+     the exact same mechanism this file already relied on for the
+     title-to-trigger gap before this element existed. No new margin
+     value needed on either existing rule.
+     width: 980px matches the holdings grid's own real 3-card width
+     exactly (300px x 3 + 40px gap x 2 = 980px), centered the same way
+     (margin: 0 auto within .container's own content box) so its left
+     and right edges land on the same pixels as the first/last holding
+     card's own edges -- per explicit request ("anchored... with the
+     same padding as the cards"). height: 300px, an explicit starting
+     value, not yet tuned against real content.
+     Colors mirror .holding-card exactly (same background/border/
+     radius), per explicit request. */
+  .portfolio-summary {
+    width: 980px;
+    height: 300px;
+    margin: 0 auto;
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+  }
+
   .add-wrapper {
     margin-top: 100px;
     /* 100px -> 40px, 2026-09-02, per explicit request: the gap from the
@@ -734,6 +767,8 @@
 <body>
   <div class="container">
     <h1>Investments</h1>
+
+    <div class="portfolio-summary" id="portfolioSummary"></div>
 
     <div class="add-wrapper">
       <button class="add-trigger" id="addTrigger" title="Add a holding">+</button>
