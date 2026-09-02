@@ -593,8 +593,17 @@
     position: relative;
   }
   .portfolio-donut {
-    width: 400px;
-    height: 400px;
+    /* 400px -> 500px, per explicit request. Only the rendered box size
+       changes -- the SVG's own viewBox (and the ring/stroke math inside
+       it, see updatePortfolioSummary) stays "0 0 400 400", so this just
+       scales the whole drawing up uniformly, no redrawing needed. Still
+       comfortably centered inside the 600px-tall bar (50px above/below,
+       via .portfolio-summary's own flex centering, unchanged). The
+       total-value/daily-change text stays centered too, automatically
+       -- it's positioned via its own absolute 50%/50% against
+       .portfolio-summary's box, not sized relative to the donut. */
+    width: 500px;
+    height: 500px;
   }
   .portfolio-summary-text {
     position: absolute;
