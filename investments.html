@@ -1086,8 +1086,15 @@
       });
     }
 
+    // toLocaleString, not toFixed, 2026-09-02 -- real bug found and
+    // fixed once live prices started flowing through real position
+    // sizes: toFixed(2) alone has no thousands separator, so a genuine
+    // $25,051.00 position rendered as the much harder-to-read
+    // "$25051.00". en-US + explicit min/max fraction digits locks the
+    // format to exactly 2 decimal places (never 3+, never a bare whole
+    // number), same as toFixed always did, just with the comma added.
     function formatMoney(n) {
-      return n == null ? '—' : `$${n.toFixed(2)}`;
+      return n == null ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     // Real bug found and fixed 2026-09-02: adding a genuine 4th holding
