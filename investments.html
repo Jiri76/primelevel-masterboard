@@ -1503,16 +1503,28 @@
     // 2026-09-03, per explicit request/real bug: PAXG-USDT (physical
     // gold) was landing on this array's own gray/steel entry (a real
     // holding, but read as "blue" live) by pure position, while gold
-    // itself was sitting unused two slots earlier. Reserved instead for
-    // GOLD_TICKERS below -- same "reserve a meaningful color" principle
-    // already applied to green/red above, just for a specific holding
-    // identity rather than a direction.
+    // itself was sitting unused two slots earlier. Reserved instead via
+    // TICKER_COLOR_OVERRIDES below -- same "reserve a meaningful color"
+    // principle already applied to green/red above, just for a specific
+    // holding identity rather than a direction.
     const PORTFOLIO_SUMMARY_PALETTE = ['#D9A441', '#8A93A3', '#8A7550', 'rgba(249,249,250,0.5)'];
-    // Tickers that get var(--gold) directly instead of cycling through
-    // the palette above -- currently just the one real physical-gold
-    // holding (PAXG-USDT, a token literally backed 1:1 by an ounce of
-    // gold -- see the earlier chat decision on tracking it this way).
-    const GOLD_TICKERS = new Set(['PAXG-USDT']);
+    // Per-ticker color overrides, 2026-09-03 -- a holding whose real
+    // company/asset has its own recognizable brand color gets THAT
+    // instead of an arbitrary palette slot. PAXG-USDT: var(--gold),
+    // matching the physical gold it represents (see the earlier chat
+    // decision on tracking it this way). RDW (Redwire Corp): a muted
+    // brick-red/maroon (`#8B4A4A`) evoking the real company's own
+    // red/black branding, per explicit request -- deliberately NOT
+    // var(--red) itself (#E45858, notably brighter/more saturated),
+    // since that's reserved to mean "today's change is down" and a
+    // slice rendering in the exact same red would be misread as that
+    // instead of "this is Redwire." Extend this map for any future
+    // holding with its own recognizable brand color; anything not
+    // listed here still cycles through the general palette above.
+    const TICKER_COLOR_OVERRIDES = {
+      'PAXG-USDT': 'var(--gold)',
+      'RDW': '#8B4A4A',
+    };
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const portfolioSummaryEl = document.getElementById('portfolioSummary');
     let portfolioDonutEl = null;
@@ -1628,9 +1640,8 @@
       segments.forEach(({ ticker, value }, i) => {
         const fraction = totalValue > 0 ? value / totalValue : 0;
         const dash = fraction * circumference;
-        const color = GOLD_TICKERS.has(ticker)
-          ? 'var(--gold)'
-          : PORTFOLIO_SUMMARY_PALETTE[paletteIndex++ % PORTFOLIO_SUMMARY_PALETTE.length];
+        const color = TICKER_COLOR_OVERRIDES[ticker]
+          ?? PORTFOLIO_SUMMARY_PALETTE[paletteIndex++ % PORTFOLIO_SUMMARY_PALETTE.length];
         const slice = document.createElementNS(SVG_NS, 'circle');
         slice.setAttribute('cx', CX);
         slice.setAttribute('cy', CY);
