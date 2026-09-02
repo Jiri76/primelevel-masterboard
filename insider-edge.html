@@ -315,14 +315,43 @@
      not the requested 100px. Same fix already applied to li:last-child
      above, generalized to whatever tag actually ends the report. */
   .report-body > *:last-child {
+    /* Keeps the true final element's own bottom flush with .report-body's
+       fixed 100px bottom padding -- no extra margin added past it. The
+       margin-top this rule used to also carry (100px) has been split out
+       below into two more precise rules, once the verification block grew
+       from one auto-appended sentence to several: this generic
+       *:last-child selector no longer reliably means "the first
+       verification line" once more than one such line exists -- whichever
+       paragraph is genuinely last (today: the most recent manual-
+       correction note) still needs margin-bottom:0, but the 100px TOP gap
+       belongs on the FIRST verification line specifically, not whichever
+       one happens to be last. */
     margin-bottom: 0;
-    /* Per explicit request: the auto-appended independent-verification
-       sentence (always the true final element now, added by the
-       Supabase trigger right after Verdict's own last entry) reads as
-       its own trailing block, offset by the same 100px used at every
-       other section boundary on the page -- not the plain 30px
-       paragraph-to-paragraph gap it'd otherwise collapse to. */
+  }
+  /* Verdict's last ticker entry -> the verification/audit block: a real
+     section-style pause (100px, matching every other section boundary on
+     this page), marking "this is a different kind of content now" --
+     per explicit request. Targets the <p> that immediately follows a
+     Verdict ticker <p> (has a child .verdict-ticker) and itself opens the
+     audit block (has a child <em>) -- both real, structural signals
+     Cowork's own HTML already provides, no class needed. */
+  .report-body p:has(> strong.verdict-ticker) + p:has(> em) {
     margin-top: 100px;
+  }
+  /* The verification/audit paragraphs themselves (independent-EDGAR-check,
+     repeat-alert-count-check, scope note, and any manual-correction notes
+     appended later) read as one connected block, not separate sections --
+     20px between each, per explicit request ("that's the norm"). Was
+     inheriting the generic 30px paragraph gap before this. The last one
+     still gets margin-bottom:0 from the *:last-child rule above (higher
+     specificity here since this selector adds the :last-child clause
+     too), so the true final gap stays the card's own 100px bottom
+     padding, not 20px. */
+  .report-body p:has(> em) {
+    margin-bottom: 20px;
+  }
+  .report-body p:has(> em):last-child {
+    margin-bottom: 0;
   }
   /* Per explicit request: the gap between each ticker's own name line
      and its market-cap detail line right below must be DOUBLE the
