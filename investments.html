@@ -1498,7 +1498,21 @@
     // down" (the daily-change text below). A slice happening to render
     // green could otherwise be misread as "this holding is up today",
     // an entirely different fact a donut slice can't actually express.
-    const PORTFOLIO_SUMMARY_PALETTE = ['#B29B68', '#D9A441', '#8A93A3', '#8A7550', 'rgba(249,249,250,0.5)'];
+    //
+    // var(--gold) also excluded from this general-purpose cycle,
+    // 2026-09-03, per explicit request/real bug: PAXG-USDT (physical
+    // gold) was landing on this array's own gray/steel entry (a real
+    // holding, but read as "blue" live) by pure position, while gold
+    // itself was sitting unused two slots earlier. Reserved instead for
+    // GOLD_TICKERS below -- same "reserve a meaningful color" principle
+    // already applied to green/red above, just for a specific holding
+    // identity rather than a direction.
+    const PORTFOLIO_SUMMARY_PALETTE = ['#D9A441', '#8A93A3', '#8A7550', 'rgba(249,249,250,0.5)'];
+    // Tickers that get var(--gold) directly instead of cycling through
+    // the palette above -- currently just the one real physical-gold
+    // holding (PAXG-USDT, a token literally backed 1:1 by an ounce of
+    // gold -- see the earlier chat decision on tracking it this way).
+    const GOLD_TICKERS = new Set(['PAXG-USDT']);
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const portfolioSummaryEl = document.getElementById('portfolioSummary');
     let portfolioDonutEl = null;
@@ -1604,11 +1618,19 @@
       // rotate(-90) starts the first slice at 12 o'clock, the standard
       // pie/donut convention, instead of SVG's own 3-o'clock zero angle.
       let offset = 0;
+      // Separate counter for the general palette, 2026-09-03 -- a gold
+      // holding (assigned var(--gold) directly, below) must NOT also
+      // consume a slot from PORTFOLIO_SUMMARY_PALETTE's own cycle, or
+      // every OTHER holding after it would silently shift one color
+      // off from where it'd otherwise land.
+      let paletteIndex = 0;
       portfolioLegendEl.innerHTML = '';
       segments.forEach(({ ticker, value }, i) => {
         const fraction = totalValue > 0 ? value / totalValue : 0;
         const dash = fraction * circumference;
-        const color = PORTFOLIO_SUMMARY_PALETTE[i % PORTFOLIO_SUMMARY_PALETTE.length];
+        const color = GOLD_TICKERS.has(ticker)
+          ? 'var(--gold)'
+          : PORTFOLIO_SUMMARY_PALETTE[paletteIndex++ % PORTFOLIO_SUMMARY_PALETTE.length];
         const slice = document.createElementNS(SVG_NS, 'circle');
         slice.setAttribute('cx', CX);
         slice.setAttribute('cy', CY);
@@ -1643,8 +1665,11 @@
       // explicit request matching a real reference screenshot (a
       // trading app's own PNL line) -- was a middle-dot separator
       // ("+$17.43 · +0.05%"), reported as reading unclearly.
+      // A real space before "(" added back 2026-09-03, per direct
+      // follow-up -- the tight no-space version ("+$37.84(+0.11%)")
+      // read as "squashed" once actually seen live.
       portfolioDailyChangeEl.textContent =
-        `${formatSignedMoney(totalChange)}(${isUp ? '+' : '−'}${Math.abs(changePct).toFixed(2)}%)`;
+        `${formatSignedMoney(totalChange)} (${isUp ? '+' : '−'}${Math.abs(changePct).toFixed(2)}%)`;
       portfolioDailyChangeEl.classList.toggle('positive', isUp);
       portfolioDailyChangeEl.classList.toggle('negative', !isUp);
     }
