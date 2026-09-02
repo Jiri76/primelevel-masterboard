@@ -1518,12 +1518,18 @@
     // var(--red) itself (#E45858, notably brighter/more saturated),
     // since that's reserved to mean "today's change is down" and a
     // slice rendering in the exact same red would be misread as that
-    // instead of "this is Redwire." Extend this map for any future
+    // instead of "this is Redwire." WILD-USDT (Wilder World): a vivid
+    // burnt orange (`#E8720C`), matching the real project's own
+    // orange/black branding -- deliberately more saturated/vivid than
+    // PORTFOLIO_SUMMARY_PALETTE's own muted golden-orange (`#D9A441`),
+    // per explicit request to keep the two visually distinct rather
+    // than reading as the same color. Extend this map for any future
     // holding with its own recognizable brand color; anything not
     // listed here still cycles through the general palette above.
     const TICKER_COLOR_OVERRIDES = {
       'PAXG-USDT': 'var(--gold)',
       'RDW': '#8B4A4A',
+      'WILD-USDT': '#E8720C',
     };
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const portfolioSummaryEl = document.getElementById('portfolioSummary');
