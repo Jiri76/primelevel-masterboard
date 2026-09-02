@@ -1411,6 +1411,17 @@
       return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
+    // Real bug found and fixed live: the shared formatMoney()'s
+    // maximumFractionDigits:6 exists specifically for tiny PER-UNIT
+    // prices (WILD-USDT's real $0.01511) -- reused directly for the
+    // portfolio TOTAL, it showed "$34,889.8417" instead of a clean
+    // "$34,889.84". A summed total is dollars-and-cents by nature (the
+    // extra decimals are floating-point summation noise, not real
+    // precision worth keeping), so this always locks to exactly 2.
+    function formatMoneyTotal(n) {
+      return n == null ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
     function updatePortfolioSummary() {
       buildPortfolioSummaryShell();
 
@@ -1471,7 +1482,7 @@
         offset += dash;
       });
 
-      portfolioTotalValueEl.textContent = formatMoney(totalValue);
+      portfolioTotalValueEl.textContent = formatMoneyTotal(totalValue);
       const isUp = totalChange >= 0;
       const changePct = totalPrevValue > 0 ? (totalChange / totalPrevValue) * 100 : 0;
       portfolioDailyChangeEl.textContent =
