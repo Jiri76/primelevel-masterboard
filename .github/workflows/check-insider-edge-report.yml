@@ -1,0 +1,65 @@
+name: Check Insider Edge weekly report
+
+# Independent watchdog for the Insider Edge weekly report, deliberately
+# separate from the Cowork pipeline that actually produces it. Twice
+# now (7 Sept, 14 Sept 2026) that pipeline failed silently -- no report,
+# and no error left behind anywhere. This workflow does not depend on
+# Cowork, Supabase staying awake, or any Claude session being alive: it
+# just asks "does a report exist for this week?" a few hours after it
+# was due, and if not, opens a GitHub Issue -- which GitHub emails you
+# about automatically, the same as any other repo notification.
+on:
+  schedule:
+    # Mondays at 13:00 UTC -- several hours of buffer after the 6am UK
+    # scheduled report time, enough room for the pipeline's own normal
+    # retry/backoff (up to ~3h steady-state per the mistakes log) to
+    # have already finished one way or the other.
+    - cron: '0 13 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  check-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the most recent report
+        id: query
+        run: |
+          RESPONSE=$(curl -sS \
+            "https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/insider_edge_reports?select=id,title,created_at&order=id.desc&limit=1" \
+            -H "apikey: sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_")
+          echo "response=$RESPONSE" >> "$GITHUB_OUTPUT"
+
+          # Report is "fresh" if its created_at is within the last 8 days
+          # (a little over one week, so a report that ran slightly late
+          # is not flagged as missing).
+          CREATED_AT=$(echo "$RESPONSE" | grep -o '"created_at":"[^"]*"' | head -1 | cut -d'"' -f4)
+          if [ -z "$CREATED_AT" ]; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          else
+            CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
+            NOW_EPOCH=$(date +%s)
+            AGE_DAYS=$(( (NOW_EPOCH - CREATED_EPOCH) / 86400 ))
+            echo "age_days=$AGE_DAYS" >> "$GITHUB_OUTPUT"
+            if [ "$AGE_DAYS" -le 8 ]; then
+              echo "fresh=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "fresh=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Open an issue if this week's report is missing
+        if: steps.query.outputs.fresh == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const response = `${{ steps.query.outputs.response }}`;
+            const ageDays = `${{ steps.query.outputs.age_days }}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Insider Edge report missing — week of ${new Date().toISOString().slice(0,10)}`,
+              body: `The weekly Insider Edge report check ran on ${new Date().toISOString()} and found no report saved within the last 8 days.\n\nMost recent report in the database:\n\`\`\`\n${response}\n\`\`\`\n\nAge of most recent report: ${ageDays || 'unknown'} days.\n\nThis means this week's Cowork scan likely failed to produce a report — check Cowork's own scheduled-task run history for what happened.`
+            });
