@@ -50,16 +50,40 @@ jobs:
             fi
           fi
 
-      - name: Open an issue if this week's report is missing
+      - name: Alert on the missing report, without duplicating open issues
         if: steps.query.outputs.fresh == 'false'
         uses: actions/github-script@v7
         with:
           script: |
             const response = `${{ steps.query.outputs.response }}`;
             const ageDays = `${{ steps.query.outputs.age_days }}`;
-            await github.rest.issues.create({
+            const label = 'insider-edge-missing';
+            const note = `Checked again on ${new Date().toISOString()} — still no report saved.\n\nMost recent report in the database:\n\`\`\`\n${response}\n\`\`\`\n\nAge of most recent report: ${ageDays || 'unknown'} days.`;
+
+            // Reuse an already-open alert instead of piling up duplicates
+            // every week the same underlying problem persists — repeated
+            // near-identical issues/emails train you to start ignoring
+            // them, which defeats the point of the alert existing at all.
+            const existing = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Insider Edge report missing — week of ${new Date().toISOString().slice(0,10)}`,
-              body: `The weekly Insider Edge report check ran on ${new Date().toISOString()} and found no report saved within the last 8 days.\n\nMost recent report in the database:\n\`\`\`\n${response}\n\`\`\`\n\nAge of most recent report: ${ageDays || 'unknown'} days.\n\nThis means this week's Cowork scan likely failed to produce a report — check Cowork's own scheduled-task run history for what happened.`
+              state: 'open',
+              labels: label,
             });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body: note,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Insider Edge report missing — week of ${new Date().toISOString().slice(0,10)}`,
+                body: `The weekly Insider Edge report check found no report saved within the last 8 days.\n\n${note}\n\nThis means this week's Cowork scan likely failed to produce a report — check Cowork's own scheduled-task run history for what happened.\n\nThis issue will stay open and collect a comment each week this remains true, rather than a new issue piling up every time — close it once the report starts arriving normally again.`,
+                labels: [label],
+              });
+            }
