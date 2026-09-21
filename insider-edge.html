@@ -181,16 +181,19 @@
        old 100px/76px were exact for the text BOXES, but the letters sit
        inside taller boxes, so the visible gaps were ~106px (band top ->
        top of the tallest letters) and ~109px (title baseline -> band
-       bottom). Now 94px / 67px, which makes both exactly 100px to the
-       letters, measured live with font metrics (top = tallest ascender,
-       bottom = baseline; the tail of a "p" is ignored, as by eye). */
+       bottom). Top is 94px, so the tallest title letters sit exactly
+       100px below the band's top. Bottom is 96px, so the baseline of the
+       DATE line (the last line in the band) sits exactly 100px above the
+       band's bottom -- the same 100px as the top, per explicit request.
+       Measured live with font metrics (top = tallest ascender, bottom =
+       baseline; the tail of a "p" is ignored, as by eye). */
     /* 91px, not 100: the 25px heading sits in a 40px line box, so its
        letters start ~9px below the box top. 91 + 9 = exactly 100px from
        the band's bottom edge to the top of the "New Discoveries" letters
        (measured live with font metrics), matching the title band's
        by-eye rule above. */
     margin: 0 0 91px;
-    padding: 94px 70px 67px;
+    padding: 94px 70px 96px;
   }
   .report-content-title {
     font-weight: 700;
