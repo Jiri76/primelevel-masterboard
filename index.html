@@ -465,15 +465,19 @@
     // Investments also points to its own page -- the 3 holding cards
     // moved there entirely (per explicit request), this page no longer
     // has a holdings section to anchor-scroll to.
-    // Alphabetical order, per explicit request: Calendar, Insider Edge,
-    // Investments, Renewals -- "Calendar" sorts before all three (C < I),
-    // "Insider" before "Investments" (4th letter i < v), both before
-    // "Renewals" (starts with R). Calendar links straight to Google
-    // Calendar's own site -- no sign-in flow of ours involved, the click
+    // Alphabetical order, per explicit request: Calendar, Email, Insider
+    // Edge, Investments, Renewals -- "Calendar" (C) before "Email" (E)
+    // before "Insider" (I), "Insider" before "Investments" (4th letter
+    // i < v), all before "Renewals" (R). Calendar and Email link straight
+    // to Google's own sites -- no sign-in flow of ours involved, the click
     // just opens Google's own page, where the user's own Google session
-    // (if any) takes over from there.
+    // (if any) takes over from there. Email opens the company Gmail
+    // (Google Workspace, confirmed from the domain's MX records):
+    // authuser= selects info@primelevel.co.uk if that account is already
+    // signed in in the browser, otherwise Google asks to sign in as it.
     const TILES = [
       { label: 'Calendar', href: 'https://calendar.google.com/' },
+      { label: 'Email', href: 'https://mail.google.com/mail/?authuser=info%40primelevel.co.uk' },
       { label: 'Insider Edge', href: 'insider-edge.html' },
       { label: 'Investments', href: 'investments.html' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
