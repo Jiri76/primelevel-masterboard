@@ -184,7 +184,12 @@
        bottom). Now 94px / 67px, which makes both exactly 100px to the
        letters, measured live with font metrics (top = tallest ascender,
        bottom = baseline; the tail of a "p" is ignored, as by eye). */
-    margin: 0 0 100px;
+    /* 91px, not 100: the 25px heading sits in a 40px line box, so its
+       letters start ~9px below the box top. 91 + 9 = exactly 100px from
+       the band's bottom edge to the top of the "New Discoveries" letters
+       (measured live with font metrics), matching the title band's
+       by-eye rule above. */
+    margin: 0 0 91px;
     padding: 94px 70px 67px;
   }
   .report-content-title {
@@ -247,7 +252,10 @@
        request. One shared rule, applies uniformly to every section
        header -- there's no way to target just one heading without
        adding a class Cowork's real HTML doesn't have. */
-    margin: 100px 0;
+    /* Top is 91, not 100, for the same by-eye reason as the band's
+       bottom margin above: the letters start ~9px below the heading's
+       box top, so 91px of margin puts them ~100px from what precedes. */
+    margin: 91px 0 100px;
   }
   .report-body h3:first-child {
     margin-top: 0;
