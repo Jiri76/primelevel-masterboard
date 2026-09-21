@@ -411,13 +411,60 @@
     padding: 0 0 60px;
     width: 100%;
   }
+
+  /* Narrow screens. The date buttons are pinned to the left edge
+     (position:fixed; left:40px; 200px wide, so they occupy x=40-240),
+     which only leaves the report card clear when the screen is at least
+     ~1728px wide (container is 1240px max, centered, plus 20px padding).
+     Below that they sat on top of the report text -- confirmed live at
+     1440px and 375px. So below that width the buttons become a normal
+     row between the title and the report instead. Wide-screen layout is
+     untouched. */
+  @media (max-width: 1727px) {
+    .report-tiles {
+      position: static;
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0 0 40px;
+    }
+    .report-tile {
+      max-width: calc(50% - 8px);
+    }
+    h1 {
+      margin-bottom: 40px;
+    }
+  }
+  @media (max-width: 720px) {
+    h1 {
+      font-size: 44px;
+    }
+    .report-tile {
+      font-size: 15px;
+      padding: 0 8px;
+    }
+    .report-header-band {
+      margin-bottom: 48px;
+      padding: 48px 24px 40px;
+    }
+    .report-content-title {
+      font-size: 26px;
+    }
+    .report-body {
+      padding: 0 24px 60px;
+    }
+  }
 </style>
 </head>
 <body>
-  <div class="report-tiles" id="reportTiles"></div>
-
   <div class="container">
     <h1>Insider Edge</h1>
+    <!-- Sits here (not first in <body>) so that on screens too narrow to
+         pin it to the left edge, it flows as a row between the title and
+         the report. On wide screens it is position:fixed, so where it sits
+         in the DOM makes no visual difference. -->
+    <div class="report-tiles" id="reportTiles"></div>
     <div id="content">
       <div class="empty-state" id="emptyState">
         No reports yet — check back after the next scheduled report.
@@ -484,7 +531,7 @@
         // entirely, along with the `selected` variable it used.
         var closed = document.createElement('div');
         closed.className = 'empty-state closed-state';
-        closed.textContent = 'Click a date on the left to open a report.';
+        closed.textContent = 'Click a date to open a report.';
 
         emptyState.remove();
         content.append(closed);
@@ -630,7 +677,7 @@
         if (reports.length > 0) {
           const closed = document.createElement('div');
           closed.className = 'empty-state closed-state';
-          closed.textContent = 'Click a date on the left to open a report.';
+          closed.textContent = 'Click a date to open a report.';
           contentEl.append(closed);
         }
         alignReportTiles();
