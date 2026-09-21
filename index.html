@@ -152,8 +152,14 @@
      -- its own explicit width/height:100% fill the box regardless of
      flex-direction. */
   .image-placeholder {
-    width: 800px;
-    height: 500px;
+    /* Fluid, not a fixed 800x500: exactly 800x500 whenever there is room
+       (the container is wide enough), scales down on narrow screens but
+       ALWAYS keeps the same 8:5 shape, so the saved pan/zoom (stored as
+       percentages) and the 800x500 thumbnail crop stay correct at every
+       size. */
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 8 / 5;
     margin: 0 auto;
     background: var(--input-bg);
     border: 1px solid var(--white);
@@ -313,13 +319,59 @@
     font-size: 25px; /* per explicit request -- bumped up from 20px; Renewals' Sending... button stays 15px */
     opacity: 0.45;
   }
+
+  /* Responsive layout. Desktop (>= 1320px) is untouched: the tiles are
+     pinned to the left edge (x 40-240) and the centered 800px picture
+     starts at x >= 260 from that width up, so they never overlap. Below
+     1320px they WOULD overlap, so the tiles stop being pinned and become
+     a normal centered row between the title and the picture (same
+     approach as insider-edge.html). Every tile keeps the identical look:
+     only the row layout and, on phones, one shared width/font change. */
+  @media (max-width: 1319px) {
+    .tiles {
+      position: static;
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0 0 40px;
+    }
+    .tile {
+      width: 200px;
+    }
+    h1 {
+      margin-bottom: 40px;
+    }
+  }
+  @media (max-width: 720px) {
+    h1 {
+      font-size: 44px;
+    }
+    .tile {
+      width: calc(50% - 8px);
+      padding: 0 8px;
+    }
+  }
+  @media (max-width: 420px) {
+    .tile {
+      font-size: 16px;
+    }
+  }
+  @media (max-width: 359px) {
+    h1 {
+      font-size: 38px; /* "Masterboard" at 44px is ~290px wide: too wide for a 320px screen's 280px content box */
+    }
+  }
 </style>
 </head>
 <body>
-  <div class="tiles" id="tiles"></div>
-
   <div class="container">
     <h1>Masterboard</h1>
+    <!-- Sits here (not before the container) so that below 1320px, where it
+         stops being pinned to the left edge, it flows as a row between the
+         title and the picture. On desktop it is position:fixed, so where it
+         sits in the DOM makes no visual difference. -->
+    <div class="tiles" id="tiles"></div>
     <div class="image-placeholder" id="imagePlaceholder">
       <span class="image-placeholder-error" id="imagePlaceholderError"></span>
       <span class="image-placeholder-label">Click to select a picture</span>
@@ -379,6 +431,9 @@
           // already the exact final picture -- just show it as-is.
           img.onload = function () {
             placeholder.classList.add('has-image');
+            // The thumbnail is a finished 800px-wide picture; the frame is
+            // fluid, so scale it to the frame's real width (1 on desktop).
+            img.style.transform = 'scale(' + (placeholder.getBoundingClientRect().width / 800) + ')';
           };
           img.src = cached.thumb;
         } else if (cached.version) {
@@ -1126,11 +1181,17 @@
     // Same pattern as the original alignTilesToCards(), just re-targeted
     // at the picture now that the holding cards have moved away.
     function alignTilesToPicture() {
+      // Only meaningful while the tiles are pinned (desktop); below 1320px
+      // they are a normal row in the page flow and `top` does nothing.
+      if (getComputedStyle(tilesEl).position !== 'fixed') return;
       const pictureTop = imagePlaceholder.getBoundingClientRect().top;
       tilesEl.style.top = `${Math.round(pictureTop)}px`;
     }
     document.fonts.ready.then(alignTilesToPicture);
     window.addEventListener('resize', alignTilesToPicture);
+    // The picture frame is fluid now, so its pan/zoom transform (computed
+    // from the frame's real size) must be recomputed whenever it resizes.
+    window.addEventListener('resize', renderTransform);
     window.addEventListener('load', alignTilesToPicture);
     alignTilesToPicture();
   </script>
