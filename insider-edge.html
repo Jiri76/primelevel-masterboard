@@ -37,7 +37,7 @@
   .container {
     max-width: 1240px;
     margin: 0 auto;
-    padding: 100px 20px 80px;
+    padding: 100px 20px 100px; /* bottom was 80px -- raised to 100px per explicit request, so the space below the report card matches the 100px used at the top and between sections */
   }
   h1 {
     color: var(--gold);
@@ -353,7 +353,7 @@
      too), so the true final gap stays the card's own 100px bottom
      padding, not 20px. */
   .report-body p:has(> em) {
-    margin-bottom: 20px;
+    margin-bottom: 30px; /* was 20px -- raised to 30px per explicit request so it matches the 30px used between every other entry/paragraph in the report */
   }
   .report-body p:has(> em):last-child {
     margin-bottom: 0;
