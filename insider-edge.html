@@ -303,6 +303,11 @@
      now does the separating. */
   .report-body li {
     margin-bottom: 30px; /* was 24px + a 24px padding-bottom + a border, per explicit request now just this one clean gap */
+    /* On the <li> itself, not only on .report-body ul above: a real
+       saved report (21 Sep 2026, Repeat Alerts) shipped its <li> items
+       without an opening <ul>, and an orphan <li> ignores the ul rule
+       and gets the browser's default bullet. */
+    list-style: none;
   }
   .report-body li:last-child {
     margin-bottom: 0;
@@ -645,6 +650,26 @@
       const body = document.createElement('div');
       body.className = 'report-body';
       body.innerHTML = report.html_content; // trusted -- see the CSS comment above on why
+      // Defensive repair: everything below assumes each ticker entry is
+      // "line 1 <br> line 2". The 21 Sep 2026 report shipped a plain
+      // newline there instead (HTML collapses a newline to a space), so
+      // line 1 ran straight into line 2 ("...market cap Currently
+      // profitable...") and lost its bold/spacing treatment. Turn the
+      // first newline of any ticker entry that has no <br> into one.
+      body.querySelectorAll('li').forEach((li) => {
+        if (li.querySelector('br')) return;
+        if (!li.firstElementChild || li.firstElementChild.tagName !== 'STRONG') return;
+        const walker = document.createTreeWalker(li, NodeFilter.SHOW_TEXT);
+        let textNode;
+        while ((textNode = walker.nextNode())) {
+          const idx = textNode.nodeValue.indexOf('\n');
+          if (idx === -1) continue;
+          const rest = textNode.splitText(idx);
+          rest.nodeValue = rest.nodeValue.replace(/^\n+/, '');
+          textNode.parentNode.insertBefore(document.createElement('br'), rest);
+          break;
+        }
+      });
       // Per explicit request: bold the ticker's descriptive first line
       // (Company -- Sector -- Market Cap) so it reads as one visually
       // consistent bold unit alongside the ticker itself -- font SIZE
