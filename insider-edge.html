@@ -255,7 +255,11 @@
     /* Top is 91, not 100, for the same by-eye reason as the band's
        bottom margin above: the letters start ~9px below the heading's
        box top, so 91px of margin puts them ~100px from what precedes. */
-    margin: 91px 0 100px;
+    /* Bottom is 91 too: the first ticker line's letters sit ~9px below
+       its line-box top, so 91px puts them exactly 100px under the
+       underline (measured live: was 109px by eye at 100px). A "None."
+       line sits ~6px below its box top, so it lands at ~97px. */
+    margin: 91px 0;
   }
   .report-body h3:first-child {
     margin-top: 0;
