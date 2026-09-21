@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inbox Report — Masterboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  /* Same design tokens as the rest of Masterboard. PRIVATE PAGE: the reports
+     contain email content, so they live in private Supabase tables and are
+     only readable after signing in with an allowed address (see
+     email_report_viewers). Nothing is shown to a signed-out visitor. */
+  :root {
+    --navy: #1E2633;
+    --white: #F9F9FA;
+    --gold: #B29B68;
+    --input-bg: #2A3441;
+    --placeholder: #8A93A3;
+    --border: #3A4453;
+    --red: #E45858;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100%;
+  }
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 90px 20px 100px;
+  }
+  h1 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 60px;
+    margin: 0 0 85px;
+    text-align: center;
+  }
+
+  /* Date buttons: identical to Insider Edge's report tiles. Pinned to the
+     left on wide screens, a centered row below 1728px. */
+  .report-tiles {
+    position: fixed;
+    top: 48px;
+    left: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 200px;
+  }
+  .report-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    width: 200px;
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0 18px;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 18px;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+  .report-tile:hover,
+  .report-tile.selected {
+    border-color: var(--white);
+    transform: scale(1.025);
+  }
+  .report-tile.failed {
+    color: var(--red);
+  }
+
+  /* Sign-in card (shown only while signed out). */
+  .signin {
+    max-width: 520px;
+    margin: 0 auto;
+    background: var(--white);
+    color: var(--navy);
+    padding: 50px 40px;
+  }
+  .signin h2 {
+    margin: 0 0 12px;
+    font-size: 25px;
+  }
+  .signin p {
+    margin: 0 0 24px;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .signin input {
+    width: 100%;
+    height: 50px;
+    padding: 0 16px;
+    font-size: 16px;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--white);
+    background: var(--input-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .signin input:focus-visible,
+  .signin button:focus-visible,
+  .signout:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .signin button {
+    width: 100%;
+    height: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--navy);
+    background: var(--gold);
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .signin button:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+  .signin .message {
+    margin: 16px 0 0;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin .message.error {
+    color: #b33a3a;
+  }
+
+  .report-content {
+    width: 100%;
+    background: var(--white);
+    color: var(--navy);
+    overflow: hidden;
+  }
+  .report-header-band {
+    background: var(--input-bg);
+    padding: 60px 40px;
+    text-align: center;
+  }
+  .report-content-title {
+    margin: 0 0 3px;
+    font-weight: 700;
+    font-size: 35px;
+    color: var(--gold);
+  }
+  .report-content-date {
+    color: var(--gold);
+    opacity: 0.6;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .report-body {
+    font-size: 15px;
+    line-height: 24px;
+    padding: 60px 70px 70px;
+  }
+  .report-body h3 {
+    font-size: 25px;
+    font-weight: 700;
+    margin: 60px 0 30px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--navy);
+  }
+  .report-body h3:first-child {
+    margin-top: 0;
+  }
+  .report-body p {
+    margin: 0 0 30px;
+  }
+  .report-body ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .report-body li {
+    margin: 0 0 18px;
+    padding: 0;
+  }
+  .report-body ul ul {
+    margin: 6px 0 0 20px;
+  }
+  .report-body ul ul li {
+    margin-bottom: 6px;
+  }
+  .report-body a {
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .report-body a:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .report-error {
+    color: #b33a3a;
+    font-weight: 700;
+  }
+  .empty-state {
+    color: var(--placeholder);
+    font-size: 20px;
+    text-align: center;
+    padding: 0 0 60px;
+    width: 100%;
+  }
+  .signout {
+    display: block;
+    margin: 40px auto 0;
+    background: none;
+    border: 0;
+    color: var(--placeholder);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  @media (min-width: 1728px) {
+    .empty-state { margin-top: -4px; }
+  }
+  @media (max-width: 1727px) {
+    .report-tiles {
+      position: static;
+      width: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0 0 40px;
+    }
+    h1 { margin-bottom: 40px; }
+  }
+  @media (max-width: 720px) {
+    h1 { font-size: 44px; }
+    .report-tile {
+      width: calc(50% - 8px);
+      padding: 0 8px;
+      font-size: 15px;
+    }
+    .signin { padding: 36px 24px; }
+    .report-header-band { padding: 40px 24px; }
+    .report-content-title { font-size: 26px; }
+    .report-body { padding: 40px 24px 50px; }
+  }
+  @media (max-width: 359px) {
+    h1 { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Inbox Report</h1>
+    <div class="report-tiles" id="reportTiles"></div>
+    <div id="content"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import DOMPurify from 'https://esm.sh/dompurify@3.1.6';
+
+    const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const tilesEl = document.getElementById('reportTiles');
+    const contentEl = document.getElementById('content');
+
+    // ---- Sanitising ---------------------------------------------------
+    // The report text is written by an AI agent FROM EMAIL CONTENT, which
+    // anyone in the world can influence. So it is never trusted: only a few
+    // plain tags survive, links are limited to opening a Gmail thread, and
+    // inline style may only set a text colour (the red flags).
+    const GMAIL_LINK = /^https:\/\/mail\.google\.com\//;
+    const COLOUR_ONLY = /^\s*color:\s*#[0-9a-f]{3,8}\s*;?\s*$/i;
+    DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+      if (node.hasAttribute('style') && !COLOUR_ONLY.test(node.getAttribute('style'))) {
+        node.removeAttribute('style');
+      }
+      if (node.tagName === 'A') {
+        if (!GMAIL_LINK.test(node.getAttribute('href') || '')) {
+          node.removeAttribute('href');
+        } else {
+          node.setAttribute('target', '_blank');
+          node.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
+    });
+    function cleanReportHtml(html) {
+      return DOMPurify.sanitize(html || '', {
+        ALLOWED_TAGS: ['h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'br', 'span', 'a'],
+        ALLOWED_ATTR: ['style', 'href', 'target', 'rel'],
+      });
+    }
+
+    // ---- Small helpers --------------------------------------------------
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+    function formatDate(value) {
+      return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    function formatDateTime(value) {
+      return new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    // ---- Signed-out view ------------------------------------------------
+    function showSignIn() {
+      tilesEl.replaceChildren();
+      const box = el('div', 'signin');
+      box.append(el('h2', '', 'Sign in'));
+      box.append(el('p', '', 'This page shows your daily inbox report, so it is private. Enter your email address and we will send you a one-time login link.'));
+      const form = document.createElement('form');
+      const label = el('label', '', 'Email address');
+      label.htmlFor = 'signInEmail';
+      const input = document.createElement('input');
+      input.type = 'email';
+      input.id = 'signInEmail';
+      input.name = 'email';
+      input.autocomplete = 'email';
+      input.required = true;
+      const button = el('button', '', 'Send me a login link');
+      button.type = 'submit';
+      const message = el('p', 'message');
+      message.setAttribute('aria-live', 'polite');
+      form.append(label, input, button, message);
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        message.className = 'message';
+        message.textContent = 'Sending…';
+        const { error } = await supabase.auth.signInWithOtp({
+          email: input.value.trim(),
+          options: { emailRedirectTo: window.location.origin + window.location.pathname },
+        });
+        if (error) {
+          message.className = 'message error';
+          message.textContent = `Could not send the link: ${error.message}`;
+          button.disabled = false;
+        } else {
+          message.textContent = 'Done. Open the email we just sent and tap the link. It brings you straight back here.';
+        }
+      });
+      box.append(form);
+      contentEl.replaceChildren(box);
+    }
+
+    // ---- Signed-in view -------------------------------------------------
+    function renderReport(report) {
+      const card = el('div', 'report-content');
+      const band = el('div', 'report-header-band');
+      band.append(el('div', 'report-content-title', report.title));
+      band.append(el('div', 'report-content-date', `Generated ${formatDateTime(report.created_at)}`));
+      const body = el('div', 'report-body');
+      if (report.status === 'failed') {
+        body.append(el('p', 'report-error', 'This run failed, so there is no report for this day.'));
+        body.append(el('p', '', report.error_text || 'No error details were recorded.'));
+      } else {
+        body.innerHTML = cleanReportHtml(report.html_content);
+      }
+      card.append(band, body);
+      contentEl.replaceChildren(card);
+      alignTiles();
+    }
+
+    // The tiles are position:fixed on wide screens, so put them on the same
+    // line as the top of the report card (scroll-independent).
+    function alignTiles() {
+      if (getComputedStyle(tilesEl).position !== 'fixed') return;
+      const target = contentEl.firstElementChild;
+      if (!target) return;
+      tilesEl.style.top = `${Math.round(target.getBoundingClientRect().top + window.scrollY)}px`;
+    }
+    window.addEventListener('resize', alignTiles);
+
+    function renderTiles(reports, selectedId) {
+      tilesEl.replaceChildren();
+      for (const report of reports) {
+        const tile = el('button', 'report-tile', formatDate(report.run_date || report.created_at));
+        tile.type = 'button';
+        if (report.status === 'failed') tile.classList.add('failed');
+        if (report.id === selectedId) tile.classList.add('selected');
+        tile.addEventListener('click', () => {
+          renderTiles(reports, report.id);
+          renderReport(report);
+        });
+        tilesEl.append(tile);
+      }
+    }
+
+    async function showReports() {
+      const { data, error } = await supabase
+        .from('email_reports')
+        .select('id, created_at, run_date, status, title, html_content, error_text')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      contentEl.replaceChildren();
+      tilesEl.replaceChildren();
+      if (error) {
+        contentEl.append(el('div', 'empty-state', `Could not load reports: ${error.message}`));
+      } else if (!data.length) {
+        contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
+      } else {
+        renderTiles(data, data[0].id);
+        renderReport(data[0]);
+      }
+      const out = el('button', 'signout', 'Sign out');
+      out.type = 'button';
+      out.addEventListener('click', () => supabase.auth.signOut());
+      contentEl.append(out);
+    }
+
+    // ---- Routing on sign-in state ---------------------------------------
+    let shown = null;
+    async function route(session) {
+      const mode = session ? 'reports' : 'signin';
+      if (mode === shown) return;
+      shown = mode;
+      if (mode === 'reports') {
+        // The login link comes back with tokens in the address: tidy it.
+        if (window.location.hash.includes('access_token')) history.replaceState(null, '', window.location.pathname);
+        await showReports();
+      } else {
+        showSignIn();
+      }
+    }
+    supabase.auth.onAuthStateChange((_event, session) => { route(session); });
+    const { data: { session } } = await supabase.auth.getSession();
+    route(session);
+  </script>
+</body>
+</html>
