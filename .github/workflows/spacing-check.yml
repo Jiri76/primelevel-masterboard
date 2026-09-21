@@ -1,0 +1,34 @@
+name: Insider Edge layout guard
+
+# Fails loudly if the Insider Edge page ever drifts from the locked spacing and
+# font-size settings (see INSIDER-EDGE-SPACING-SPEC.md). Runs on every change to
+# the page or to this check, after each Monday report has landed, and on demand.
+on:
+  push:
+    paths:
+      - 'insider-edge.html'
+      - 'tools/spacing-check.mjs'
+      - '.github/workflows/spacing-check.yml'
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  spacing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm init -y >/dev/null
+          npm install playwright@1
+          npx playwright install --with-deps chromium
+      - name: Serve the page
+        run: |
+          python3 -m http.server 8091 >/dev/null 2>&1 &
+          sleep 2
+      - name: Measure spacing and font sizes
+        run: node tools/spacing-check.mjs
