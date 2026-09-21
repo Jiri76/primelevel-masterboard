@@ -444,12 +444,23 @@
     color: var(--placeholder);
     font-size: 20px; /* bumped from 15px per explicit request -- matches Renewals'/Investments' own empty-state size */
     text-align: center;
-    /* padding-top is 0, not the label's old 60px -- the h1 above already
-       provides a 100px margin-bottom, so the title-to-message gap is
-       exactly 100px, matching every other page. Bottom padding (60px)
-       is left as-is -- purely visual balance below the text. */
+    /* padding-top is 0. The gap from the title down to this message is
+       100px BY EYE (bottom of the "Insider Edge" letters -> top of the
+       message letters), like every other 100px gap on this page: see the
+       desktop-only rule below. Bottom padding (60px) is left as-is --
+       purely visual balance below the text. */
     padding: 0 0 60px;
     width: 100%;
+  }
+  /* Desktop only (>= 1728px, where the date buttons are pinned to the
+     left and do not sit between the title and this message). The h1's
+     85px bottom margin is tuned for the report card below it, and the
+     20px message letters start ~4px lower in their line box, so the
+     message sat 104px below the title. -4px makes it exactly 100px. */
+  @media (min-width: 1728px) {
+    .empty-state {
+      margin-top: -4px;
+    }
   }
 
   /* Narrow screens. The date buttons are pinned to the left edge

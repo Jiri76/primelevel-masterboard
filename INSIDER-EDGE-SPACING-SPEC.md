@@ -21,7 +21,7 @@ the card, band or underline. This is what the reader sees. It is deliberately
 
 | Spacing | Where |
 |---|---|
-| **100px** | Page top → "Insider Edge" letters · "Insider Edge" bottom → card top · card top → title letters · date line bottom → bottom of dark band · band bottom → "New Discoveries" letters · every heading underline → first line beneath it · last line of a section → next heading's letters · last Verdict line → first check line · last check line → card bottom · card bottom → page bottom |
+| **100px** | Page top → "Insider Edge" letters · "Insider Edge" bottom → card top · card top → title letters · date line bottom → bottom of dark band · band bottom → "New Discoveries" letters · every heading underline → first line beneath it · last line of a section → next heading's letters · last Verdict line → first check line · last check line → card bottom · card bottom → page bottom · when no report is open, the “Insider Edge” title → the “Click a date to open a report.” message (desktop) |
 | **30px** | Ticker line → its text · last text line of an entry → next ticker · each of the three check lines → the next |
 | **24px** | The normal line height between lines inside a paragraph (no extra gap) |
 | **15px** | LOCKED by the owner 2026-09-21: title → date line inside the dark band, AND the bottom of every chapter heading's letters → its underline (all six headings identical) |
@@ -53,6 +53,7 @@ letter). They were measured live, not guessed.
 | `.container` | `padding: 90px 20px 100px` |
 | `h1` | `font-size: 60px; margin: 0 0 85px` |
 | `.report-header-band` | `padding: 94px 70px 96px; margin: 0 0 91px` |
+| `.empty-state` (message shown before any report is opened; desktop ≥1728px only) | `margin-top: -4px` (title → message = 100px by eye) |
 | `.report-content-title` | `font-size: 35px; margin-bottom: 3px` (title → date = 15px by eye) |
 | `.report-body h3` | `font-size: 25px; margin: 83.5px 0 91px` (first: `margin-top: 0`) |
 | `.report-body h3 + ul:not(:has(strong))` (the "None." lists) | `padding-top: 4px` |

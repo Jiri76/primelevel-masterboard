@@ -16,6 +16,17 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForSelector('.report-tile', { timeout: 30000 });
+// 1) Before any report is open: title -> "Click a date to open a report." must be 100px.
+const empty = await page.evaluate(() => {
+  const es = document.querySelector('.empty-state'), h1 = document.querySelector('h1');
+  if (!es) return null;
+  const c = document.createElement('canvas').getContext('2d');
+  const met = (el, txt) => { const s = getComputedStyle(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText(txt); return { a: m.actualBoundingBoxAscent, fa: m.fontBoundingBoxAscent }; };
+  const rect = (el) => { const g = document.createRange(); g.selectNodeContents(el.firstChild || el); return g.getClientRects()[0]; };
+  const hb = rect(h1).top + scrollY + met(h1, 'x').fa;
+  const eb = rect(es).top + scrollY + met(es, 'x').fa;
+  return (eb - met(es, es.textContent.trim()).a) - hb;
+});
 await page.click('.report-tile');
 await page.waitForSelector('.report-body', { timeout: 30000 });
 await page.evaluate(() => document.fonts.ready);
@@ -121,6 +132,7 @@ const row = (label, v, want, tol) => {
   if (!ok) fails.push(`${label}: ${v.toFixed(1)}px, expected ${want}px`);
 };
 console.log(`Report has ${m.nHeadings} headings, ${m.nEntries} entries, ${m.nCheck} check lines\n`);
+if (empty !== null) row('title -> "Click a date to open a report." message (no report open)', empty, 100, TOL_100);
 Object.entries(m.g100).forEach(([k, v]) => row(k, v, 100, TOL_100));
 Object.entries(m.g30).forEach(([k, v]) => row(k, v, 30, TOL_30));
 Object.entries(m.g15).forEach(([k, v]) => row(k, v, 15, TOL_30));
