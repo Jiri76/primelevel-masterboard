@@ -1,0 +1,75 @@
+name: Check daily inbox report
+
+# Independent watchdog for the daily inbox-triage agent (Claude Cowork, 08:00
+# UK). Deliberately separate from that agent: it does not depend on Cowork,
+# Gmail or any Claude session being alive. Insider Edge taught the lesson --
+# a dead pipeline cannot report its own death. This asks one question a
+# little after the report was due, using only the public "heartbeat" function
+# (it reveals WHEN the last report ran and whether it succeeded -- never any
+# email content, which lives in private tables):
+#   * no successful report since 06:30 UTC today  -> open a GitHub Issue
+#   * the latest report is a stored failure       -> open a GitHub Issue
+# GitHub emails you about issues, like any other repo notification.
+on:
+  schedule:
+    # 09:30 UTC daily = 10:30 BST / 09:30 GMT, i.e. 1.5-2.5h after the 08:00 UK
+    # run, enough room for the agent's own retries to have finished.
+    - cron: '30 9 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  check-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the heartbeat and alert if the report is missing or failed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = 'https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/rpc/email_report_heartbeat';
+            const key = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+              body: '{}',
+            });
+            const text = await res.text();
+            if (!res.ok) core.setFailed(`Heartbeat request failed: HTTP ${res.status} ${text}`);
+            const beat = JSON.parse(text);
+            core.info(`Heartbeat: ${text}`);
+
+            // Nothing has ever run yet: the agent has not been switched on.
+            // Say so in the log and stay quiet, rather than alerting daily
+            // before the first scheduled run. (Once the first report exists,
+            // monitoring is fully live.)
+            if (!beat.last_report_at) {
+              core.notice('No inbox report has ever been saved -- agent not started yet, nothing to check.');
+              return;
+            }
+
+            const dueSince = new Date();
+            dueSince.setUTCHours(6, 30, 0, 0); // 08:00 UK is 07:00 (BST) or 08:00 (GMT) UTC
+            const lastSuccess = beat.last_success_at ? new Date(beat.last_success_at) : null;
+            const problems = [];
+            if (!lastSuccess || lastSuccess < dueSince) problems.push(`No successful report has been saved since ${dueSince.toISOString()}. Last success: ${beat.last_success_at || 'never'}.`);
+            if (beat.last_status === 'failed') problems.push('The most recent report was stored as FAILED (the agent hit an error and recorded it).');
+            if (problems.length === 0) { core.info('Report is present and healthy.'); return; }
+
+            const label = 'inbox-report-missing';
+            try {
+              await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name: label, color: 'B60205' });
+            } catch (e) { /* label already exists */ }
+            const note = `Checked ${new Date().toISOString()}.\n\n- ${problems.join('\n- ')}\n\nHeartbeat:\n\`\`\`\n${text}\n\`\`\``;
+            const existing = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: label });
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.data[0].number, body: note });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: `Daily inbox report problem — ${new Date().toISOString().slice(0, 10)}`,
+                body: `${note}\n\nCheck the Cowork scheduled task's run history. This issue stays open and collects a comment each day the problem persists; close it once reports are arriving normally again.`,
+                labels: [label],
+              });
+            }
