@@ -37,13 +37,13 @@
   .container {
     max-width: 1240px;
     margin: 0 auto;
-    padding: 100px 20px 100px; /* bottom was 80px -- raised to 100px per explicit request, so the space below the report card matches the 100px used at the top and between sections */
+    padding: 90px 20px 100px; /* top 90: the 60px "Insider Edge" letters start 10px below their box top, so they land 100px from the page top. bottom was 80px -- raised to 100px per explicit request, so the space below the report card matches the 100px used at the top and between sections */
   }
   h1 {
     color: var(--gold);
     font-weight: 700;
     font-size: 60px;
-    margin: 0 0 100px;
+    margin: 0 0 85px; /* letters' baseline -> card top = 100px by eye (15px of box below the baseline) */
     text-align: center;
   }
   /* .back-link removed per explicit request 2026-08-26 -- deliberately
@@ -233,7 +233,7 @@
        own padding, moved here as part of eliminating the negative-margin
        corner-artifact fix above. No top padding needed: the header band
        already provides its own 100px top inset internally. */
-    padding: 0 70px 100px;
+    padding: 0 70px 93px; /* last check line -> card bottom = 100px by eye */
   }
   .report-body p {
     margin: 0 0 30px; /* was 20px -- didn't match the 30px used everywhere else (list items, heading-to-content). Only visibly matters once a section has 2+ paragraphs in a row, e.g. Verdict once more than one ticker survives in a future week. */
@@ -259,10 +259,16 @@
        its line-box top, so 91px puts them exactly 100px under the
        underline (measured live: was 109px by eye at 100px). A "None."
        line sits ~6px below its box top, so it lands at ~97px. */
-    margin: 91px 0;
+    margin: 83.5px 0 91px; /* top: last line's letters -> this heading's letters = 100px by eye */
   }
   .report-body h3:first-child {
     margin-top: 0;
+  }
+  /* A "None. ..." line (no ticker inside) starts closer to the top of its
+     box than a ticker line does, so its heading needs 4px more to land
+     the same 100px from the underline. */
+  .report-body h3 + ul:not(:has(strong)) {
+    padding-top: 4px;
   }
   /* Verdict is always the last section by design (see the fixed
      section order Cowork's prompt follows), so :last-of-type is a
@@ -322,8 +328,9 @@
      blurring into one wall of text. The divider line between entries
      (border-bottom) was removed per explicit request -- spacing alone
      now does the separating. */
-  .report-body li {
-    margin-bottom: 30px; /* was 24px + a 24px padding-bottom + a border, per explicit request now just this one clean gap */
+  .report-body li,
+  .report-body p:has(strong.verdict-ticker) {
+    margin-bottom: 15px; /* text -> next entry's ticker = 30px by eye */
     /* On the <li> itself, not only on .report-body ul above: a real
        saved report (21 Sep 2026, Repeat Alerts) shipped its <li> items
        without an opening <ul>, and an orphan <li> ignores the ul rule
@@ -361,8 +368,8 @@
      Verdict ticker <p> (has a child .verdict-ticker) and itself opens the
      audit block (has a child <em>) -- both real, structural signals
      Cowork's own HTML already provides, no class needed. */
-  .report-body p:has(> strong.verdict-ticker) + p:has(> em) {
-    margin-top: 100px;
+  .report-body p:has(strong.verdict-ticker) + p:has(> em) {
+    margin-top: 88px; /* last Verdict text -> first check line = 100px by eye */
   }
   /* The verification/audit paragraphs themselves (independent-EDGAR-check,
      repeat-alert-count-check, scope note, and any manual-correction notes
@@ -374,26 +381,11 @@
      too), so the true final gap stays the card's own 100px bottom
      padding, not 20px. */
   .report-body p:has(> em) {
-    margin-bottom: 30px; /* was 20px -- raised to 30px per explicit request so it matches the 30px used between every other entry/paragraph in the report */
+    margin-bottom: 18px; /* check line -> next check line = 30px by eye */
   }
   .report-body p:has(> em):last-child {
     margin-bottom: 0;
   }
-  /* Per explicit request: the gap between each ticker's own name line
-     and its market-cap detail line right below must be DOUBLE the
-     normal line-height gap -- see doubleTickerLineBreaks() in the
-     module script (and its duplicate in the inline pre-script) for how
-     this is actually achieved. TWO real CSS attempts were tried here
-     first and both measured as failing live (br { display:block;
-     margin-bottom } measured ~6px, not 48px; br::after with the same
-     properties also measured ~6px despite getComputedStyle reporting
-     the rule as applied) -- <br> elements do not reliably generate
-     boxes for their own margin or for ::after content in practice,
-     regardless of what the CSSOM claims. Fixed instead with a plain,
-     completely standard JS approach: insert a second real <br>
-     immediately after each existing one inside a ticker entry. Two
-     consecutive line breaks reliably create a full second empty line
-     in every browser, no CSS edge cases involved at all. */
   /* The ticker code (always the first <strong> in each entry) gets its
      own slightly larger, letter-spaced treatment -- a real visual
      anchor to scan down the list for, distinct from the rest of the
@@ -411,6 +403,20 @@
      as it was, un-inherited by the rest of the line. */
   .report-body li > span.line1-bold {
     font-weight: 700;
+  }
+  /* The page uses three measurements, all judged by eye (bottom of one
+     line's letters to the top of the next line's letters):
+       100px  between sections, and around the title band and card
+       30px   between a ticker line and its text, between entries, and
+              between the check lines
+       24px   the ordinary line height inside a paragraph
+     The CSS numbers below are smaller than 30/100 because a line's
+     letters sit inside a taller line box (about 6px of space below the
+     baseline, 8-9px above the tallest letter), so each margin is the
+     target minus that built-in space. Measured live, not guessed. */
+  .report-body .entry-head {
+    display: block;
+    margin-bottom: 17px; /* ticker line -> its text = 30px by eye */
   }
   /* Per explicit request: just the conviction word itself (High/Medium/
      Low) must be bold -- Cowork already wraps exactly that word in an
@@ -745,39 +751,27 @@
       // first <br> (the ticker's own existing <strong> nests inside
       // harmlessly) rather than any CSS ::first-line trick, which would
       // be fragile against real text wrapping.
-      body.querySelectorAll('li').forEach((li) => {
-        const firstBr = li.querySelector('br');
+      // Each entry's first line (ticker entries and Verdict entries alike)
+      // becomes its own block, and the <br> that ended it is removed. The
+      // gap to the text below is then one exact CSS margin
+      // (.entry-head), instead of a stack of <br> empty lines, which
+      // can only ever be multiples of the 24px line height.
+      body.querySelectorAll('li, p:has(> strong.verdict-ticker)').forEach((entry) => {
+        const firstBr = entry.querySelector('br');
         if (!firstBr) return;
         const range = document.createRange();
-        range.setStart(li, 0);
+        range.setStart(entry, 0);
         range.setEndBefore(firstBr);
         // A <span> with its own class, not another <strong> -- the
         // ticker's existing <strong> (see the CSS rule targeting it
         // specifically for its own larger, letter-spaced size) stays
         // nested one level inside this, and must remain distinguishable
         // from this wrapper so its size doesn't leak onto the whole line.
-        const wrap = document.createElement('span');
-        wrap.className = 'line1-bold';
-        wrap.appendChild(range.extractContents());
-        li.insertBefore(wrap, firstBr);
-      });
-      // Per explicit request: double the gap after each ticker's own
-      // name line. Real bug found and fixed: two CSS-only attempts
-      // (styling the <br> directly, then br::after) both measured as
-      // NOT actually creating the extra space live, despite
-      // getComputedStyle reporting the rules as applied -- <br>
-      // elements don't reliably generate boxes for their own margin or
-      // for generated content in practice. Fixed instead with a plain,
-      // completely standard approach: insert a real second <br>
-      // immediately after each existing one inside a ticker entry --
-      // two consecutive line breaks reliably create a full second
-      // empty line in every browser, no CSS edge cases involved.
-      // Also applies to each Verdict entry's ticker+stars line -- per
-      // explicit request, the gap between it and the paragraph below it
-      // matches the ticker-list entries exactly (30px, measured live;
-      // it was 6px with a single <br>).
-      body.querySelectorAll('li br, p:has(> strong.verdict-ticker) br').forEach((br) => {
-        br.insertAdjacentElement('afterend', document.createElement('br'));
+        const head = document.createElement('span');
+        head.className = entry.tagName === 'LI' ? 'entry-head line1-bold' : 'entry-head';
+        head.appendChild(range.extractContents());
+        entry.insertBefore(head, firstBr);
+        firstBr.remove();
       });
       card.append(headerBand, body);
       contentEl.append(card);
