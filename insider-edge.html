@@ -174,9 +174,18 @@
        30 + (100 - 54) = 76px hits exactly 100px total from the title's
        own text to the band's bottom edge. padding-top 100px/left-right
        70px reproduce the same title inset the card's own padding used to
-       provide before this restructure. */
+       provide before this restructure.
+
+       OPTICAL ADJUSTMENT, 2026-09-21 (per explicit request -- make the
+       top and bottom gaps read the same BY EYE, not just by box): the
+       old 100px/76px were exact for the text BOXES, but the letters sit
+       inside taller boxes, so the visible gaps were ~106px (band top ->
+       top of the tallest letters) and ~109px (title baseline -> band
+       bottom). Now 94px / 67px, which makes both exactly 100px to the
+       letters, measured live with font metrics (top = tallest ascender,
+       bottom = baseline; the tail of a "p" is ignored, as by eye). */
     margin: 0 0 100px;
-    padding: 100px 70px 76px;
+    padding: 94px 70px 67px;
   }
   .report-content-title {
     font-weight: 700;
