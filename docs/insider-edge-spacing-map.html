@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Insider Edge spacing map</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet"><style>:root{--navy:#1E2633;--band:#2A3441;--gold:#B29B68;--white:#F9F9FA;--ink:#1E2633;--c100:#F0803C;--c30:#2FC4B2;--c24:#E3C26B;--c17:#C79BFF}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Insider Edge spacing map</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet"><style>:root{--navy:#1E2633;--band:#2A3441;--gold:#B29B68;--white:#F9F9FA;--ink:#1E2633;--c100:#F0803C;--c30:#2FC4B2;--c24:#E3C26B;--c17:#C79BFF;--c15:#8FB8FF}
 *{box-sizing:border-box}
 body{margin:0;background:var(--navy);color:var(--white);font-family:'Montserrat',sans-serif;padding:32px 20px 80px}
 .wrap{max-width:1200px;margin:0 auto}
@@ -8,17 +8,19 @@ p.sub b{color:var(--white)}
 .legend{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 30px}
 .lg{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--white);background:#2A3441;border-radius:8px;padding:8px 14px}
 .lg b{font-size:22px;font-weight:800;color:#12161d;border-radius:6px;padding:2px 10px}
-.lg.g17 b{background:var(--c17)}.lg.g100 b{background:var(--c100)}.lg.g30 b{background:var(--c30)}.lg.g24 b{background:var(--c24)}
+.lg.g17 b{background:var(--c17)}.lg.g15 b{background:var(--c15)}.lg.g100 b{background:var(--c100)}.lg.g30 b{background:var(--c30)}.lg.g24 b{background:var(--c24)}
 .pg{width:640px;position:relative}
 .gap{position:relative}
 .gap.g100{background:repeating-linear-gradient(135deg,rgba(240,128,60,.42) 0 6px,rgba(240,128,60,.16) 6px 12px);border-top:2px solid var(--c100);border-bottom:2px solid var(--c100)}
 .gap.g17{background:repeating-linear-gradient(135deg,rgba(199,155,255,.65) 0 4px,rgba(199,155,255,.28) 4px 8px);border-top:2px solid var(--c17);border-bottom:2px solid var(--c17)}
+.gap.g15{background:repeating-linear-gradient(135deg,rgba(143,184,255,.7) 0 4px,rgba(143,184,255,.3) 4px 8px);border-top:2px solid var(--c15);border-bottom:2px solid var(--c15)}
 .gap.g30{background:repeating-linear-gradient(135deg,rgba(47,196,178,.5) 0 5px,rgba(47,196,178,.2) 5px 10px);border-top:2px solid var(--c30);border-bottom:2px solid var(--c30)}
 .tag{position:absolute;width:max-content;left:calc(100% + 18px);top:50%;transform:translateY(-50%);white-space:nowrap;display:flex;align-items:center;gap:10px;font-size:15px;line-height:1.2;color:#eef1f6}
 .bd .tag{left:calc(100% + 67px)}
 .tag b{display:inline-block;min-width:54px;text-align:center;font-size:20px;font-weight:800;padding:3px 10px;border-radius:7px;color:#12161d}
 .g100 .tag b,.tag.g100 b{background:var(--c100)}
 .g17 .tag b,.tag.g17 b{background:var(--c17)}
+.g15 .tag b,.tag.g15 b{background:var(--c15)}
 .g30 .tag b,.tag.g30 b{background:var(--c30)}
 .tag.g24 b{background:var(--c24)}
 .tag em{font-style:normal;font-weight:600;white-space:normal;max-width:380px}
@@ -29,8 +31,10 @@ p.sub b{color:var(--white)}
 .ttl,.dt{display:flex;align-items:center;justify-content:center;font-weight:700}
 .ttl{font-size:18px}.dt{font-size:11px;opacity:.75}
 .bd{padding:0 49px}
-.h3{border-bottom:3px solid var(--ink);display:flex;align-items:flex-start;padding-top:2px;font-weight:800;font-size:16px}
-.h3.gold{color:var(--gold);border-color:var(--gold)}
+.h3t{display:flex;align-items:flex-start;font-weight:800;font-size:16px;color:var(--ink)}
+.h3t.gold{color:var(--gold)}
+.uline{height:3px;background:var(--ink)}
+.uline.gold{background:var(--gold)}
 .tk{font-weight:800;font-size:12px;display:flex;align-items:center;white-space:nowrap;overflow:hidden}
 .ln{background:repeating-linear-gradient(to bottom,#aeb6c4 0 7px,transparent 7px 16.8px);opacity:.8;margin-right:30px}
 .em{display:flex;align-items:center;font-size:11px;font-style:italic;color:#4b5565}
@@ -39,7 +43,7 @@ p.sub b{color:var(--white)}
 .brk{margin:0;padding:8px 0;text-align:center;font-size:12px;color:#6d7686;font-style:italic;border-top:2px dashed #c9ced8;border-bottom:2px dashed #c9ced8}
 .wide{overflow-x:auto;padding-right:520px}
 @media (max-width:1150px){.tag{position:static;transform:none;padding:3px 4px;background:rgba(0,0,0,.55);white-space:normal}.wide{padding-right:0}.pg{width:100%;max-width:640px}}
-</style></head><body><div class="wrap"><h1 class="t">Insider Edge report — spacing map</h1><div class="legend"><span class="lg g100"><b>100</b> big pause between sections</span><span class="lg g30"><b>30</b> between a ticker and its text, between entries, between check lines</span><span class="lg g24"><b>24</b> normal line spacing inside a paragraph</span><span class="lg g17"><b>17</b> title → date line (the one fixed exception — locked)</span></div><p class="sub">Drawn to scale (1 real px = 0.7 px here). The striped bands are the empty spaces: <b style="color:#F0803C">orange = 100px</b>, <b style="color:#2FC4B2">teal = 30px</b>, <b style="color:#E3C26B">gold = the normal 24px line spacing</b>. Every gap is measured the way the eye sees it — from the bottom of the letters above to the top of the letters below (or to the edge of the card or underline) — and checked live on the page at desktop width. These are fixed page settings, so every report gets exactly the same spacing whatever its length.<br><b>Font sizes (locked):</b> chapter headings 25px · tickers 20px · text and the three closing lines 15px · page title "Insider Edge" 60px · title in the dark band 35px · date line 15px.</p><div class="wide"><div class="pg">
+</style></head><body><div class="wrap"><h1 class="t">Insider Edge report — spacing map</h1><div class="legend"><span class="lg g100"><b>100</b> big pause between sections</span><span class="lg g30"><b>30</b> between a ticker and its text, between entries, between check lines</span><span class="lg g24"><b>24</b> normal line spacing inside a paragraph</span><span class="lg g17"><b>17</b> title → date line (the one fixed exception — locked)</span><span class="lg g15"><b>15</b> heading letters → underline (not yet decided)</span></div><p class="sub">Drawn to scale (1 real px = 0.7 px here). The striped bands are the empty spaces: <b style="color:#F0803C">orange = 100px</b>, <b style="color:#2FC4B2">teal = 30px</b>, <b style="color:#E3C26B">gold = the normal 24px line spacing</b>. Every gap is measured the way the eye sees it — from the bottom of the letters above to the top of the letters below (or to the edge of the card or underline) — and checked live on the page at desktop width. These are fixed page settings, so every report gets exactly the same spacing whatever its length.<br><b>Font sizes (locked):</b> chapter headings 25px · tickers 20px · text and the three closing lines 15px · page title "Insider Edge" 60px · title in the dark band 35px · date line 15px.</p><div class="wide"><div class="pg">
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Top of page → top of the "Insider Edge" letters</em></span></div>
 <div class="h1" style="height:51.099999999999994px"><span>Insider Edge</span></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Bottom of the "Insider Edge" letters → top of report card</em></span></div>
@@ -53,7 +57,9 @@ p.sub b{color:var(--white)}
 </div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Bottom of dark band → top of the "New Discoveries" letters</em></span></div>
 <div class="bd">
-<div class="h3 " style="height:32.199999999999996px"><span>New Discoveries — 6</span></div>
+<div class="h3t " style="height:14px"><span>New Discoveries — 6</span></div>
+<div class="gap g15" style="height:10.5px"><span class="tag"><b>15</b><em>Heading letters → underline <i>(bottom of the letters to the line; the small tails of g, y, p reach a few px closer)</i></em></span></div>
+<div class="uline "></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Underline → first company (BWMX)</em></span></div>
 <div class="tk" style="height:16.799999999999997px"><span>BWMX — Betterware de México — Market Cap $683.49M.</span></div>
 <div class="gap g30" style="height:21px"><span class="tag"><b>30</b><em>Ticker line → its text</em></span></div>
@@ -66,11 +72,15 @@ p.sub b{color:var(--white)}
 <div class="brk">… same pattern for the rest of New Discoveries, Institutional Buying and Fundamentals …</div>
 <div class="ln" style="height:50.4px"></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Last line of an entry → next heading (e.g. "Watch Line")</em></span></div>
-<div class="h3 " style="height:32.199999999999996px"><span>Watch Line — 0</span></div>
+<div class="h3t " style="height:14px"><span>Watch Line — 0</span></div>
+<div class="gap g15" style="height:10.5px"><span class="tag"><b>15</b><em>Heading letters → underline <i>(bottom of the letters to the line; the small tails of g, y, p reach a few px closer)</i></em></span></div>
+<div class="uline "></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Underline → "None. No tickers have yet accumulated…"</em></span></div>
 <div class="ln" style="height:33.599999999999994px"></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Last line → next heading, "Repeat Alerts"</em></span></div>
-<div class="h3 " style="height:32.199999999999996px"><span>Repeat Alerts — 3</span></div>
+<div class="h3t " style="height:14px"><span>Repeat Alerts — 3</span></div>
+<div class="gap g15" style="height:10.5px"><span class="tag"><b>15</b><em>Heading letters → underline <i>(bottom of the letters to the line; the small tails of g, y, p reach a few px closer)</i></em></span></div>
+<div class="uline "></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Underline → first company (LIEN)</em></span></div>
 <div class="tk" style="height:16.799999999999997px"><span>LIEN — Chicago Atlantic BDC, Inc. — Market Cap $X.</span></div>
 <div class="gap g30" style="height:21px"><span class="tag"><b>30</b><em>Ticker line → its text ("This is the 4th time…")</em></span></div>
@@ -80,7 +90,9 @@ p.sub b{color:var(--white)}
 <div class="gap g30" style="height:21px"><span class="tag"><b>30</b><em>Ticker line → its text</em></span></div>
 <div class="ln" style="height:50.4px"></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Last line of AVBC → "Verdict"</em></span></div>
-<div class="h3 gold" style="height:32.199999999999996px"><span>Verdict</span></div>
+<div class="h3t gold" style="height:14px"><span>Verdict</span></div>
+<div class="gap g15" style="height:10.5px"><span class="tag"><b>15</b><em>Heading letters → underline <i>(bottom of the letters to the line; the small tails of g, y, p reach a few px closer)</i></em></span></div>
+<div class="uline gold"></div>
 <div class="gap g100" style="height:70px"><span class="tag"><b>100</b><em>Underline → first entry (UAMY)</em></span></div>
 <div class="tk" style="height:16.799999999999997px"><span>UAMY — ★★☆</span></div>
 <div class="gap g30" style="height:21px"><span class="tag"><b>30</b><em>Ticker + stars line → verdict text</em></span></div>

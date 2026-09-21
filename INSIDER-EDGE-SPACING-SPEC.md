@@ -27,7 +27,8 @@ the card, band or underline. This is what the reader sees. It is deliberately
 | **17px** | ONE fixed exception, LOCKED by the owner 2026-09-21: title → date line inside the dark band |
 
 The 17px title → date gap is locked and guarded (see the table above). Still
-undecided by the owner: heading letters → its underline (≈14px). A wrapped ticker
+undecided by the owner: heading letters → its underline (15px from the bottom of the
+letters; the tails of g/y/p reach 10–14px). Shown in the mock-up. A wrapped ticker
 line (narrow screens) reads 28px instead of 30px — unavoidable.
 
 ## The only three font sizes (report body)
