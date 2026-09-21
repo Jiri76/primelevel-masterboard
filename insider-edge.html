@@ -751,7 +751,11 @@
       // immediately after each existing one inside a ticker entry --
       // two consecutive line breaks reliably create a full second
       // empty line in every browser, no CSS edge cases involved.
-      body.querySelectorAll('li br').forEach((br) => {
+      // Also applies to each Verdict entry's ticker+stars line -- per
+      // explicit request, the gap between it and the paragraph below it
+      // matches the ticker-list entries exactly (30px, measured live;
+      // it was 6px with a single <br>).
+      body.querySelectorAll('li br, p:has(> strong.verdict-ticker) br').forEach((br) => {
         br.insertAdjacentElement('afterend', document.createElement('br'));
       });
       card.append(headerBand, body);
