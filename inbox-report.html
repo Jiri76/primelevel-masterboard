@@ -20,6 +20,8 @@
     --placeholder: #8A93A3;
     --border: #3A4453;
     --red: #E45858;
+    --orange: #D9A441;
+    --green: #4CAF7D;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -204,6 +206,73 @@
   .report-body ul ul li {
     margin-bottom: 6px;
   }
+  /* ---- Scannable layout: at-a-glance table + one card per email ---- */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    margin: 0 4px 4px 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+  .badge.high { background: var(--red); color: #fff; }
+  .badge.medium { background: var(--gold); color: var(--navy); }
+  .badge.low { background: #dfe3ea; color: var(--navy); }
+  .badge.spam { background: #c9ced8; color: #4b5565; }
+  .badge.worry-yes { background: #fff; color: #b3261e; border-color: #b3261e; }
+  .badge.worry-watch { background: #fff; color: #8a5a00; border-color: var(--orange); }
+  .badge.worry-no { background: #fff; color: #23694a; border-color: var(--green); }
+  .badge.cat { background: var(--input-bg); color: var(--white); }
+  .badge.draft { background: #eef1f5; color: var(--navy); border-color: var(--border); }
+  .report-body table.scan {
+    width: 100%;
+    margin: 0 0 30px;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .report-body table.scan th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 2px solid var(--navy);
+  }
+  .report-body table.scan td {
+    padding: 10px;
+    vertical-align: top;
+    border-bottom: 1px solid #dfe3ea;
+  }
+  .report-body li.entry {
+    margin: 0 0 24px;
+    padding: 16px 18px 6px;
+    border: 1px solid #dfe3ea;
+    border-left: 6px solid #c9ced8;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .report-body li.entry.high { border-left-color: var(--red); }
+  .report-body li.entry.medium { border-left-color: var(--gold); }
+  .report-body li.entry.low { border-left-color: #dfe3ea; }
+  .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
+  .report-body li.entry p { margin: 0 0 10px; }
+  .report-body li.entry p.from { font-size: 14px; color: #4b5565; }
+  .report-body li.entry p.gist { font-size: 15px; }
+  .report-body li.entry p.why { font-size: 14px; }
+  .report-body details {
+    margin: 0 0 12px;
+  }
+  .report-body summary {
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .report-body summary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
   /* Quoted text: the original email and the drafted reply. */
   .report-body blockquote {
     margin: 8px 0 12px;
@@ -270,6 +339,29 @@
     .report-header-band { padding: 40px 24px; }
     .report-content-title { font-size: 26px; }
     .report-body { padding: 40px 24px 50px; }
+    /* Phones: each summary row becomes a compact stacked line (badges, then the
+       sentence, then the draft status) instead of a cramped 4-column table. */
+    .report-body table.scan,
+    .report-body table.scan tbody { display: block; }
+    .report-body table.scan thead { display: none; }
+    .report-body table.scan tr {
+      display: block;
+      padding: 10px 0;
+      border-bottom: 1px solid #dfe3ea;
+    }
+    .report-body table.scan td {
+      display: inline-block;
+      padding: 0 6px 4px 0;
+      border: 0;
+    }
+    .report-body table.scan td:nth-child(3) {
+      display: block;
+      padding: 2px 0 4px;
+    }
+    .report-body table.scan td:nth-child(4)::before {
+      content: 'Draft: ';
+      color: #4b5565;
+    }
   }
   @media (max-width: 359px) {
     h1 { font-size: 38px; }
@@ -301,7 +393,14 @@
     // inline style may only set a text colour (the red flags).
     const GMAIL_LINK = /^https:\/\/mail\.google\.com\//;
     const COLOUR_ONLY = /^\s*color:\s*#[0-9a-f]{3,8}\s*;?\s*$/i;
+    // Only these style classes are honoured (defined in this page's CSS).
+    const CLASS_WHITELIST = new Set(['badge', 'high', 'medium', 'low', 'spam', 'worry-yes', 'worry-watch', 'worry-no', 'cat', 'draft', 'entry', 'head', 'from', 'gist', 'why', 'scan']);
     DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+      if (node.hasAttribute('class')) {
+        const kept = node.getAttribute('class').split(/\s+/).filter((c) => CLASS_WHITELIST.has(c));
+        if (kept.length) node.setAttribute('class', kept.join(' '));
+        else node.removeAttribute('class');
+      }
       if (node.hasAttribute('style') && !COLOUR_ONLY.test(node.getAttribute('style'))) {
         node.removeAttribute('style');
       }
@@ -316,8 +415,8 @@
     });
     function cleanReportHtml(html) {
       return DOMPurify.sanitize(html || '', {
-        ALLOWED_TAGS: ['h3', 'h4', 'p', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'b', 'i', 'br', 'span', 'a'],
-        ALLOWED_ATTR: ['style', 'href', 'target', 'rel'],
+        ALLOWED_TAGS: ['h3', 'h4', 'p', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'b', 'i', 'br', 'span', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'details', 'summary'],
+        ALLOWED_ATTR: ['style', 'href', 'target', 'rel', 'class', 'open'],
       });
     }
 
