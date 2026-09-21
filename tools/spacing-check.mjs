@@ -56,7 +56,7 @@ const m = await page.evaluate(() => {
   const title = doc.querySelector('.report-content-title'), date = doc.querySelector('.report-content-date');
   const card = doc.querySelector('.report-content'), body = doc.querySelector('.report-body');
   const hs = [...body.querySelectorAll('h3')];
-  const g100 = {}, g30 = {}, g17 = {}, fonts = {};
+  const g100 = {}, g30 = {}, g15 = {}, fonts = {};
   const pageFonts = { 'page title "Insider Edge"': cs(h1).fontSize, 'title inside the dark band': cs(title).fontSize, 'date line under the title': cs(date).fontSize };
 
   g100['page top -> "Insider Edge" letters'] = first(h1).top;
@@ -75,7 +75,8 @@ const m = await page.evaluate(() => {
     g100['last check line -> card bottom'] = R(card).b - last(chk[chk.length - 1]).base;
     chk.forEach((p, i) => { if (i > 0) g30[`check line ${i} -> ${i + 1}`] = first(p).top - last(chk[i - 1]).base; });
   }
-  g17['title -> date line'] = first(date).top - last(title).base;
+  g15['title -> date line'] = first(date).top - last(title).base;
+  hs.forEach((h) => { g15[`"${h.textContent.trim().slice(0, 18)}" letters -> underline`] = R(h).b - parseFloat(cs(h).borderBottomWidth) - last(h).base; });
   g100['card bottom -> page bottom'] = doc.documentElement.scrollHeight - R(card).b;
 
   // entries: ticker line -> text, text -> next ticker, line pitch inside paragraphs
@@ -108,7 +109,7 @@ const m = await page.evaluate(() => {
     (cat[k] = cat[k] || new Set()).add(cs(p).fontSize);
   }
   Object.keys(cat).forEach((k) => (fonts[k] = [...cat[k]]));
-  return { g100, g30, g17, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length };
+  return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length };
 });
 
 await browser.close();
@@ -122,7 +123,7 @@ const row = (label, v, want, tol) => {
 console.log(`Report has ${m.nHeadings} headings, ${m.nEntries} entries, ${m.nCheck} check lines\n`);
 Object.entries(m.g100).forEach(([k, v]) => row(k, v, 100, TOL_100));
 Object.entries(m.g30).forEach(([k, v]) => row(k, v, 30, TOL_30));
-Object.entries(m.g17).forEach(([k, v]) => row(k, v, 17, TOL_30));
+Object.entries(m.g15).forEach(([k, v]) => row(k, v, 15, TOL_30));
 
 const wantPage = { 'page title "Insider Edge"': '60px', 'title inside the dark band': '35px', 'date line under the title': '15px' };
 Object.entries(wantPage).forEach(([k, px]) => {

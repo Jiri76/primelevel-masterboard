@@ -17,19 +17,18 @@ g/p/y are ignored) to the top of the tallest letters below — or to the edge of
 the card, band or underline. This is what the reader sees. It is deliberately
 *not* the CSS box gap, because letters sit inside taller line boxes.
 
-## The spacings: 100px, 30px, 24px — plus the one locked 17px
+## The spacings: 100px, 30px, 24px — plus the locked 15px
 
 | Spacing | Where |
 |---|---|
 | **100px** | Page top → "Insider Edge" letters · "Insider Edge" bottom → card top · card top → title letters · date line bottom → bottom of dark band · band bottom → "New Discoveries" letters · every heading underline → first line beneath it · last line of a section → next heading's letters · last Verdict line → first check line · last check line → card bottom · card bottom → page bottom |
 | **30px** | Ticker line → its text · last text line of an entry → next ticker · each of the three check lines → the next |
 | **24px** | The normal line height between lines inside a paragraph (no extra gap) |
-| **17px** | ONE fixed exception, LOCKED by the owner 2026-09-21: title → date line inside the dark band |
+| **15px** | LOCKED by the owner 2026-09-21: title → date line inside the dark band, AND the bottom of every chapter heading's letters → its underline (all six headings identical) |
 
-The 17px title → date gap is locked and guarded (see the table above). Still
-undecided by the owner: heading letters → its underline (15px from the bottom of the
-letters; the tails of g/y/p reach 10–14px). Shown in the mock-up. A wrapped ticker
-line (narrow screens) reads 28px instead of 30px — unavoidable.
+Both 15px gaps are locked and guarded. (The 15px is measured from the bottom of the
+letters; the small tails of g/y/p reach 10–14px.) A wrapped ticker line (narrow
+screens) reads 28px instead of 30px — unavoidable.
 
 ## The only three font sizes (report body)
 
@@ -54,6 +53,7 @@ letter). They were measured live, not guessed.
 | `.container` | `padding: 90px 20px 100px` |
 | `h1` | `font-size: 60px; margin: 0 0 85px` |
 | `.report-header-band` | `padding: 94px 70px 96px; margin: 0 0 91px` |
+| `.report-content-title` | `font-size: 35px; margin-bottom: 3px` (title → date = 15px by eye) |
 | `.report-body h3` | `font-size: 25px; margin: 83.5px 0 91px` (first: `margin-top: 0`) |
 | `.report-body h3 + ul:not(:has(strong))` (the "None." lists) | `padding-top: 4px` |
 | `.entry-head` (ticker line, made a block by the page script) | `margin-bottom: 17px` |

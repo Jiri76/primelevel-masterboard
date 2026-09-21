@@ -12,7 +12,7 @@
      font-size values on this page (container, h1, .report-header-band,
      .report-body h3, .entry-head, li/p margins, check lines, and the
      25px/20px/15px font sizes) are a fixed spec: only 100px, 30px and
-     24px line spacing, measured by eye (plus one fixed 17px gap between the
+     24px line spacing and 15px (title->date, heading->underline), measured by eye (fixed 15px gap between the
      band title and its date; page title 60px, band title 35px, date 15px).
      Do NOT change any of them without
      an explicit request from the owner. Full spec:
@@ -208,7 +208,7 @@
   .report-content-title {
     font-weight: 700;
     font-size: 35px;
-    margin-bottom: 5px;
+    margin-bottom: 3px; /* title baseline -> date letters = 15px by eye (was 5px = 17px) */
     text-align: center;
     color: var(--gold);
   }
