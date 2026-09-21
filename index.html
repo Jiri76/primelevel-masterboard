@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://mail.google.com" />
 <link rel="preconnect" href="https://calendar.google.com" />
 <link rel="preconnect" href="https://accounts.google.com" />
+<link rel="preconnect" href="https://email.seznam.cz" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   /* Copied verbatim from Renewals -- same tokens, not just similar
@@ -548,6 +549,11 @@
       { label: 'Email', href: 'https://mail.google.com/mail/u/0/?authuser=info%40primelevel.co.uk' },
       { label: 'Insider Edge', href: 'insider-edge.html' },
       { label: 'Investments', href: 'investments.html' },
+      // Personal Email: the owner's personal address is on Seznam (confirmed
+      // from the domain's MX records), so this opens Seznam webmail -- no
+      // address is put in the link; Seznam opens the signed-in inbox, or
+      // asks to sign in. Sorts between "Investments" (I) and "Renewals" (R).
+      { label: 'Personal Email', href: 'https://email.seznam.cz/' },
       { label: 'Renewals', href: 'https://jiri76.github.io/primelevel-renewals/' },
     ];
 
