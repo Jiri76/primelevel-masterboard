@@ -10,6 +10,7 @@
      sign-in host, which Gmail can hop through) while the page sits idle, so
      the click doesn't have to pay DNS + TCP + TLS setup first. -->
 <link rel="preconnect" href="https://mail.google.com" />
+<link rel="preconnect" href="https://calendar.google.com" />
 <link rel="preconnect" href="https://accounts.google.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <style>
@@ -539,7 +540,11 @@
     // shorter /mail/?authuser=... form to (a permanent 301), so linking to
     // it directly is the same destination with one redirect hop less.
     const TILES = [
-      { label: 'Calendar', href: 'https://calendar.google.com/' },
+      // Calendar links to the app's own address (/calendar/u/0/r, the first
+      // signed-in Google account -- the same one the plain calendar.google.com
+      // address lands on for a signed-in browser), skipping the hop from the
+      // bare domain, and the page preconnects to it while idle (see <head>).
+      { label: 'Calendar', href: 'https://calendar.google.com/calendar/u/0/r' },
       { label: 'Email', href: 'https://mail.google.com/mail/u/0/?authuser=info%40primelevel.co.uk' },
       { label: 'Insider Edge', href: 'insider-edge.html' },
       { label: 'Investments', href: 'investments.html' },
