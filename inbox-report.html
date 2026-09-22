@@ -302,6 +302,17 @@
     padding: 0 0 60px;
     width: 100%;
   }
+  /* Same red already used for .report-error and the sign-in form's own
+     error message elsewhere on this page -- one consistent "something's
+     wrong" colour across the whole page, not a new one. */
+  .empty-state.denied {
+    color: #b33a3a;
+    font-weight: 700; /* bold shifts the letters' own metrics slightly vs the regular-weight messages */
+    padding-top: 2px; /* title baseline -> message letters = 100px by eye (measured 98px without this).
+       padding, not margin -- an added margin-top here collapses against h1's
+       own larger margin-bottom and has literally no visible effect; padding
+       never collapses, so it's the only reliable way to nudge this. */
+  }
   .signout {
     display: block;
     width: fit-content;
@@ -521,24 +532,43 @@
     }
 
     async function showReports() {
-      const { data, error } = await supabase
-        .from('email_reports')
-        .select('id, created_at, run_date, status, title, html_content, error_text')
-        .order('created_at', { ascending: false })
-        .limit(30);
       contentEl.replaceChildren();
       tilesEl.replaceChildren();
-      if (error) {
-        // A clean, plain-English message for the reader -- the real technical
-        // detail (table/column names, the raw Postgres error) is still logged
-        // to the console for whoever is debugging, never shown on the page.
-        console.error('Could not load email_reports:', error);
+
+      // Check access FIRST, before ever querying the reports table itself --
+      // a signed-in visitor who isn't on the approved list is told so
+      // plainly and immediately (per explicit request: they already proved
+      // they own that exact address by clicking a real emailed link, so
+      // naming it back to them reveals nothing new). is_email_report_viewer()
+      // runs the exact same check the table's own RLS policy uses, so this
+      // can never disagree with what the table itself would allow.
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: allowed, error: authError } = await supabase.rpc('is_email_report_viewer');
+
+      if (authError) {
+        console.error('Could not check report access:', authError);
         contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
-      } else if (!data.length) {
-        contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
+      } else if (!allowed) {
+        contentEl.append(el('div', 'empty-state denied', `${user?.email || 'This account'} does not have access to this report.`));
       } else {
-        renderTiles(data, data[0].id);
-        renderReport(data[0]);
+        const { data, error } = await supabase
+          .from('email_reports')
+          .select('id, created_at, run_date, status, title, html_content, error_text')
+          .order('created_at', { ascending: false })
+          .limit(30);
+        if (error) {
+          // A clean, plain-English message for the reader -- the real
+          // technical detail (table/column names, the raw Postgres error) is
+          // still logged to the console for whoever is debugging, never
+          // shown on the page.
+          console.error('Could not load email_reports:', error);
+          contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
+        } else if (!data.length) {
+          contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
+        } else {
+          renderTiles(data, data[0].id);
+          renderReport(data[0]);
+        }
       }
       const out = el('button', 'signout', 'Sign out');
       out.type = 'button';
