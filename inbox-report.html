@@ -34,7 +34,7 @@
   .container {
     max-width: 1240px;
     margin: 0 auto;
-    padding: 90px 20px 100px;
+    padding: 87px 20px 100px; /* top: measured live -- 90px overshot to 103px by eye, 87px lands the "Inbox Report" letters exactly 100px from the page top */
   }
   h1 {
     color: var(--gold);
@@ -304,13 +304,15 @@
   }
   .signout {
     display: block;
-    margin: 40px auto 0;
+    width: fit-content;
+    margin: 31px auto 0; /* letters' baseline -> "Sign out" letters = 100px by eye. The .empty-state above already carries a 60px bottom padding, so only 31px more is needed here (measured live: 91px overshot to 160px). */
     background: none;
     border: 0;
-    color: var(--placeholder);
+    color: var(--gold); /* same colour as the "Inbox Report" title, per explicit request */
     font-family: 'Montserrat', sans-serif;
-    font-size: 15px;
-    text-decoration: underline;
+    font-size: 20px; /* matches .empty-state's size, per explicit request */
+    font-weight: 700;
+    text-decoration: none; /* per explicit request -- no underline */
     cursor: pointer;
   }
 
@@ -527,7 +529,11 @@
       contentEl.replaceChildren();
       tilesEl.replaceChildren();
       if (error) {
-        contentEl.append(el('div', 'empty-state', `Could not load reports: ${error.message}`));
+        // A clean, plain-English message for the reader -- the real technical
+        // detail (table/column names, the raw Postgres error) is still logged
+        // to the console for whoever is debugging, never shown on the page.
+        console.error('Could not load email_reports:', error);
+        contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
       } else if (!data.length) {
         contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
       } else {
