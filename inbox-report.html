@@ -8,6 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <style>
+  /* LOCKED OPENING PAGE -- approved by the owner 2026-09-26. The opening
+     screens (no access / no reports yet / could not load) follow the
+     PrimeLevel opening-page standard exactly: title 60px bold gold, one
+     message line 20px regular soft grey-blue, Sign out 20px bold gold,
+     100px / 100px / 100px by eye, everything centred. The values that
+     produce it (.container padding-top, h1 margin, .empty-state, .signout)
+     must NOT change without an explicit request from the owner. Full spec:
+     OPENING-PAGE-STANDARD.md. Guarded automatically by
+     tools/opening-page-check.mjs (workflow "Opening page guard"). */
   /* Same design tokens as the rest of Masterboard. PRIVATE PAGE: the reports
      contain email content, so they live in private Supabase tables and are
      only readable after signing in with an allowed address (see

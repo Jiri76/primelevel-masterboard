@@ -1,0 +1,91 @@
+name: Opening page guard
+
+# Fails loudly if any PrimeLevel "opening page" (title + one message line +
+# optional Sign out) drifts from the LOCKED standard in OPENING-PAGE-STANDARD.md.
+# Runs on every change to a page that has one, every Monday, and on demand.
+# Run it manually with "selftest" ticked to prove the alarm still catches drift.
+# On failure it opens (or comments on) a GitHub Issue: the same alert path the
+# report watchdogs use, which GitHub emails to the owner (proven 2026-09-19).
+on:
+  push:
+    paths:
+      - 'insider-edge.html'
+      - 'inbox-report.html'
+      - 'OPENING-PAGE-STANDARD.md'
+      - 'tools/opening-page-check.mjs'
+      - '.github/workflows/opening-page-check.yml'
+  schedule:
+    - cron: '30 14 * * 1'
+  workflow_dispatch:
+    inputs:
+      selftest:
+        description: 'Self-test: deliberately break the styling and confirm the guard catches it'
+        type: boolean
+        default: false
+      drill:
+        description: 'Alarm drill: break the styling and let the run FAIL, to prove the Issue + email alert arrives'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  opening-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm init -y >/dev/null
+          npm install playwright@1
+          npx playwright install --with-deps chromium
+      - name: Serve the pages
+        run: |
+          python3 -m http.server 8091 >/dev/null 2>&1 &
+          sleep 2
+      - name: Measure every opening page
+        # shell: bash (explicit) turns on pipefail, so a failing guard still
+        # fails this step even though its output is piped through tee.
+        shell: bash
+        env:
+          SELFTEST: ${{ inputs.selftest && '1' || '0' }}
+          DRILL: ${{ inputs.drill && '1' || '0' }}
+        run: node tools/opening-page-check.mjs 2>&1 | tee guard-output.txt
+      - name: Alert the owner, without duplicating open issues
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          SELFTEST: ${{ inputs.selftest && '1' || '0' }}
+          DRILL: ${{ inputs.drill && '1' || '0' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('guard-output.txt') ? fs.readFileSync('guard-output.txt', 'utf8') : '(the guard did not get as far as measuring -- see the run log)';
+            const failing = output.split('\n').filter((l) => /FAIL|note:|Error/.test(l)).join('\n') || output.slice(-3000);
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const what = process.env.DRILL === '1'
+              ? 'ALARM DRILL: a deliberate test of this alert, run on demand. The pages were broken on purpose inside the guard\'s own browser only; the real pages are fine. Close this issue.'
+              : process.env.SELFTEST === '1'
+              ? 'The opening-page guard SELF-TEST failed: the alarm did not catch every deliberate break, so the guard itself needs fixing.'
+              : 'An opening page no longer matches the LOCKED standard in OPENING-PAGE-STANDARD.md (title 60px bold gold, message 20px regular grey-blue, Sign out 20px bold gold, 100/100/100px by eye, centred, no sideways scroll on a phone).';
+            const note = `Checked ${new Date().toISOString()} (${context.eventName}, commit ${context.sha.slice(0, 7)}).\n\n${what}\n\nFailing checks:\n\`\`\`\n${failing}\n\`\`\`\nFull log: ${run}`;
+            const label = process.env.DRILL === '1' ? 'opening-page-alarm-drill' : 'opening-page-drift';
+            try {
+              await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, name: label, color: 'B60205' });
+            } catch (e) { /* label already exists */ }
+            const existing = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: label });
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.data[0].number, body: note });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title: `${process.env.DRILL === '1' ? 'ALARM DRILL (test only): opening page drift' : 'Opening page drift'} — ${new Date().toISOString().slice(0, 10)}`,
+                body: `${note}\n\nFix the page's CSS back to the standard (never edit the standard to match the drift). This issue stays open and collects a comment on each failing run; close it once the guard passes again.`,
+                labels: [label],
+              });
+            }
