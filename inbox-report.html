@@ -472,16 +472,33 @@
         button.disabled = true;
         message.className = 'message';
         message.textContent = 'Sending…';
+        // shouldCreateUser: false -- this page only ever signs in people who
+        // already exist. This Supabase project is shared with the customer
+        // app, where a trigger turns every NEW user into an app customer
+        // account; without this, a stranger typing any address here would
+        // create a junk customer. Unknown addresses are refused by Supabase
+        // (422, error_code "otp_disabled", verified 2026-09-26) and nothing
+        // is created. The page answers both cases with the same neutral
+        // message, so it never reveals which addresses exist.
         const { error } = await supabase.auth.signInWithOtp({
           email: input.value.trim(),
-          options: { emailRedirectTo: window.location.origin + window.location.pathname },
+          options: {
+            emailRedirectTo: window.location.origin + window.location.pathname,
+            shouldCreateUser: false,
+          },
         });
-        if (error) {
+        const neutral = 'If this address is allowed to open the Inbox Report, a sign-in link is on its way. Check your inbox (and spam folder), then tap the link. It brings you straight back here.';
+        if (!error || error.code === 'otp_disabled' || /signups not allowed/i.test(error.message || '')) {
+          message.textContent = neutral;
+        } else if (error.status === 429) {
           message.className = 'message error';
-          message.textContent = `Could not send the link: ${error.message}`;
+          message.textContent = 'Too many sign-in requests. Please wait a minute and try again.';
           button.disabled = false;
         } else {
-          message.textContent = 'Done. Open the email we just sent and tap the link. It brings you straight back here.';
+          console.error('Could not send the sign-in link:', error);
+          message.className = 'message error';
+          message.textContent = 'Could not send the link right now. Please try again in a moment.';
+          button.disabled = false;
         }
       });
       box.append(form);
