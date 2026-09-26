@@ -12,9 +12,10 @@ name: Check daily inbox report
 # GitHub emails you about issues, like any other repo notification.
 on:
   schedule:
-    # 09:30 UTC daily = 10:30 BST / 09:30 GMT, i.e. 1.5-2.5h after the 08:00 UK
-    # run, enough room for the agent's own retries to have finished.
-    - cron: '30 9 * * *'
+    # 11:30 UTC daily = 12:30 BST / 11:30 GMT. The agent may retry until 11:00
+    # UK at the latest (its retry limit), so its final result is always saved
+    # before this check runs, in summer and in winter.
+    - cron: '30 11 * * *'
   workflow_dispatch: {}
 
 permissions:
