@@ -295,23 +295,21 @@
     color: #b33a3a;
     font-weight: 700;
   }
+  /* PRIMELEVEL OPENING-PAGE STANDARD (owner, 2026-09-26) -- identical to
+     insider-edge.html's "Click a date to open a report." screen: title
+     Montserrat 60px bold gold; ONE message line Montserrat 20px regular soft
+     grey-blue (--placeholder); Sign out Montserrat 20px bold gold; page top ->
+     title letters, title -> message letters and message -> Sign out all 100px
+     by eye; everything centred. EVERY message here (no access, no reports yet,
+     could not load) uses this one style -- no per-message colours or weights.
+     Spec: OPENING-PAGE-STANDARD.md. */
   .empty-state {
     color: var(--placeholder);
     font-size: 20px;
+    font-weight: 400;
     text-align: center;
     padding: 0 0 60px;
     width: 100%;
-  }
-  /* Same red already used for .report-error and the sign-in form's own
-     error message elsewhere on this page -- one consistent "something's
-     wrong" colour across the whole page, not a new one. */
-  .empty-state.denied {
-    color: #b33a3a;
-    font-weight: 700; /* bold shifts the letters' own metrics slightly vs the regular-weight messages */
-    padding-top: 2px; /* title baseline -> message letters = 100px by eye (measured 98px without this).
-       padding, not margin -- an added margin-top here collapses against h1's
-       own larger margin-bottom and has literally no visible effect; padding
-       never collapses, so it's the only reliable way to nudge this. */
   }
   .signout {
     display: block;
@@ -566,7 +564,7 @@
         console.error('Could not check report access:', authError);
         contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
       } else if (!allowed) {
-        contentEl.append(el('div', 'empty-state denied', `${user?.email || 'This account'} does not have access to this report.`));
+        contentEl.append(el('div', 'empty-state', `${user?.email || 'This account'} does not have access to this report.`));
       } else {
         const { data, error } = await supabase
           .from('email_reports')
