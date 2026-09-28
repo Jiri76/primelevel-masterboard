@@ -13,7 +13,8 @@
      .report-body h3, .entry-head, li/p margins, check lines, and the
      25px/20px/15px font sizes) are a fixed spec: only 100px, 30px and
      24px line spacing and 15px (title->date, heading->underline), measured by eye (fixed 15px gap between the
-     band title and its date; page title 60px, band title 35px, date 15px).
+     band title and its date; page title 50px (60 -> 50 by the owner,
+     2026-09-28), band title 35px, date 15px).
      Do NOT change any of them without
      an explicit request from the owner. Full spec:
      INSIDER-EDGE-SPACING-SPEC.md. Guarded automatically by
@@ -50,12 +51,13 @@
   .container {
     max-width: 1240px;
     margin: 0 auto;
-    padding: 90px 20px 100px; /* top 90: the 60px "Insider Edge" letters start 10px below their box top, so they land 100px from the page top. bottom was 80px -- raised to 100px per explicit request, so the space below the report card matches the 100px used at the top and between sections */
+    padding: 90px 20px 100px; /* top 90: the "Insider Edge" letters start 10px below their box top (50px letters in a 65px line), so they land 100px from the page top. bottom was 80px -- raised to 100px per explicit request, so the space below the report card matches the 100px used at the top and between sections */
   }
   h1 {
     color: var(--gold);
     font-weight: 700;
-    font-size: 60px;
+    font-size: 50px; /* owner 2026-09-28: sub-page titles 50px (the Masterboard home title stays 60px) */
+    line-height: 65px; /* 50px letters are 8px shorter than 60px ones; a 65px line keeps exactly the space the 60px title had above its letters (10px) and below its baseline (15px), so every by-eye gap around the title stays 100 without touching any padding or margin */
     margin: 0 0 85px; /* letters' baseline -> card top = 100px by eye (15px of box below the baseline) */
     text-align: center;
   }
@@ -493,6 +495,7 @@
   @media (max-width: 720px) {
     h1 {
       font-size: 44px;
+      line-height: normal; /* phone title unchanged by the 50px desktop change */
     }
     .report-tile {
       font-size: 15px;

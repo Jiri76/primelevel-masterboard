@@ -21,7 +21,7 @@ standard; never edit the standard to match the drift.
 
 | Element | Font | Size | Weight | Colour |
 |---|---|---|---|---|
-| Page title (e.g. "Insider Edge", "Inbox Report") | Montserrat | 60px | Bold (700) | Company gold `#B29B68` |
+| Page title (e.g. "Insider Edge", "Inbox Report") | Montserrat | 50px (60 → 50 by the owner, 2026-09-28; the Masterboard home title stays 60px) | Bold (700) | Company gold `#B29B68` |
 | The message line (every message, no exceptions) | Montserrat | 20px | Regular (400) | Soft grey-blue `#8A93A3` |
 | Sign out (when shown) | Montserrat | 20px | Bold (700) | Company gold `#B29B68`, no underline |
 
@@ -48,9 +48,15 @@ They were measured live, not guessed, and **must be re-measured for any new page
 | Rule | insider-edge.html | inbox-report.html |
 |---|---|---|
 | `.container` padding-top | 90px | 87px |
-| `h1` | 60px, 700, gold, `margin: 0 0 85px`, centred | same |
+| `h1` | 50px, 700, gold, `line-height: 65px`, `margin: 0 0 85px`, centred | same |
 | `.empty-state` (the message) | 20px, 400, `var(--placeholder)`, centred, `padding: 0 0 60px`; `margin-top: -4px` at ≥1728px | same |
 | `.signout` | n/a | 20px, 700, gold, no underline, `width: fit-content; margin: 31px auto 0` |
+
+Why `line-height: 65px`: at 50px the title's letters are 8px shorter than at 60px,
+and a normal line would lose 2px of space above the letters and 2px below them. The
+65px line gives exactly that space back, so all the numbers above (and the 100px gaps
+they produce) stayed the same when the title went from 60 to 50. Phones (≤720px) keep
+their 44px title with `line-height: normal`.
 
 Nudging a gap by a few px: use **padding, not margin** on the message; a small
 `margin-top` collapses into the title's larger `margin-bottom` and does nothing.
@@ -108,3 +114,8 @@ messages (no access / no reports yet / could not load) measured **100 / 100 / 10
 all lines 0px off centre, fonts exactly as the table above; 375px phone: no sideways
 scrolling. The same day the guard itself was proven: the normal run passed on all
 4 screens, and the self-test caught every deliberate break on all 4.
+
+2026-09-28: title changed from 60px to 50px on the owner's request. Before the
+change went live, both guards were run against the live pages and against the new
+version: every gap measured identical (100 / 100 / 100 on all 4 screens), only the
+title size differed.

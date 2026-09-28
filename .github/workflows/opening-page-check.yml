@@ -72,7 +72,7 @@ jobs:
               ? 'ALARM DRILL: a deliberate test of this alert, run on demand. The pages were broken on purpose inside the guard\'s own browser only; the real pages are fine. Close this issue.'
               : process.env.SELFTEST === '1'
               ? 'The opening-page guard SELF-TEST failed: the alarm did not catch every deliberate break, so the guard itself needs fixing.'
-              : 'An opening page no longer matches the LOCKED standard in OPENING-PAGE-STANDARD.md (title 60px bold gold, message 20px regular grey-blue, Sign out 20px bold gold, 100/100/100px by eye, centred, no sideways scroll on a phone).';
+              : 'An opening page no longer matches the LOCKED standard in OPENING-PAGE-STANDARD.md (title 50px bold gold, message 20px regular grey-blue, Sign out 20px bold gold, 100/100/100px by eye, centred, no sideways scroll on a phone).';
             const note = `Checked ${new Date().toISOString()} (${context.eventName}, commit ${context.sha.slice(0, 7)}).\n\n${what}\n\nFailing checks:\n\`\`\`\n${failing}\n\`\`\`\nFull log: ${run}`;
             const label = process.env.DRILL === '1' ? 'opening-page-alarm-drill' : 'opening-page-drift';
             try {

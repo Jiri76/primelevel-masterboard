@@ -10,7 +10,7 @@
 <style>
   /* LOCKED OPENING PAGE -- approved by the owner 2026-09-26. The opening
      screens (no access / no reports yet / could not load) follow the
-     PrimeLevel opening-page standard exactly: title 60px bold gold, one
+     PrimeLevel opening-page standard exactly: title 50px bold gold, one
      message line 20px regular soft grey-blue, Sign out 20px bold gold,
      100px / 100px / 100px by eye, everything centred. The values that
      produce it (.container padding-top, h1 margin, .empty-state, .signout)
@@ -48,7 +48,8 @@
   h1 {
     color: var(--gold);
     font-weight: 700;
-    font-size: 60px;
+    font-size: 50px; /* owner 2026-09-28: sub-page titles 50px (the Masterboard home title stays 60px) */
+    line-height: 65px; /* 50px letters are 8px shorter than 60px ones; a 65px line keeps exactly the space the 60px title had above and below its letters, so the locked 100/100/100 by eye is unchanged without touching any padding or margin */
     margin: 0 0 85px;
     text-align: center;
   }
@@ -306,7 +307,7 @@
   }
   /* PRIMELEVEL OPENING-PAGE STANDARD (owner, 2026-09-26) -- identical to
      insider-edge.html's "Click a date to open a report." screen: title
-     Montserrat 60px bold gold; ONE message line Montserrat 20px regular soft
+     Montserrat 50px bold gold (60 -> 50 by the owner, 2026-09-28); ONE message line Montserrat 20px regular soft
      grey-blue (--placeholder); Sign out Montserrat 20px bold gold; page top ->
      title letters, title -> message letters and message -> Sign out all 100px
      by eye; everything centred. EVERY message here (no access, no reports yet,
@@ -349,7 +350,7 @@
     h1 { margin-bottom: 40px; }
   }
   @media (max-width: 720px) {
-    h1 { font-size: 44px; }
+    h1 { font-size: 44px; line-height: normal; } /* phone title unchanged by the 50px desktop change */
     .report-tile {
       width: calc(50% - 8px);
       padding: 0 8px;

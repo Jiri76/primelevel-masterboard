@@ -6,7 +6,7 @@
 //   * page top -> title letters, title -> message, message -> Sign out: 100px BY EYE
 //     (baseline of the letters above -> top of the tallest letters below)
 //   * every line centred on the screen
-//   * title 60px bold gold; message 20px regular soft grey-blue; Sign out 20px bold
+//   * title 50px bold gold; message 20px regular soft grey-blue; Sign out 20px bold
 //     gold with no underline
 //   * no sideways scrolling on a 375px phone
 //
@@ -123,7 +123,7 @@ for (const p of PAGES) {
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
   for (const [k, v] of Object.entries(r.centre)) check('centring', Math.abs(v) <= TOL, `${k} centred (${v.toFixed(1)}px off)`);
   const want = {
-    title: { family: 'Montserrat', size: '60px', weight: '700', color: GOLD },
+    title: { family: 'Montserrat', size: '50px', weight: '700', color: GOLD },
     message: { family: 'Montserrat', size: '20px', weight: '400', color: GREY_BLUE },
     'Sign out': { family: 'Montserrat', size: '20px', weight: '700', color: GOLD, underline: 'none' },
   };

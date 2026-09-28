@@ -39,7 +39,8 @@ screens) reads 28px instead of 30px — unavoidable.
 | Text (paragraphs, the company/sector/market-cap line, the three closing lines) | **15px** |
 
 **Page titles — also LOCKED by the owner 2026-09-21 ("do not change"):** the page
-title "Insider Edge" is **60px**, the title inside the dark band is **35px**, and
+title "Insider Edge" is **50px** (changed from 60px by the owner on 2026-09-28, with
+every gap kept exactly as before), the title inside the dark band is **35px**, and
 the date line under it is **15px** (same as the text). Guarded automatically.
 
 ## The CSS values that produce this (desktop, ≥1728px)
@@ -51,7 +52,7 @@ letter). They were measured live, not guessed.
 | Setting | CSS |
 |---|---|
 | `.container` | `padding: 90px 20px 100px` |
-| `h1` | `font-size: 60px; margin: 0 0 85px` |
+| `h1` | `font-size: 50px; line-height: 65px; margin: 0 0 85px` (the 65px line keeps the same space above and below the letters the 60px title had, so no gap moved) |
 | `.report-header-band` | `padding: 94px 70px 96px; margin: 0 0 91px` |
 | `.empty-state` (message shown before any report is opened; desktop ≥1728px only) | `margin-top: -4px` (title → message = 100px by eye) |
 | `.report-content-title` | `font-size: 35px; margin-bottom: 3px` (title → date = 15px by eye) |

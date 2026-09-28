@@ -137,7 +137,7 @@ Object.entries(m.g100).forEach(([k, v]) => row(k, v, 100, TOL_100));
 Object.entries(m.g30).forEach(([k, v]) => row(k, v, 30, TOL_30));
 Object.entries(m.g15).forEach(([k, v]) => row(k, v, 15, TOL_30));
 
-const wantPage = { 'page title "Insider Edge"': '60px', 'title inside the dark band': '35px', 'date line under the title': '15px' };
+const wantPage = { 'page title "Insider Edge"': '50px', 'title inside the dark band': '35px', 'date line under the title': '15px' };
 Object.entries(wantPage).forEach(([k, px]) => {
   const ok = m.pageFonts[k] === px;
   console.log(`${ok ? 'PASS' : 'FAIL'}  font ${k}: ${m.pageFonts[k]} (expected ${px})`);
