@@ -22,7 +22,7 @@ the card, band or underline. This is what the reader sees. It is deliberately
 | Spacing | Where |
 |---|---|
 | **100px** | Page top → "Insider Edge" letters · "Insider Edge" bottom → card top · card top → title letters · date line bottom → bottom of dark band · band bottom → "New Discoveries" letters · every heading underline → first line beneath it · last line of a section → next heading's letters · last Verdict line → first check line · last check line → card bottom · card bottom → page bottom · when no report is open, the “Insider Edge” title → the “Click a date to open a report.” message (desktop) |
-| **30px** | Ticker line → its text · last text line of an entry → next ticker · each of the three check lines → the next |
+| **30px** | Ticker line → its text · last text line of an entry → next ticker · each closing italic line → the next (since 2026-09-28 always four: the database's three check lines, then the agent's Notebook line) |
 | **24px** | The normal line height between lines inside a paragraph (no extra gap) |
 | **15px** | LOCKED by the owner 2026-09-21: title → date line inside the dark band, AND the bottom of every chapter heading's letters → its underline (all six headings identical) |
 
@@ -36,7 +36,7 @@ screens) reads 28px instead of 30px — unavoidable.
 |---|---|
 | Chapter headings (New Discoveries, Institutional Buying, Fundamentals, Watch Line, Repeat Alerts, Verdict) | **25px** |
 | Tickers (including Verdict tickers and stars) | **20px** |
-| Text (paragraphs, the company/sector/market-cap line, the three closing lines) | **15px** |
+| Text (paragraphs, the company/sector/market-cap line, the closing italic lines) | **15px** |
 
 **Page titles — also LOCKED by the owner 2026-09-21 ("do not change"):** the page
 title "Insider Edge" is **50px** (changed from 60px by the owner on 2026-09-28, with
