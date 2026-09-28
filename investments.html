@@ -32,15 +32,18 @@
   .container {
     max-width: 1040px;
     margin: 0 auto;
-    padding: 100px 20px 80px;
+    padding: 85px 20px 80px; /* top 85 (was 100, owner 2026-09-28): the "Investments" letters start 15px below their box top, so they land exactly 100px from the page top BY EYE, the same as every other Masterboard page */
   }
-  /* Same h1 language as Masterboard's own title -- not a coincidence,
-     "placed in the same way" per explicit request. */
+  /* Same h1 language as Masterboard's own title (gold, bold, centred),
+     except the size: sub-pages are 50px, the Masterboard home 60px
+     (owner, 2026-09-28). Spacing is 100px by eye above and below, like
+     Insider Edge and Inbox Report. */
   h1 {
     color: var(--gold);
     font-weight: 700;
-    font-size: 60px;
-    margin: 0 0 100px;
+    font-size: 50px; /* owner 2026-09-28: sub-page titles 50px (the Masterboard home title stays 60px) */
+    line-height: 65px; /* same title line as Insider Edge and Inbox Report */
+    margin: 0 0 85px; /* was 100 (owner 2026-09-28): the letters' baseline sits 15px above the box bottom, so 85 puts the portfolio bar's top edge exactly 100px below the letters BY EYE */
     text-align: center;
   }
   /* .back-link removed per explicit request 2026-08-26 -- deliberately
