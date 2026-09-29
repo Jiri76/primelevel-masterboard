@@ -264,6 +264,21 @@
   .image-placeholder img.dragging {
     cursor: grabbing;
   }
+  /* VIEW-ONLY photo (OWNER-ONLY rule, owner 2026-09-30): nobody can
+     upload, replace, drag or zoom the photo from this page until the
+     Masterboard sign-in exists, and the database refuses those writes
+     anyway. So: a plain arrow cursor, no "Click to select a picture"
+     prompt, and normal page scrolling when a finger or trackpad moves
+     over the photo (touch-action:none above exists only for dragging). */
+  .image-placeholder.view-only {
+    cursor: default;
+  }
+  .image-placeholder.view-only img {
+    touch-action: auto;
+  }
+  .image-placeholder.view-only .image-placeholder-label {
+    display: none;
+  }
   .image-placeholder.has-image .image-placeholder-label {
     display: none;
   }
@@ -380,7 +395,10 @@
          title and the picture. On desktop it is position:fixed, so where it
          sits in the DOM makes no visual difference. -->
     <div class="tiles" id="tiles"></div>
-    <div class="image-placeholder" id="imagePlaceholder">
+    <!-- view-only: OWNER-ONLY rule (owner, 2026-09-30) -- nobody can change
+         the photo through this page until the Masterboard sign-in exists;
+         the database refuses it too. Remove the class for the signed-in owner. -->
+    <div class="image-placeholder view-only" id="imagePlaceholder">
       <span class="image-placeholder-error" id="imagePlaceholderError"></span>
       <span class="image-placeholder-label">Click to select a picture</span>
       <img id="imagePreview" alt="" />
@@ -705,7 +723,13 @@
     // new upload (click-to-reopen AND a stray file-input change) until
     // the current one has fully resolved.
     let uploadInProgress = false;
+    // OWNER-ONLY rule (owner, 2026-09-30): the photo can't be changed from
+    // this page by anyone until the Masterboard sign-in exists (the
+    // database refuses the writes as well). Every editing gesture below
+    // (click/right-click to upload, drag, wheel-zoom) checks this first.
+    const pictureEditable = () => !imagePlaceholder.classList.contains('view-only');
     imagePlaceholder.addEventListener('click', () => {
+      if (!pictureEditable()) return;
       // Once a picture exists, left-click no longer does anything on its
       // own -- press-and-hold to drag (below), right-click to replace
       // (further below). Only relevant for the very first upload, when
@@ -717,6 +741,7 @@
     // per explicit request. preventDefault stops the browser's own
     // native right-click context menu.
     imagePlaceholder.addEventListener('contextmenu', (e) => {
+      if (!pictureEditable()) return; // the browser's normal right-click menu shows instead
       if (!imagePlaceholder.classList.contains('has-image')) return;
       e.preventDefault();
       if (uploadInProgress) return;
@@ -1064,6 +1089,7 @@
     // exactly "never reveal empty space," not an approximation. ----
     let dragState = null;
     imagePreview.addEventListener('pointerdown', (e) => {
+      if (!pictureEditable()) return;
       if (!imagePlaceholder.classList.contains('has-image')) return;
       e.preventDefault(); // extra defense alongside touch-action:none above, belt and braces against native gesture interception
       // Cursor -> hand the INSTANT the button goes down, per explicit
@@ -1134,6 +1160,7 @@
     // once on release).
     let zoomSaveTimer = null;
     imagePreview.addEventListener('wheel', (e) => {
+      if (!pictureEditable()) return; // before preventDefault: the page scrolls normally over the photo
       if (!imagePlaceholder.classList.contains('has-image')) return;
       // Deliberately NOT gated by the press-and-hold lock above -- per
       // explicit decision, zoom always works regardless, since it can't
