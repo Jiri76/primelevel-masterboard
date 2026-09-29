@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign-in box — LOCKED reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* PRIMELEVEL SIGN-IN BOX — LOCKED REFERENCE (owner, 2026-09-30; design v10).
+     Full spec and the reasons behind every value: SIGNIN-BOX-STANDARD.md.
+     Copy this exactly for every sign-in page ("create a sign-in page").
+     The page around it here is the Inbox Report's layout (title 50px, the
+     opening-page spacing), because the after-send line must sit exactly like
+     an opening-page message. Do NOT change a value without the owner's
+     explicit request. */
+  :root {
+    --navy: #1E2633;
+    --white: #F9F9FA;
+    --gold: #B29B68;
+    --card: #E9E9EB; /* 7.5% navy mixed into white: 0.925 x #F9F9FA + 0.075 x #1E2633 per channel */
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--navy);
+    color: var(--navy); /* no browser-default black anywhere */
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100%;
+  }
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 87px 20px 100px; /* "Inbox Report" letters 100px from the page top by eye */
+  }
+  h1 {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 50px;
+    line-height: 65px;
+    margin: 0 0 85px;
+    text-align: center;
+  }
+  .report-tiles { display: flex; } /* the live page's (empty) date-button row */
+
+  /* ---- The card ---- By-eye rhythm: 60 at the card edges (30 on phones),
+     30 between groups, 15 inside a group, 24 line pitch. CSS margins are
+     smaller than the by-eye gaps because letters sit inside taller line
+     boxes; every value was measured live. */
+  .signin {
+    max-width: 540px;
+    margin: 0 auto;
+    background: var(--card);
+    color: var(--navy);
+    border-radius: 10px;
+    padding: 57px 60px 60px; /* 60 by eye on all four edges (the top is 3px less for the 20px heading's own space) */
+    text-align: left;
+  }
+  .signin h2 {
+    margin: 0 0 5px; /* "Sign in" -> intro letters = 15 */
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .signin p {
+    margin: 0 0 20px; /* intro -> "Email address" = 30 */
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 11px; /* "Email address" -> field = 15 */
+  }
+  .signin input {
+    width: 100%;
+    height: 45px;
+    padding: 0 16px; /* typed letters 16 above / 17 below by eye: the closest possible (odd 33px) */
+    font-size: 16px; /* 16px: also stops iPhone Safari zooming in on tap */
+    font-family: 'Montserrat', sans-serif;
+    color: var(--navy);
+    background: var(--white);
+    border: 1px solid var(--navy);
+    border-radius: 10px;
+    margin-bottom: 15px; /* field -> button = 15 */
+    text-align: left;
+  }
+  .signin input:focus-visible,
+  .signin button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .signin button {
+    width: 100%;
+    height: 45px;
+    padding: 2px 0 0; /* button text centred by eye: 16 above, 16 below */
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--navy);
+    background: var(--white); /* both buttons white: two equal choices, neither is gold */
+    border: 1px solid var(--navy);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  /* Hover + press: colour swap (owner's pick, 2026-09-30). Only the button moves. */
+  .signin button:hover {
+    background: var(--navy);
+    color: var(--white);
+    transform: scale(1.02);
+  }
+  .signin button:active {
+    background: var(--navy);
+    color: var(--white);
+    transform: scale(0.97);
+  }
+  /* Error line under the button: only for a genuine send failure. */
+  .signin .message {
+    margin: 16px 0 0;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin .or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 21px 0; /* button -> line and line -> next button = 30 each */
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--navy);
+  }
+  .signin .or::before,
+  .signin .or::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--navy);
+  }
+
+  /* ---- After-send: the opening-page standard's message, exactly ---- */
+  .empty-state {
+    color: #8A93A3;
+    font-size: 20px;
+    font-weight: 400;
+    text-align: center;
+    padding: 0 0 60px;
+    margin: 0;
+  }
+  @media (min-width: 1728px) {
+    .empty-state { margin-top: -4px; }
+  }
+  @media (max-width: 1727px) {
+    .report-tiles { margin: 0 0 40px; }
+    h1 { margin-bottom: 40px; }
+  }
+  @media (max-width: 720px) {
+    h1 { font-size: 44px; line-height: normal; }
+    .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye (half of desktop's 60) */
+  }
+  @media (max-width: 359px) {
+    h1 { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Inbox Report</h1>
+    <div class="report-tiles"></div>
+    <div class="signin">
+      <h2>Sign in</h2>
+      <p>Your inbox report is private. Enter your email address and we’ll send you a link to sign in.</p>
+      <form id="signInForm">
+        <label for="signInEmail">Email address</label>
+        <input type="email" id="signInEmail" autocomplete="email" required>
+        <button type="submit">Send me a sign-in link</button>
+        <p class="message" id="signInMessage" aria-live="polite"></p>
+      </form>
+      <!-- The passkey route: show ONLY once passkeys genuinely work (no dead buttons). -->
+      <div class="or">or</div>
+      <button type="button" class="passkey">Sign in with passkey</button>
+    </div>
+    <p class="empty-state" id="sentMessage" hidden>Done. Check your email for your sign-in link.</p>
+  </div>
+  <script>
+    // LOCKED BEHAVIOUR. Click -> "Done": no "Sending…", no spinner, the button
+    // never changes. On a real page `sendLink` is:
+    //   supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: <this page> } })
+    // and the SAME "Done" shows whatever email was typed (a stranger never learns
+    // which emails are allowed). Only a genuine failure (network, rate limit)
+    // keeps the box and shows a short error under the button.
+    // This reference file sends nothing.
+    const sendLink = async () => ({ error: null });
+    let sending = false;
+    document.getElementById('signInForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (sending) return; // ignore double clicks while Supabase replies: no duplicate emails
+      sending = true;
+      const { error } = await sendLink(document.getElementById('signInEmail').value.trim());
+      sending = false;
+      const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
+      if (genuineFailure) {
+        document.getElementById('signInMessage').textContent = 'Could not send the link right now. Please try again in a minute.';
+        return;
+      }
+      document.querySelector('.signin').hidden = true;
+      document.getElementById('sentMessage').hidden = false;
+    });
+  </script>
+</body>
+</html>
