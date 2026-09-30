@@ -26,16 +26,23 @@ jobs:
     steps:
       - name: Query the most recent report
         id: query
+        shell: bash
         run: |
-          RESPONSE=$(curl -sS \
-            "https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/insider_edge_reports?select=id,title,created_at&order=id.desc&limit=1" \
-            -H "apikey: sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_")
+          # Rings the Insider Edge "doorbell" (insider_edge_heartbeat(),
+          # 2026-09-30): it answers ONLY when the latest report was saved,
+          # never its title or content (owner-only rule: the reports table
+          # itself is for the owner alone). The public key is enough for it.
+          KEY="sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_"
+          RESPONSE=$(curl -sS -X POST \
+            "https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/rpc/insider_edge_heartbeat" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}')
           echo "response=$RESPONSE" >> "$GITHUB_OUTPUT"
 
-          # Report is "fresh" if its created_at is within the last 8 days
+          # Report is "fresh" if it was saved within the last 8 days
           # (a little over one week, so a report that ran slightly late
-          # is not flagged as missing).
-          CREATED_AT=$(echo "$RESPONSE" | grep -o '"created_at":"[^"]*"' | head -1 | cut -d'"' -f4)
+          # is not flagged as missing). No answer at all also counts as
+          # "not fresh", so a broken doorbell raises the alarm too.
+          CREATED_AT=$(echo "$RESPONSE" | tr -d ' ' | grep -o '"last_report_at":"[^"]*"' | head -1 | cut -d'"' -f4)
           if [ -z "$CREATED_AT" ]; then
             echo "fresh=false" >> "$GITHUB_OUTPUT"
           else

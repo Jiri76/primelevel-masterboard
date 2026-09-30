@@ -5,10 +5,12 @@ name: Keep Supabase awake
 # that silently blocked that week's Insider Edge report. This workflow
 # does nothing but a single, tiny, read-only request once a day so the
 # project always looks "recently active" and never gets the chance to
-# pause. It reads one row from a public table using the same public
-# anon key already embedded in insider-edge.html -- no write access,
-# no ability to change or delete anything, identical in effect to a
-# random visitor loading that page.
+# pause. It rings the Insider Edge "doorbell" (the insider_edge_heartbeat()
+# function, 2026-09-30) with the public key: a real database query, so the
+# project counts as active, but it reveals ONLY when the latest report was
+# saved -- never any report content (owner-only rule: the reports table
+# itself is for the owner alone). --fail-with-body turns this run red if the
+# database doesn't answer, instead of passing silently.
 on:
   schedule:
     - cron: '0 9 * * *'
@@ -19,7 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Poke Supabase to keep the project awake
+        shell: bash
         run: |
-          curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
-            "https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/insider_edge_reports?select=id&limit=1" \
-            -H "apikey: sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_"
+          KEY="sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_"
+          curl -sS --fail-with-body -w "\nHTTP %{http_code}\n" -X POST \
+            "https://kenlhcatkjthhzuaznpg.supabase.co/rest/v1/rpc/insider_edge_heartbeat" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
