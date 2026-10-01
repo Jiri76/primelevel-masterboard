@@ -335,9 +335,11 @@
     cursor: pointer;
   }
 
-  @media (min-width: 1728px) {
-    .empty-state { margin-top: -4px; }
-  }
+  /* The message is 100px by eye below the title at EVERY width (owner,
+     2026-10-01: "100 everywhere"): the -4px makes up for the 20px letters
+     starting ~4px down their line. Messages only ever show when there are no
+     date buttons, so the empty button row takes no space (:empty below). */
+  .empty-state { margin-top: -4px; }
   @media (max-width: 1727px) {
     .report-tiles {
       position: static;
@@ -346,11 +348,14 @@
       flex-wrap: wrap;
       justify-content: center;
       margin: 0 0 40px;
+      padding-top: 1px; /* title letters -> button EDGE: 99 -> 100 by eye (padding, not margin: a margin would collapse into the title's) */
     }
-    h1 { margin-bottom: 40px; }
+    .report-tiles:empty { margin: 0; padding: 0; }
+    h1 { margin-bottom: 85px; } /* title letters -> top EDGE of the date buttons = 100 by eye (was 40 = 48 by eye) */
   }
   @media (max-width: 720px) {
-    h1 { font-size: 44px; line-height: normal; } /* phone title unchanged by the 50px desktop change */
+    .container { padding-top: 90px; } /* 44px title: page top -> letters 100 by eye */
+    h1 { font-size: 44px; line-height: normal; margin-bottom: 89px; } /* phone title unchanged by the 50px desktop change; margin: title -> next = 100 by eye */
     .report-tile {
       width: calc(50% - 8px);
       padding: 0 8px;
@@ -385,7 +390,8 @@
     }
   }
   @media (max-width: 359px) {
-    h1 { font-size: 38px; }
+    .container { padding-top: 91px; } /* 38px title: page top -> letters 100 by eye */
+    h1 { font-size: 38px; margin-bottom: 90px; }
   }
 </style>
 </head>
@@ -448,11 +454,23 @@
       if (text !== undefined) node.textContent = text;
       return node;
     }
+    // Every date: three-letter month, "28 Sep 2026" (owner rule, 2026-10-01).
+    // Spelled out here: the browser's own short month writes September as
+    // "Sept" (British) or puts the month first (American).
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function toDate(value) {
+      // A plain "2026-09-28" (run_date) is a calendar day, not a moment:
+      // read it as local, so no timezone can shift it to the day before.
+      const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      return day ? new Date(+day[1], +day[2] - 1, +day[3]) : new Date(value);
+    }
     function formatDate(value) {
-      return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      const d = toDate(value);
+      return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     }
     function formatDateTime(value) {
-      return new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      const d = toDate(value);
+      return `${formatDate(value)}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
     // ---- Signed-out view ------------------------------------------------
