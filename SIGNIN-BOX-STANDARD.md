@@ -132,9 +132,12 @@ version plus the general version the mobile app needs (VERSION 2026-10-02b).
 2. **Guard** (`tools/opening-page-check.mjs`, "Opening page guard"): the Masterboard
    front door's box (100px by eye below the title, centred) and its after-send screen
    ("Done…", the opening-page message exactly), plus the corner Sign out on every
-   signed-in page (40/40, phones 20/20, font, colour, no underline). Alarm by GitHub
-   Issue + email. NOT YET guarded: the box's own inside values (60/15/30/24 spacing,
-   45px controls, fonts and colours inside the card) — next on the work list. A value
+   signed-in page (40/40, phones 20/20, font, colour, no underline), AND the box's own
+   inside values on a computer and a phone (added 2026-10-02): the edges 60 (phones 30),
+   the 15 / 30 gaps, the 24 line pitch, 45px field and button, 540px width, every font and
+   colour, the 1px navy borders and the 10px corners. Alarm by GitHub Issue + email. Not
+   guarded: where the letters sit INSIDE the field and the button (16/17 and 16/16, set by
+   eye on 2026-09-30); they follow from the guarded 45px height and fixed padding. A value
    that is not in the guard is not protected.
 3. Trigger phrases: "create a sign-in page", "standard sign-in box" → apply ALL of this
    without asking the owner to restate it.

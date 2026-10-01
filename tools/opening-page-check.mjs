@@ -49,6 +49,7 @@ const PAGES = [
 const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.empty-state,.door-message{padding-top:9px!important;color:#ff0000!important}'
   + '#signInBox{position:relative!important;top:9px!important}' /* not margin-top: it would melt into the title's larger margin and move nothing */
+  + '.signin p{margin-bottom:26px!important}.signin label{font-size:17px!important}.signin button{background:#B29B68!important;height:50px!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
@@ -110,6 +111,43 @@ function measure({ below, corner }) {
   return out;
 }
 
+// The INSIDE of the LOCKED sign-in box (SIGNIN-BOX-STANDARD.md), by eye:
+// letters for text, edges for boxes.
+function measureBox() {
+  const cs = getComputedStyle, doc = document, c = doc.createElement('canvas').getContext('2d');
+  const met = (el, txt) => { const s = cs(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; return c.measureText(txt); };
+  const lines = (el) => { // per line: baseline + top of the tallest letters
+    const g = doc.createRange(); g.selectNodeContents(el);
+    const rs = [...g.getClientRects()].filter((r) => r.width > 0);
+    const fa = met(el, 'x').fontBoundingBoxAscent, a = met(el, el.textContent.trim()).actualBoundingBoxAscent;
+    const out = [];
+    for (const r of rs) { const base = r.top + fa; if (!out.length || Math.abs(out[out.length - 1].base - base) > 2) out.push({ base, top: base - a }); }
+    return out;
+  };
+  const box = doc.getElementById('signInBox'), h2 = box.querySelector('h2'), intro = box.querySelector('p'), label = box.querySelector('label');
+  const input = box.querySelector('input'), button = box.querySelector('button');
+  const B = box.getBoundingClientRect(), I = input.getBoundingClientRect(), U = button.getBoundingClientRect();
+  const H = lines(h2), P = lines(intro), L = lines(label);
+  const font = (el) => { const s = cs(el); return `${s.fontFamily.split(',')[0].replace(/["']/g, '').trim()} ${s.fontSize} ${s.fontWeight} ${s.color}`; };
+  return {
+    edges: { 'box top -> "Sign in" letters': H[0].top - B.top, 'button -> box bottom': B.bottom - U.bottom, 'box left -> field': I.left - B.left, 'field -> box right': B.right - I.right, 'box left -> button': U.left - B.left },
+    inside: { '"Sign in" -> intro letters': [P[0].top - H[H.length - 1].base, 15], 'intro line pitch': [P.length > 1 ? P[1].base - P[0].base : NaN, 24], 'intro -> "Email address" letters': [L[0].top - P[P.length - 1].base, 30], '"Email address" -> field edge': [I.top - L[L.length - 1].base, 15], 'field -> button': [U.top - I.bottom, 15] },
+    sizes: { 'field height': [I.height, 45], 'button height': [U.height, 45], ...(innerWidth >= 580 ? { 'box width': [B.width, 540] } : {}) },
+    fonts: { '"Sign in"': font(h2), intro: font(intro), '"Email address"': font(label), field: font(input), button: font(button) },
+    colours: { box: cs(box).backgroundColor, field: cs(input).backgroundColor, button: cs(button).backgroundColor, 'field border': `${cs(input).borderTopWidth} ${cs(input).borderTopColor}`, 'button border': `${cs(button).borderTopWidth} ${cs(button).borderTopColor}`, corners: `${cs(box).borderTopLeftRadius} ${cs(input).borderTopLeftRadius} ${cs(button).borderTopLeftRadius}` },
+  };
+}
+const NAVY = 'rgb(30, 38, 51)';
+const BOX_FONTS = { '"Sign in"': `Montserrat 20px 700 ${NAVY}`, intro: `Montserrat 15px 400 ${NAVY}`, '"Email address"': `Montserrat 15px 700 ${NAVY}`, field: `Montserrat 16px 400 ${NAVY}`, button: `Montserrat 16px 700 ${NAVY}` };
+const BOX_COLOURS = { box: 'rgb(233, 233, 235)', field: 'rgb(249, 249, 250)', button: 'rgb(249, 249, 250)', 'field border': `1px ${NAVY}`, 'button border': `1px ${NAVY}`, corners: '10px 10px 10px' };
+function checkBox(check, where, b, edge) {
+  for (const [k, v] of Object.entries(b.edges)) check('box spacing', Math.abs(v - edge) <= TOL, `box (${where}) ${k}: ${v.toFixed(1)}px (expected ${edge})`);
+  for (const [k, [v, want]] of Object.entries(b.inside)) check('box spacing', Math.abs(v - want) <= TOL, `box (${where}) ${k}: ${v.toFixed(1)}px (expected ${want})`);
+  for (const [k, [v, want]] of Object.entries(b.sizes)) check('box sizes', Math.abs(v - want) <= TOL, `box (${where}) ${k}: ${v.toFixed(1)}px (expected ${want})`);
+  for (const [k, v] of Object.entries(b.fonts)) check('box fonts', v === BOX_FONTS[k], `box (${where}) ${k}: ${v}${v === BOX_FONTS[k] ? '' : `  <- expected ${BOX_FONTS[k]}`}`);
+  for (const [k, v] of Object.entries(b.colours)) check('box colours', v === BOX_COLOURS[k], `box (${where}) ${k}: ${v}${v === BOX_COLOURS[k] ? '' : `  <- expected ${BOX_COLOURS[k]}`}`);
+}
+
 // CHROME_PATH lets it run on a computer that has Chrome but no Playwright browser.
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 let totalFails = 0;
@@ -120,6 +158,7 @@ for (const p of PAGES) {
   const check = (kind, ok, line) => { if (!ok) failed.add(kind); console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${line}`); };
   const desk = await openPage(browser, p, { width: 1920, height: 1080 });
   const r = await desk.evaluate(measure, { below: p.below, corner: !!p.corner });
+  const boxDesk = p.below === '#signInBox' ? await desk.evaluate(measureBox) : null;
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
@@ -135,8 +174,13 @@ for (const p of PAGES) {
   const phone = await openPage(browser, p, { width: 375, height: 812 });
   const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const rPhone = p.corner ? await phone.evaluate(measure, { below: p.below, corner: true }) : null;
+  const boxPhone = boxDesk ? await phone.evaluate(measureBox) : null;
   await phone.close();
   check('phone width', overflow <= 0, `phone 375px sideways scrolling: ${overflow}px`);
+  if (boxDesk) {
+    checkBox(check, 'computer', boxDesk, 60);
+    checkBox(check, 'phone', boxPhone, 30);
+  }
   if (p.corner) {
     const corners = [['computer', r.corner, 40], ['phone', rPhone.corner, 20]];
     for (const [where, cr, want40] of corners) {
@@ -150,7 +194,7 @@ for (const p of PAGES) {
   totalFails += failed.size;
   if (failed.size) pagesThatFailed += 1;
   if (SELFTEST) {
-    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style'] : [])];
+    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }
