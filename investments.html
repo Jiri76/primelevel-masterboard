@@ -1792,18 +1792,75 @@
     // (60 calls/minute Finnhub free-tier limit vs. holdings-count x
     // refreshes-per-minute actually used, nowhere close for any
     // realistic number of holdings).
+    //
+    // KEEP THE LAST GOOD PRICE (owner, 2026-10-01: gold kept vanishing from
+    // the chart). Finnhub's KuCoin feed often answers "no price" for a
+    // perfectly valid pair (measured live: PAXG-USDT empty in 3 of 6 calls).
+    // This used to copy that empty answer over the last good price
+    // (Object.assign), so gold dropped out of the total and the chart, its
+    // card wrongly said "Not supported by KuCoin", and it flickered every
+    // minute. Now: a real price always replaces the old one; an empty answer
+    // NEVER wipes a price we already have; and a ticker that has never had
+    // a price is re-asked QUICK_RETRIES times, QUICK_RETRY_MS apart (it shows
+    // the plain "--" meanwhile), before it is called not found -- seamless,
+    // instead of a red error for a whole minute. (The Edge Function itself
+    // also retries each missing price up to 3 times since 2026-10-01.)
+    const QUICK_RETRIES = 2;
+    const QUICK_RETRY_MS = 5000;
+    const quickRetriesLeft = {}; // ticker -> quick re-asks left before "not found"
+    let quickRetryTimer = null;
+    function scheduleQuickRetry() {
+      if (quickRetryTimer) return;
+      quickRetryTimer = setTimeout(() => { quickRetryTimer = null; refreshPrices(); }, QUICK_RETRY_MS);
+    }
+    // True while some holding has never had a price and still has quick
+    // re-asks left (uses one up per ticker).
+    function needsQuickRetry(tickers) {
+      let retry = false;
+      for (const ticker of tickers) {
+        if (livePrices[ticker] !== undefined) continue; // priced, or already called not found
+        const left = quickRetriesLeft[ticker] ?? QUICK_RETRIES;
+        if (left > 0) { quickRetriesLeft[ticker] = left - 1; retry = true; }
+      }
+      return retry;
+    }
     async function refreshPrices() {
       if (!holdings.length) return;
       const tickers = [...new Set(holdings.map((h) => h.ticker))];
       let quotes;
       try {
         const res = await fetch(`${QUOTES_FUNCTION_URL}?symbols=${tickers.join(',')}`);
-        if (!res.ok) return; // leave livePrices as they were -- a failed refresh shouldn't blank out the last known prices
+        if (!res.ok) {
+          // Leave livePrices as they were -- a failed refresh never blanks
+          // out the last known prices. Re-ask soon if something has never
+          // been priced; otherwise the next 60s tick will do.
+          if (needsQuickRetry(tickers)) scheduleQuickRetry();
+          return;
+        }
         quotes = await res.json();
       } catch {
-        return; // network hiccup -- try again on the next 60s tick, same reasoning as above
+        if (needsQuickRetry(tickers)) scheduleQuickRetry(); // network hiccup, same reasoning as above
+        return;
       }
-      Object.assign(livePrices, quotes);
+      for (const ticker of tickers) {
+        const quote = quotes[ticker] ?? quotes[ticker.toUpperCase()] ?? null;
+        if (quote) {
+          livePrices[ticker] = quote; // a real price always wins
+        } else if (livePrices[ticker] === undefined) {
+          // Never had a price: stay "--" while quick re-asks are left,
+          // then call it not found.
+          const left = quickRetriesLeft[ticker] ?? QUICK_RETRIES;
+          if (left > 0) {
+            quickRetriesLeft[ticker] = left - 1;
+            scheduleQuickRetry();
+          } else {
+            livePrices[ticker] = null;
+          }
+        }
+        // else: an empty answer for a ticker that already has a price (or
+        // is already "not found") changes nothing -- the last good price
+        // stays on screen.
+      }
       for (const holding of holdings) {
         const els = displayEls.get(holding.id);
         if (!els) continue; // this holding's card isn't in display mode right now (its edit panel is open) -- nothing on screen to update
