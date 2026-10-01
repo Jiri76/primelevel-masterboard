@@ -489,13 +489,17 @@
       max-width: calc(50% - 8px);
     }
     h1 {
-      margin-bottom: 40px;
+      margin-bottom: 92px; /* title letters -> date tiles = 100 by eye (owner 2026-10-01: "100 everywhere"; was 40 = 48 by eye) */
     }
   }
   @media (max-width: 720px) {
+    .container {
+      padding-top: 92px; /* 44px title: page top -> letters 100 by eye */
+    }
     h1 {
       font-size: 44px;
       line-height: normal; /* phone title unchanged by the 50px desktop change */
+      margin-bottom: 96px; /* title letters -> date tiles = 100 by eye */
     }
     .report-tile {
       font-size: 15px;
@@ -510,6 +514,15 @@
     }
     .report-body {
       padding: 0 24px 60px;
+    }
+  }
+  @media (max-width: 359px) {
+    .container {
+      padding-top: 93px; /* 38px title: page top -> letters 100 by eye */
+    }
+    h1 {
+      font-size: 38px; /* "Insider Edge" at 44px wrapped onto two lines on a 320px screen (same 38px as the other pages) */
+      margin-bottom: 97px; /* title letters -> date tiles = 100 by eye */
     }
   }
 </style>
@@ -577,7 +590,12 @@
           // request. Derived from created_at (a real date value)
           // rather than trying to parse/shorten Cowork's own title
           // text, which has no guaranteed format.
-          tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          // Short month, the same on every screen (owner 2026-10-01): the
+          // full "28 September 2026" didn't fit a tile. Spelled out here, not
+          // the browser's en-GB short month, which writes September "Sept".
+          // KEEP IN STEP with the same label in renderTiles() below.
+          var tileDate = new Date(report.created_at);
+          tile.textContent = tileDate.getDate() + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][tileDate.getMonth()] + ' ' + tileDate.getFullYear();
           reportTiles.append(tile);
         });
 
@@ -705,8 +723,10 @@
         // Short date label, not the full title -- per explicit request.
         // Derived from created_at (a real date value) rather than
         // trying to parse/shorten Cowork's own title text, which has
-        // no guaranteed format.
-        tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        // no guaranteed format. Short month, the same on every screen
+        // (owner 2026-10-01; KEEP IN STEP with the instant-paint copy above).
+        const tileDate = new Date(report.created_at);
+        tile.textContent = `${tileDate.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][tileDate.getMonth()]} ${tileDate.getFullYear()}`;
         tile.title = report.title; // full title still available on hover
         tile.addEventListener('click', () => {
           selectedId = report.id;
@@ -749,7 +769,9 @@
       title.textContent = report.title;
       const date = document.createElement('div');
       date.className = 'report-content-date';
-      date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      // Three-letter month on every date (owner rule 2026-10-01): "28 Sep 2026".
+      const reportDate = new Date(report.created_at);
+      date.textContent = `${reportDate.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][reportDate.getMonth()]} ${reportDate.getFullYear()}`;
       headerBand.append(title, date);
       const body = document.createElement('div');
       body.className = 'report-body';
