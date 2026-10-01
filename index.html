@@ -398,13 +398,16 @@
   }
 
   /* ---- FRONT DOOR (owner-only, 2026-10-01) ----
-     Signed out: only the title + the LOCKED sign-in box (SIGNIN-BOX-STANDARD.md,
-     copied from docs/signin-box-reference.html; no passkey button until
-     passkeys genuinely work). Signed in as the owner: everything as before +
-     the corner Sign out. Everything private starts `hidden` and is only shown
-     by the scripts below, so nothing private can flash for a stranger.
-     `hidden` must win over the display:flex/block rules above. */
-  [hidden] { display: none !important; }
+     This page IS PrimeLevel's one front door (door.js, loaded in <head>,
+     stamps <html data-view> before the first paint and does the checking).
+     Signed out ("door"): only the title + the LOCKED sign-in box
+     (SIGNIN-BOX-STANDARD.md, copied from docs/signin-box-reference.html; no
+     passkey button until passkeys genuinely work). After sending ("sent"),
+     another account or a failed check ("no-access"): the title + one
+     message line. The owner: everything private (.pl-private, hidden by
+     door.js for anyone else) + door.js's corner Sign out. */
+  :root:not([data-view="door"]) #signInBox { display: none; }
+  :root:not([data-view="sent"]):not([data-view="no-access"]) #doorMessage { display: none; }
   .signin {
     max-width: 540px;
     margin: 0 auto;
@@ -444,8 +447,7 @@
     text-align: left;
   }
   .signin input:focus-visible,
-  .signin button:focus-visible,
-  .signout:focus-visible {
+  .signin button:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
   }
@@ -490,25 +492,6 @@
     text-align: center;
     margin: 0;
   }
-  /* Sign out: LOCKED 2026-10-01 (SIGNIN-BOX-STANDARD.md, "Sign out").
-     Top-right corner, by eye 40px from the top and 40px from the right
-     (the tiles sit 40px from the left); phones 20 / 20. */
-  .signout {
-    position: fixed;
-    top: 37px;
-    right: 40px;
-    z-index: 10;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--gold);
-    text-decoration: none;
-    cursor: pointer;
-  }
   /* With no tiles and no photo, the sign-in box and the one message line
      sit 100px BY EYE under the title at every width (owner: "spacing must
      be maintained all the time"). Measured: baseline of "Masterboard" ->
@@ -518,7 +501,6 @@
   :root[data-view="no-access"] h1 { margin-bottom: 81px; }
   @media (max-width: 720px) {
     .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye */
-    .signout { top: 17px; right: 20px; }
     :root[data-view="sent"] h1,
     :root[data-view="no-access"] h1 { margin-bottom: 85px; }
   }
@@ -527,12 +509,15 @@
     :root[data-view="no-access"] h1 { margin-bottom: 86px; }
   }
 </style>
+<!-- PrimeLevel's one front door: decides what may show BEFORE the first
+     paint, checks, and draws Sign out. Shared by every private page. -->
+<script src="door.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Masterboard</h1>
-    <!-- FRONT DOOR: shown only when signed out (see the scripts below). -->
-    <div class="signin" id="signInBox" hidden>
+    <!-- FRONT DOOR: shown only to someone not signed in (door.js stamp "door"). -->
+    <div class="signin" id="signInBox">
       <h2>Sign in</h2>
       <p>Your Masterboard is private. Enter your email address and we’ll send you a link to sign in.</p>
       <form id="signInForm">
@@ -542,11 +527,10 @@
         <p class="message" id="signInMessage" aria-live="polite"></p>
       </form>
     </div>
-    <p class="door-message" id="doorMessage" aria-live="polite" hidden></p>
-    <button type="button" class="signout" id="signOutButton" hidden>Sign out</button>
-    <!-- Everything private lives in here and starts hidden: only the
-         signed-in owner ever sees it. -->
-    <div id="ownerArea" hidden>
+    <p class="door-message" id="doorMessage" aria-live="polite"></p>
+    <!-- Everything private lives in here: hidden by door.js for anyone but
+         the signed-in owner. -->
+    <div id="ownerArea" class="pl-private">
     <!-- Sits here (not before the container) so that below 1320px, where it
          stops being pinned to the left edge, it flows as a row between the
          title and the picture. On desktop it is position:fixed, so where it
@@ -592,40 +576,10 @@
        old hand-built full-URL approach if no thumbnail is cached yet
        (e.g. the very first time this runs after this fix ships). -->
   <script>
-    // FRONT DOOR, first decision (owner-only, 2026-10-01). Runs before the
-    // first paint, so the right screen appears straight away:
-    //  - 'owner': this browser holds a Supabase session for the user the
-    //    module script below already confirmed as the owner (OWNER_KEY) ->
-    //    show the Masterboard at once (and the instant photo below);
-    //  - 'wait': signed in but not yet confirmed as the owner (e.g. signed in
-    //    on the Inbox Report, same website), or coming back from the emailed
-    //    link (tokens in the address) -> show nothing until the module
-    //    script has checked;
-    //  - 'door': anyone else -> only the sign-in box.
-    // This is only the page's look. The real lock is the database, which
-    // refuses anyone but the owner whatever this page shows.
     (function () {
-      var view = 'door';
-      try {
-        var token = JSON.parse(localStorage.getItem('sb-kenlhcatkjthhzuaznpg-auth-token') || 'null');
-        var ownerId = localStorage.getItem('masterboard-owner-v1');
-        if (token && token.user && token.user.id) view = ownerId === token.user.id ? 'owner' : 'wait';
-      } catch (e) {
-        // storage blocked: stay on the door, the module script decides
-      }
-      if (view === 'door' && window.location.hash.indexOf('access_token') !== -1) view = 'wait';
-      document.documentElement.setAttribute('data-view', view);
-      if (view === 'owner') {
-        document.getElementById('ownerArea').hidden = false;
-        document.getElementById('signOutButton').hidden = false;
-      } else if (view === 'door') {
-        document.getElementById('signInBox').hidden = false;
-      }
-    })();
-
-    (function () {
-      // The instant photo is private too: only for the confirmed owner.
-      if (document.documentElement.getAttribute('data-view') !== 'owner') return;
+      // The instant photo is private too: only for the confirmed owner
+      // (door.js's first decision, made in <head>).
+      if (!PrimeLevelDoor.isOwnerView()) return;
       try {
         var cached = JSON.parse(localStorage.getItem('masterboard-picture-cache-v1') || 'null');
         if (!cached) return; // nothing cached yet -- fine, the module script below handles this normally
@@ -715,12 +669,9 @@
     });
 
     // FRONT DOOR: true only while the signed-in owner's Masterboard is on
-    // screen (set by the first inline script, then by route() at the end of
-    // this script). Every private load below checks it first, so a stranger's
-    // browser never even fetches the photo or the report list.
-    function isOwnerView() {
-      return document.documentElement.getAttribute('data-view') === 'owner';
-    }
+    // screen (door.js decides). Every private load below checks it first, so
+    // a stranger's browser never even fetches the photo or the report list.
+    const isOwnerView = () => PrimeLevelDoor.isOwnerView();
 
     // A dedicated public bucket, one fixed object key ('hero', no
     // extension -- Content-Type is set explicitly on upload, so the
@@ -821,7 +772,7 @@
       // both ways makes this idempotent and safe to call repeatedly.
       insiderEdgeTile.classList.toggle('unread', !readIds.has(latestId));
     }
-    checkInsiderEdgeUnread();
+    // (First run: PrimeLevelDoor.whenOwner(...) at the end of this script.)
     // Real gap found and fixed: this only ran once, at initial page load
     // -- unlike loadSettings() below (see its own pageshow/visibilitychange
     // handling), nothing re-ran this check when the page was restored from
@@ -1235,7 +1186,7 @@
 
       paintPicture({ x: data.image_position_x, y: data.image_position_y, version: data.picture_version, zoom: data.image_zoom });
     }
-    loadSettings();
+    // (First run: PrimeLevelDoor.whenOwner(...) at the end of this script.)
 
     // Real bug found and fixed: Renewals has no link back to Masterboard,
     // so the only way back is the browser's own Back button -- and for
@@ -1445,107 +1396,58 @@
     window.addEventListener('load', alignTilesToPicture);
     alignTilesToPicture();
 
-    // ---- FRONT DOOR: sign-in state -> which screen (owner-only, 2026-10-01) ----
-    // Screens: 'door' (the sign-in box), 'sent' ("Done…"), 'owner' (the
-    // Masterboard + Sign out), 'no-access' (a signed-in account that isn't
-    // the owner: one message + Sign out), 'wait' (back from the emailed link,
-    // still checking it: nothing shown).
-    const OWNER_KEY = 'masterboard-owner-v1';
-    const AUTH_STORAGE_KEY = 'sb-kenlhcatkjthhzuaznpg-auth-token'; // where supabase-js keeps the session
-    // The one address Supabase sends the sign-in link back to. It must stay
-    // EXACTLY as allow-listed in Supabase -> Authentication -> URL
-    // Configuration -> Redirect URLs (added 2026-10-01). Never location.href:
-    // an extra ?query or index.html would not match, and Supabase would send
-    // the link to the Site URL instead.
-    const FRONT_DOOR_URL = 'https://jiri76.github.io/primelevel-masterboard/';
-    const signInBox = document.getElementById('signInBox');
+    // ---- FRONT DOOR: this page IS PrimeLevel's one front door ----
+    // door.js (loaded in <head>) makes the first decision before the first
+    // paint, checks who is signed in, and draws Sign out. This page adds only
+    // what a front door needs: the sign-in box, and its one-line screens.
+    // Screens (<html data-view>): 'door' (the sign-in box), 'sent' ("Done…"),
+    // 'owner' (the Masterboard + Sign out), 'no-access' (another account, or
+    // the check failed: one message + Sign out), 'wait' (still checking:
+    // nothing shown).
     const signInForm = document.getElementById('signInForm');
     const signInEmail = document.getElementById('signInEmail');
     const signInMessage = document.getElementById('signInMessage');
     const doorMessage = document.getElementById('doorMessage');
-    const signOutButton = document.getElementById('signOutButton');
-    const ownerArea = document.getElementById('ownerArea');
 
-    function setView(view) {
-      document.documentElement.setAttribute('data-view', view);
-      signInBox.hidden = view !== 'door';
-      ownerArea.hidden = view !== 'owner';
-      signOutButton.hidden = !(view === 'owner' || view === 'no-access');
-      doorMessage.hidden = !(view === 'sent' || view === 'no-access');
+    function showMessage(view, text) {
+      doorMessage.textContent = text;
+      PrimeLevelDoor.setView(view);
     }
 
-    // Forget everything private this browser remembers: who the owner is and
-    // the cached photo thumbnail (pre-mortem risk 8).
-    function forgetOwner() {
-      try {
-        localStorage.removeItem(OWNER_KEY);
-        localStorage.removeItem(PICTURE_CACHE_KEY);
-      } catch {
-        // storage blocked: nothing was stored either
-      }
-    }
-
-    // Leaving the owner's screen always reloads the page, so nothing private
-    // stays behind in the page's memory.
-    function reloadClean() {
-      window.location.replace(window.location.pathname);
-    }
-
-    function showOwner() {
-      if (isOwnerView()) return; // already on screen: the first script showed it and the loads above ran
-      setView('owner');
+    // The owner's Masterboard: load the private parts (at once when door.js
+    // already knew the owner, otherwise the moment the check confirms it).
+    PrimeLevelDoor.whenOwner(() => {
       loadSettings();
       checkInsiderEdgeUnread();
       alignTilesToPicture();
-    }
-
-    let routedFor = null; // ignore repeat events for the same state (e.g. token refreshes)
-    async function route(session) {
-      const key = session ? session.user.id : 'signed-out';
-      if (key === routedFor) return;
-      routedFor = key;
-
-      if (!session) {
-        forgetOwner();
-        if (isOwnerView()) { reloadClean(); return; } // signed out elsewhere, or the session ended
-        if (document.documentElement.getAttribute('data-view') !== 'sent') setView('door');
-        return;
-      }
-
-      // The sign-in link comes back with tokens in the address: tidy it.
-      if (window.location.hash.includes('access_token')) history.replaceState(null, '', window.location.pathname);
-
-      // Is this the owner? The database's own allow-list answers (today it
-      // holds only info@primelevel.co.uk), so the page can never disagree
-      // with what the tables allow.
-      const { data: allowed, error } = await supabase.rpc('is_email_report_viewer');
-      if (error) {
-        console.error('Could not check Masterboard access:', error);
-        if (isOwnerView()) return; // keep the board; the database still guards every read
-        doorMessage.textContent = 'Could not check your access right now. Please try again in a moment.';
-        setView('no-access');
-        return;
-      }
-      if (allowed) {
-        try { localStorage.setItem(OWNER_KEY, session.user.id); } catch { /* the board still shows, just not instantly next time */ }
-        showOwner();
-        return;
-      }
-      forgetOwner();
-      if (isOwnerView()) { reloadClean(); return; }
-      doorMessage.textContent = `${session.user.email || 'This account'} does not have access to the Masterboard.`;
-      setView('no-access');
-    }
+    });
+    PrimeLevelDoor.gate(supabase, {
+      notSignedIn() {
+        if (document.documentElement.getAttribute('data-view') !== 'sent') PrimeLevelDoor.setView('door');
+      },
+      notOwner(session) {
+        showMessage('no-access', `${session.user.email || 'This account'} does not have access to the Masterboard.`);
+        PrimeLevelDoor.addSignOut(supabase);
+      },
+      checkFailed() {
+        showMessage('no-access', 'Could not check your access right now. Please try again in a moment.');
+        PrimeLevelDoor.addSignOut(supabase);
+      },
+    });
 
     // Click -> "Done" (LOCKED behaviour, SIGNIN-BOX-STANDARD.md): no
     // "Sending…", the button never changes, double clicks are ignored while
-    // Supabase replies (no duplicate emails). shouldCreateUser: false: this
-    // Supabase project is shared with the customer app, so a stranger typing
-    // an address must never create an account. Supabase refuses unknown
-    // addresses ("signups not allowed", 422), and the page shows the SAME
-    // "Done" for them, so nobody learns which addresses are allowed. Only a
-    // genuine failure (no connection, rate limit, Supabase down) keeps the box
-    // and shows a short error under the button.
+    // Supabase replies (no duplicate emails). The link always comes back to
+    // the front door's exact address, as allow-listed in Supabase ->
+    // Authentication -> URL Configuration -> Redirect URLs (never
+    // location.href: an extra ?query or index.html would not match, and
+    // Supabase would send the link to the Site URL instead).
+    // shouldCreateUser: false: this Supabase project is shared with the
+    // customer app, so a stranger typing an address must never create an
+    // account. Supabase refuses unknown addresses ("signups not allowed",
+    // 422), and the page shows the SAME "Done" for them, so nobody learns
+    // which addresses are allowed. Only a genuine failure (no connection,
+    // rate limit, Supabase down) keeps the box and shows a short error.
     let sending = false;
     signInForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1554,7 +1456,7 @@
       signInMessage.textContent = '';
       const { error } = await supabase.auth.signInWithOtp({
         email: signInEmail.value.trim(),
-        options: { emailRedirectTo: FRONT_DOOR_URL, shouldCreateUser: false },
+        options: { emailRedirectTo: PrimeLevelDoor.FRONT_DOOR_URL, shouldCreateUser: false },
       });
       sending = false;
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
@@ -1563,37 +1465,8 @@
         signInMessage.textContent = 'Could not send the link right now. Please try again in a minute.';
         return;
       }
-      doorMessage.textContent = 'Done. Check your email for your sign-in link.';
-      setView('sent');
+      showMessage('sent', 'Done. Check your email for your sign-in link.');
     });
-
-    signOutButton.addEventListener('click', async () => {
-      forgetOwner();
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        // No connection: Supabase keeps the session when it can't reach the
-        // server, so remove it from this browser directly. The page must
-        // never stay signed in after Sign out.
-        console.error('Sign out could not reach Supabase:', error);
-        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* nothing stored */ }
-      }
-      reloadClean();
-    });
-
-    // Supabase's advice: no awaited Supabase calls inside this callback, so
-    // the check runs just after it.
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setTimeout(() => route(session), 0);
-    });
-    // Back/forward can restore a frozen copy of this page: re-check who is
-    // signed in, so a page left signed in never reappears after a sign out.
-    window.addEventListener('pageshow', async (event) => {
-      if (!event.persisted) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      route(session);
-    });
-    const { data: { session: initialSession } } = await supabase.auth.getSession();
-    route(initialSession);
   </script>
 </body>
 </html>
