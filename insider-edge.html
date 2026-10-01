@@ -488,6 +488,10 @@
     .report-tile {
       max-width: calc(50% - 8px);
     }
+    /* No reports at all: the empty date row takes no space, so the message
+       sits 100 by eye below the title (same as the Inbox Report). */
+    .report-tiles:empty { margin: 0; }
+    .report-tiles:empty + #content .empty-state { margin-top: -4px; }
     h1 {
       margin-bottom: 85px; /* title letters -> top EDGE of the date tiles = 100 by eye (owner 2026-10-01: "100 everywhere"); measured to the tile edge, not the gold "unread" glow, which reaches ~7px higher and disappears once a report is read */
     }
@@ -526,9 +530,13 @@
     }
   }
 </style>
+<!-- PrimeLevel's one front door (shared by every private page): decides what
+     may show BEFORE the first paint, sends anyone but the signed-in owner to
+     the Masterboard front door, and draws Sign out. -->
+<script src="door.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container pl-private">
     <h1>Insider Edge</h1>
     <!-- Sits here (not first in <body>) so that on screens too narrow to
          pin it to the left edge, it flows as a row between the title and
@@ -562,6 +570,9 @@
        upgrade quietly" pattern as the picture. -->
   <script>
     (function () {
+      // The cached reports are private: only for the confirmed owner
+      // (door.js's first decision, made in <head>).
+      if (!PrimeLevelDoor.isOwnerView()) return;
       try {
         var cached = JSON.parse(localStorage.getItem('insider-edge-reports-cache-v1') || 'null');
         if (!cached || cached.length === 0) return;
@@ -886,7 +897,11 @@
         // Harmless if storage is unavailable -- just means no instant paint next time.
       }
     }
-    loadReports();
+    // Private: the reports load only for the signed-in owner (door.js; at
+    // once when it already knew the owner). Anyone else is sent to the
+    // Masterboard front door before anything loads.
+    PrimeLevelDoor.whenOwner(loadReports);
+    PrimeLevelDoor.gate(supabase);
   </script>
 </body>
 </html>

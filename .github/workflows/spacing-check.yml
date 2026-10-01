@@ -7,7 +7,9 @@ on:
   push:
     paths:
       - 'insider-edge.html'
+      - 'door.js'
       - 'tools/spacing-check.mjs'
+      - 'tools/guard-supabase.mjs'
       - '.github/workflows/spacing-check.yml'
   schedule:
     - cron: '0 14 * * 1'

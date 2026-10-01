@@ -1,27 +1,32 @@
 // PrimeLevel opening-page guard.
 //
-// Measures every "opening page" (page title + one message line + optional
-// Sign out) against the LOCKED standard in OPENING-PAGE-STANDARD.md and exits 1
+// Measures every "opening page" against the LOCKED standards and exits 1
 // (fails the workflow) if anything has drifted:
-//   * page top -> title letters, title -> message, message -> Sign out: 100px BY EYE
-//     (baseline of the letters above -> top of the tallest letters below)
-//   * every line centred on the screen
-//   * title 50px bold gold; message 20px regular soft grey-blue; Sign out 20px bold
-//     gold with no underline
-//   * no sideways scrolling on a 375px phone
+//   * OPENING-PAGE-STANDARD.md: page top -> title letters and title -> the one
+//     message line (or the sign-in box's top edge) are 100px BY EYE (baseline
+//     of the letters above -> top of the tallest letters below); every line
+//     centred; title bold gold (50px; the Masterboard home 60px); message 20px
+//     regular soft grey-blue.
+//   * SIGNIN-BOX-STANDARD.md "Sign out": on every signed-in page, Sign out sits
+//     top-right, 40px / 40px by eye on a computer and 20px / 20px on a phone,
+//     Montserrat 20px bold gold, no underline (drawn by door.js).
+//   * no sideways scrolling on a 375px phone.
 //
-// The Inbox Report's screens only appear after sign-in. Inside this guard's own
-// throwaway browser the Supabase library is replaced by a small stand-in that
-// pretends to be signed in and returns each situation (no access / no reports /
-// could not load). No real account, no real data, nothing leaves the browser.
+// Since 2026-10-02 every private page sits behind door.js (one front door).
+// The guard's throwaway browser is never signed in, so the Supabase library is
+// swapped for a stand-in (tools/guard-supabase.mjs): signed out for the front
+// door's own screens, a pretend owner for the inner pages. Insider Edge keeps
+// reading its REAL reports (pretend key, real data). No real account, no
+// password, nothing written.
 //
-// SELFTEST=1 proves the alarm works: it deliberately breaks the styling of every
-// page and the run only passes if the guard catches the drift on every one.
-// DRILL=1 applies the same breaks but judges them like a normal run, so the run
-// FAILS on purpose: used to prove the Issue + email alert actually arrives.
+// SELFTEST=1 proves the alarm works: it deliberately breaks every kind of rule
+// on every page and the run only passes if every break is caught. DRILL=1
+// applies the same breaks but judges them like a normal run, so the run FAILS
+// on purpose: used to prove the Issue + email alert actually arrives.
 //
 // NEW OPENING PAGE? Add it to PAGES below in the same commit that creates it.
 import { chromium } from 'playwright';
+import { signedOut, ownerFake, ownerReal, useStandIn } from './guard-supabase.mjs';
 
 const BASE = process.env.BASE_URL || 'http://localhost:8091';
 const SELFTEST = process.env.SELFTEST === '1';
@@ -30,82 +35,79 @@ const TOL = 1; // px
 const GOLD = 'rgb(178, 155, 104)';
 const GREY_BLUE = 'rgb(138, 147, 163)';
 
-// ready = what appears once the page has finished drawing its opening message.
-// Insider Edge is the real page with real data: once its reports load it swaps
-// "No reports yet ..." for "Click a date to open a report.". If they never load,
-// the "No reports yet" line is measured instead (it is an opening message too).
+// below: '#signInBox' = measure the title -> the box's top edge; otherwise
+// the selector of the one message line. corner: a signed-in page (Sign out).
 const PAGES = [
-  { name: 'Insider Edge: no report open', path: '/insider-edge.html', ready: '.closed-state', signout: false },
-  { name: 'Inbox Report: no access', path: '/inbox-report.html', state: 'denied', ready: '.signout', signout: true },
-  { name: 'Inbox Report: no reports yet', path: '/inbox-report.html', state: 'empty', ready: '.signout', signout: true },
-  { name: 'Inbox Report: could not load', path: '/inbox-report.html', state: 'error', ready: '.signout', signout: true },
+  { name: 'Masterboard front door: sign-in box', path: '/', standIn: signedOut(), ready: '#signInBox', below: '#signInBox', title: '60px' },
+  { name: 'Masterboard front door: after sending', path: '/', standIn: signedOut(), ready: '#signInBox', send: true, below: '#doorMessage', title: '60px' },
+  { name: 'Insider Edge: no report open', path: '/insider-edge.html', standIn: ownerReal(), ready: '.empty-state', prefer: '.closed-state', below: '#content .empty-state', title: '50px', corner: true },
+  { name: 'Inbox Report: no reports yet', path: '/inbox-report.html', standIn: ownerFake({ email_reports: [] }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
+  { name: 'Inbox Report: could not load', path: '/inbox-report.html', standIn: ownerFake({ email_reports: 'error' }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
 ];
 
-const supabaseStandIn = (state) => `
-export const createClient = () => ({
-  auth: {
-    getSession: async () => ({ data: { session: { user: { email: 'guard@example.com' } } } }),
-    getUser: async () => ({ data: { user: { email: 'guard@example.com' } } }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-    signOut: async () => ({ error: null }),
-    signInWithOtp: async () => ({ error: null }),
-  },
-  rpc: async () => (${JSON.stringify(state)} === 'error'
-    ? { data: null, error: { message: 'guard stand-in' } }
-    : { data: ${JSON.stringify(state)} !== 'denied', error: null }),
-  from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: [], error: null }) }) }) }),
-});`;
+// Deliberate drift for SELFTEST/DRILL: every kind of rule broken at once.
+const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
+  + '.empty-state,.door-message{padding-top:9px!important;color:#ff0000!important}'
+  + '#signInBox{position:relative!important;top:9px!important}' /* not margin-top: it would melt into the title's larger margin and move nothing */
+  + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}'
+  + '.container::after{content:"";display:block;width:3000px;height:1px}';
+
+const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
 
 async function openPage(browser, p, viewport) {
   const page = await browser.newPage({ viewport });
-  if (p.state) {
-    await page.route(/esm\.sh\/@supabase\/supabase-js/, (route) => route.fulfill({
-      status: 200,
-      contentType: 'application/javascript',
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: supabaseStandIn(p.state),
-    }));
-  }
+  await useStandIn(page, p.standIn);
+  // Never let the guard's browser write anywhere.
+  await page.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
   await page.goto(BASE + p.path, { waitUntil: 'networkidle' });
-  if (p.signout) {
-    await page.waitForSelector(p.ready, { timeout: 30000 });
-  } else {
-    await page.waitForSelector(p.ready, { timeout: 20000 }).catch(() => console.log(`  (note: ${p.ready} never appeared, measuring the message that is showing)`));
+  await page.waitForFunction(shown, p.ready, { timeout: 30000 });
+  if (p.prefer) await page.waitForSelector(p.prefer, { timeout: 20000 }).catch(() => console.log(`  (note: ${p.prefer} never appeared, measuring the message that is showing)`));
+  if (p.send) {
+    await page.fill('#signInEmail', 'guard@example.com');
+    await page.click('#signInForm button');
+    await page.waitForFunction(shown, '#doorMessage', { timeout: 10000 });
   }
-  if (SELFTEST || DRILL) {
-    // Deliberate drift that must trip every kind of check: title shrunk and pushed
-    // off centre, message pushed down and recoloured, Sign out underlined, and
-    // something too wide for a phone.
-    await page.addStyleTag({ content: 'h1{font-size:58px!important;text-align:left!important}.empty-state{padding-top:9px!important;color:#ff0000!important}.signout{text-decoration:underline!important}.container::after{content:"";display:block;width:3000px;height:1px}' });
-  }
+  if (SELFTEST || DRILL) await page.addStyleTag({ content: DRIFT });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(500);
   return page;
 }
 
-function measure() {
+function measure({ below, corner }) {
   const cs = getComputedStyle, doc = document;
   const c = doc.createElement('canvas').getContext('2d');
-  const met = (el, txt) => { const s = cs(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText(txt); return { a: m.actualBoundingBoxAscent, fa: m.fontBoundingBoxAscent }; };
+  const met = (el, txt) => { const s = cs(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText(txt); return { a: m.actualBoundingBoxAscent, fa: m.fontBoundingBoxAscent, r: m.actualBoundingBoxRight }; };
   const lines = (el) => {
     const g = doc.createRange(); g.selectNodeContents(el.firstChild || el);
     const rs = [...g.getClientRects()].filter((r) => r.width > 0);
     const x = met(el, 'x').fa, m = met(el, el.textContent.trim());
-    return {
-      top: rs[0].top + scrollY + x - m.a,
-      base: rs[rs.length - 1].top + scrollY + x,
-      centre: (Math.min(...rs.map((r) => r.left)) + Math.max(...rs.map((r) => r.right))) / 2,
-    };
+    return { top: rs[0].top + scrollY + x - m.a, base: rs[rs.length - 1].top + scrollY + x, centre: (Math.min(...rs.map((r) => r.left)) + Math.max(...rs.map((r) => r.right))) / 2 };
   };
   const font = (el) => { const s = cs(el); return { family: s.fontFamily.split(',')[0].replace(/["']/g, '').trim(), size: s.fontSize, weight: s.fontWeight, color: s.color, underline: s.textDecorationLine }; };
-  const h1 = doc.querySelector('h1'), msg = doc.querySelector('.empty-state'), out = doc.querySelector('.signout');
-  const h = lines(h1), m = lines(msg), o = out ? lines(out) : null, mid = doc.documentElement.clientWidth / 2;
-  return {
-    text: msg.textContent.trim(),
-    gaps: { 'page top -> title': h.top, 'title -> message': m.top - h.base, ...(o ? { 'message -> Sign out': o.top - m.base } : {}) },
-    centre: { title: h.centre - mid, message: m.centre - mid, ...(o ? { 'Sign out': o.centre - mid } : {}) },
-    fonts: { title: font(h1), message: font(msg), ...(out ? { 'Sign out': font(out) } : {}) },
-  };
+  const mid = doc.documentElement.clientWidth / 2;
+  const h1 = doc.querySelector('h1'), h = lines(h1), target = doc.querySelector(below);
+  const out = { gaps: { 'page top -> title': h.top }, centre: { title: h.centre - mid }, fonts: { title: font(h1) } };
+  if (below === '#signInBox') {
+    const box = target.getBoundingClientRect();
+    out.text = 'the sign-in box';
+    out.gaps['title -> sign-in box edge'] = box.top + scrollY - h.base;
+    out.centre['sign-in box'] = (box.left + box.right) / 2 - mid;
+  } else {
+    const m = lines(target);
+    out.text = target.textContent.trim();
+    out.gaps['title -> message'] = m.top - h.base;
+    out.centre.message = m.centre - mid;
+    out.fonts.message = font(target);
+  }
+  if (corner) {
+    const so = doc.getElementById('signOutButton');
+    if (!so || cs(so).display === 'none') { out.corner = null; return out; }
+    const g = doc.createRange(); g.selectNodeContents(so); const t = g.getClientRects()[0];
+    const s = cs(so); c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText('Sign out');
+    const base = t.top + m.fontBoundingBoxAscent + (t.height - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2;
+    out.corner = { top: base - m.actualBoundingBoxAscent, right: doc.documentElement.clientWidth - (t.left + m.actualBoundingBoxRight), font: font(so) };
+  }
+  return out;
 }
 
 // CHROME_PATH lets it run on a computer that has Chrome but no Playwright browser.
@@ -117,28 +119,38 @@ for (const p of PAGES) {
   const failed = new Set(); // kinds of check that failed on this page
   const check = (kind, ok, line) => { if (!ok) failed.add(kind); console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${line}`); };
   const desk = await openPage(browser, p, { width: 1920, height: 1080 });
-  const r = await desk.evaluate(measure);
+  const r = await desk.evaluate(measure, { below: p.below, corner: !!p.corner });
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
   for (const [k, v] of Object.entries(r.centre)) check('centring', Math.abs(v) <= TOL, `${k} centred (${v.toFixed(1)}px off)`);
   const want = {
-    title: { family: 'Montserrat', size: '50px', weight: '700', color: GOLD },
+    title: { family: 'Montserrat', size: p.title, weight: '700', color: GOLD },
     message: { family: 'Montserrat', size: '20px', weight: '400', color: GREY_BLUE },
-    'Sign out': { family: 'Montserrat', size: '20px', weight: '700', color: GOLD, underline: 'none' },
   };
   for (const [k, f] of Object.entries(r.fonts)) {
     const bad = Object.entries(want[k]).filter(([prop, val]) => f[prop] !== val).map(([prop, val]) => `${prop} ${f[prop]} (expected ${val})`);
-    check(`${k} style`, !bad.length, `${k}: ${f.family} ${f.size} ${f.weight} ${f.color} underline ${f.underline}${bad.length ? '  <- ' + bad.join(', ') : ''}`);
+    check(`${k} style`, !bad.length, `${k}: ${f.family} ${f.size} ${f.weight} ${f.color}${bad.length ? '  <- ' + bad.join(', ') : ''}`);
   }
   const phone = await openPage(browser, p, { width: 375, height: 812 });
   const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const rPhone = p.corner ? await phone.evaluate(measure, { below: p.below, corner: true }) : null;
   await phone.close();
   check('phone width', overflow <= 0, `phone 375px sideways scrolling: ${overflow}px`);
+  if (p.corner) {
+    const corners = [['computer', r.corner, 40], ['phone', rPhone.corner, 20]];
+    for (const [where, cr, want40] of corners) {
+      if (!cr) { check('Sign out position', false, `Sign out (${where}): not shown`); continue; }
+      check('Sign out position', Math.abs(cr.top - want40) <= TOL && Math.abs(cr.right - want40) <= TOL, `Sign out (${where}): ${cr.top.toFixed(1)}px from the top, ${cr.right.toFixed(1)}px from the right (expected ${want40} / ${want40})`);
+    }
+    const f = r.corner ? r.corner.font : null;
+    const ok = f && f.family === 'Montserrat' && f.size === '20px' && f.weight === '700' && f.color === GOLD && f.underline === 'none';
+    check('Sign out style', !!ok, `Sign out: ${f ? `${f.family} ${f.size} ${f.weight} ${f.color} underline ${f.underline}` : 'not shown'}`);
+  }
   totalFails += failed.size;
   if (failed.size) pagesThatFailed += 1;
   if (SELFTEST) {
-    const mustCatch = ['spacing', 'centring', 'title style', 'message style', 'phone width', ...(p.signout ? ['Sign out style'] : [])];
+    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }
@@ -154,7 +166,7 @@ if (SELFTEST) {
 }
 if (totalFails) {
   if (DRILL) console.error('\nALARM DRILL: the pages were broken on purpose inside this test browser only. The real pages are untouched.');
-  console.error(`\nDRIFT on ${pagesThatFailed} opening page(s). Fix the CSS back to OPENING-PAGE-STANDARD.md; never edit the standard to match drift.`);
+  console.error(`\nDRIFT on ${pagesThatFailed} opening page(s). Fix the CSS back to the standard; never edit the standard to match drift.`);
   process.exit(1);
 }
 console.log(`\nAll ${PAGES.length} opening pages match the standard.`);

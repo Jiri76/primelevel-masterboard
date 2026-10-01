@@ -6,14 +6,23 @@
 // drifted. Spacings are measured BY EYE: from the bottom (baseline) of the
 // letters above to the top of the tallest letters below, or to the edge of the
 // card / underline -- exactly how the person reading the page sees them.
+//
+// Since 2026-10-02 Insider Edge sits behind door.js (one front door), and this
+// guard's throwaway browser is never signed in: it enters as a pretend owner
+// ("pretend key") while every report is still read from the REAL database
+// (tools/guard-supabase.mjs, ownerReal). Nothing is written.
 import { chromium } from 'playwright';
+import { ownerReal, useStandIn } from './guard-supabase.mjs';
 
 const URL = process.env.SPACING_URL || 'http://localhost:8091/insider-edge.html';
 const TOL_100 = 1;   // px, for every 100px gap
 const TOL_30 = 1.5;  // px, for every 30px gap (line boxes round to whole px)
 
-const browser = await chromium.launch();
+// CHROME_PATH lets it run on a computer that has Chrome but no Playwright browser.
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+await useStandIn(page, ownerReal());
+await page.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForSelector('.report-tile', { timeout: 30000 });
 // 1) Before any report is open: title -> "Click a date to open a report." must be 100px.

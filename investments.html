@@ -1057,9 +1057,13 @@
     }
   }
 </style>
+<!-- PrimeLevel's one front door (shared by every private page): decides what
+     may show BEFORE the first paint, sends anyone but the signed-in owner to
+     the Masterboard front door, and draws Sign out. -->
+<script src="door.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container pl-private">
     <h1>Investments</h1>
 
     <div class="portfolio-summary" id="portfolioSummary"></div>
@@ -2033,7 +2037,11 @@
       return card;
     }
 
-    loadHoldings();
+    // Private: the holdings (and so the prices) load only for the signed-in
+    // owner (door.js; at once when it already knew the owner). Anyone else is
+    // sent to the Masterboard front door before anything loads.
+    PrimeLevelDoor.whenOwner(loadHoldings);
+    PrimeLevelDoor.gate(supabase);
   </script>
 </body>
 </html>
