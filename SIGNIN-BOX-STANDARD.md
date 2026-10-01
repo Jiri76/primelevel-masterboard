@@ -96,6 +96,26 @@ Windows ClearType puts faint coloured edges on thin text. Tested 2026-09-30: gre
 removes them but makes the navy text paler, and the owner saw no difference at normal size.
 Decision: keep ClearType; no fix.
 
+## Sign out (every signed-in page) — LOCKED 2026-10-01
+
+Owner: "Sign out must match on every page: style, font, size, colour, and position
+too. So it's top right on every page."
+
+| | Value |
+|---|---|
+| Wording | "Sign out" |
+| Font | Montserrat 20px bold, company gold `#B29B68`, no underline |
+| Position | Top-right corner of the screen, fixed (stays put when scrolling) |
+| Spacing BY EYE (desktop) | top of screen → top of the letters **40px** = last letter "t" → right edge **40px** (mirrors the Masterboard tiles, 40px from the left edge) |
+| Spacing BY EYE (phones ≤720px) | **20px / 20px** (the page gutter) |
+| CSS that produces it (measured) | desktop `position: fixed; top: 37px; right: 40px;` · phones `top: 17px; right: 20px;` (the top is 3px less for the letters' own space inside the line) |
+
+Shown ONLY when signed in. It replaces the old centred Sign out under the Inbox
+Report's opening message: when the single sign-in ships, the opening-page standard
+becomes title + message only, and this corner Sign out is the one exit on every page
+(Masterboard, Inbox Report, Insider Edge, Investments, Renewals). Out of the way, so
+it can't be clicked by accident, and never competing with the page's content.
+
 ## How it is locked
 
 1. This file, plus the reference implementation `docs/signin-box-reference.html`.

@@ -25,6 +25,13 @@ standard; never edit the standard to match the drift.
 | The message line (every message, no exceptions) | Montserrat | 20px | Regular (400) | Soft grey-blue `#8A93A3` |
 | Sign out (when shown) | Montserrat | 20px | Bold (700) | Company gold `#B29B68`, no underline |
 
+**Planned change, decided by the owner on 2026-10-01 (not live yet):** Sign out moves to
+the **top-right corner of every page** (40px / 40px from the letters on desktop, 20 / 20 on
+phones; see "Sign out" in `SIGNIN-BOX-STANDARD.md`). It ships with the single Masterboard
+sign-in. From then on an opening page is the title + one message line, and the guard
+checks the corner Sign out instead of the centred one. Until then, the values below stay
+as they are.
+
 | Spacing (measured **by eye**, desktop) | Value |
 |---|---|
 | Top of the page → top of the title letters | **100px** |
