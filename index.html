@@ -727,14 +727,13 @@
     // browser renders it correctly regardless of the original file's
     // format, and the URL never needs to change). Every new upload
     // overwrites this same object (upsert:true) -- there's only ever
-    // one "current" picture, no version history to manage. Bucket read
-    // AND write are both open (no `to authenticated` restriction) --
-    // an explicit, accepted trade-off since Masterboard has no sign-in
-    // and its URL is private/never shared; real access control (a
-    // sign-in gate, reusing Renewals' own magic-link pattern, or a
-    // password-gated Edge Function) can be layered on later without
-    // touching the picture itself, since it only means swapping these
-    // two policies for stricter ones.
+    // one "current" picture, no version history to manage. WRITE is
+    // LOCKED since 2026-09-30 (owner-only rule: the upload/update storage
+    // policies were dropped, so nobody can replace the photo, this page
+    // included -- it is view-only). Read is still public until step 4 of
+    // the single sign-in makes the bucket private (signed URLs) with an
+    // owner-only edit; the front door already keeps the photo off screen
+    // for anyone but the signed-in owner.
     const PICTURE_BUCKET = 'masterboard-assets';
     const PICTURE_KEY = 'hero';
 

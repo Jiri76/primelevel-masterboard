@@ -489,7 +489,7 @@
       max-width: calc(50% - 8px);
     }
     h1 {
-      margin-bottom: 92px; /* title letters -> date tiles = 100 by eye (owner 2026-10-01: "100 everywhere"; was 40 = 48 by eye) */
+      margin-bottom: 85px; /* title letters -> top EDGE of the date tiles = 100 by eye (owner 2026-10-01: "100 everywhere"); measured to the tile edge, not the gold "unread" glow, which reaches ~7px higher and disappears once a report is read */
     }
   }
   @media (max-width: 720px) {
@@ -499,7 +499,7 @@
     h1 {
       font-size: 44px;
       line-height: normal; /* phone title unchanged by the 50px desktop change */
-      margin-bottom: 96px; /* title letters -> date tiles = 100 by eye */
+      margin-bottom: 89px; /* title letters -> tile edge = 100 by eye */
     }
     .report-tile {
       font-size: 15px;
@@ -522,7 +522,7 @@
     }
     h1 {
       font-size: 38px; /* "Insider Edge" at 44px wrapped onto two lines on a 320px screen (same 38px as the other pages) */
-      margin-bottom: 97px; /* title letters -> date tiles = 100 by eye */
+      margin-bottom: 90px; /* title letters -> tile edge = 100 by eye */
     }
   }
 </style>

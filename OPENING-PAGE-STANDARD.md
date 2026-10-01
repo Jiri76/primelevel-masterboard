@@ -38,6 +38,16 @@ as they are.
 | Bottom of the title letters → top of the message letters | **100px** |
 | Bottom of the message letters → top of "Sign out" | **100px** |
 
+- **100 everywhere** (owner, 2026-10-01: "Everything must be those 100 pixels from the
+  top. Consistency across the whole board, across the whole website… until told
+  otherwise"). Page top → title letters = 100 and title letters → the first thing
+  under it = 100 by eye on EVERY page (the Masterboard home included) at EVERY
+  width, phones included. 50 on phones was considered and rejected by the owner:
+  "it gives more breathing room between the sections; 50-50 everything seems
+  crammed together". Only distances to the narrow SIDE edges shrink on phones
+  (sign-in box edges 60 → 30, Sign out corner 40 → 20).
+- By eye means letters for text and EDGES for boxes: never a glow or a shadow.
+- Every date shows a three-letter month: "28 Sep 2026" (owner rule, 2026-10-01).
 - Every line is **centred** on the screen (measured: 0px off the centre line).
 - **One style for every message.** No red, no bold, no per-message colours: a
   "no access" message looks exactly like "no reports yet".

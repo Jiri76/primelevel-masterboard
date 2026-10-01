@@ -65,8 +65,29 @@ letter). They were measured live, not guessed.
 | `.report-body` | `padding: 0 70px 93px` |
 | Ticker | `font-size: 20px`; body text `15px`; line height 24px |
 
-Narrow screens (≤1727px: buttons become a row; ≤720px: phone) keep their own
-responsive values; the guard checks desktop width.
+### Narrow screens (owner, 2026-10-01: "100 everywhere until told otherwise")
+
+Below 1728px the date buttons become a centred row between the title and the
+report. Page top → title letters and title letters → the top EDGE of the date
+buttons are **100px by eye at every width**, phones included (the owner chose
+100 over 50 on phones: "it gives more breathing room between the sections").
+Measured to the button's edge, never to the gold "unread" glow, which reaches
+~7px higher and disappears once a report is read.
+
+| Width | `.container` padding-top | `h1` |
+|---|---|---|
+| 721–1727px | 90px (as desktop) | 50px, `margin-bottom: 85px` |
+| ≤720px (phones) | 92px | 44px, `line-height: normal`, `margin-bottom: 89px` |
+| ≤359px (small phones) | 93px | 38px (44px wrapped onto two lines at 320px), `margin-bottom: 90px` |
+
+**Date buttons** show the month as three letters, "28 Sep 2026" (owner rule,
+2026-10-01): "28 September 2026" did not fit the 200px button on any screen.
+The months are spelled out in the page script (the browser's British short
+month writes September as "Sept").
+
+The guard checks desktop width; the narrow values were proven with the
+spacing survey and the clipped-text check (`ClaudeCode-Backup/reference-files/test-scripts/`)
+at 320–1920px.
 
 ## If the guard fails
 
