@@ -44,16 +44,21 @@
      can be independently positioned: tiles pinned to the left edge of
      the viewport, title centered on the whole screen -- these are no
      longer the same box, on purpose. */
+  /* 100px BY EYE everywhere (owner, 2026-10-01: "same consistency
+     everywhere until told otherwise"): page top -> top of the title
+     letters = 100, title letters -> photo = 100. The CSS numbers are
+     smaller because the 60px letters sit inside a taller line box
+     (measured live, like the other pages). */
   .container {
     max-width: 1040px;
     margin: 0 auto;
-    padding: 100px 20px 80px;
+    padding: 87px 20px 80px;
   }
   h1 {
     color: var(--gold);
     font-weight: 700;
     font-size: 60px;
-    margin: 0 0 100px;
+    margin: 0 0 85px;
     text-align: center;
   }
 
@@ -362,13 +367,15 @@
     .tile {
       width: 200px;
     }
-    h1 {
-      margin-bottom: 40px;
-    }
+    /* h1 keeps its 85px: title letters -> tiles row = 100 by eye, as on desktop */
   }
   @media (max-width: 720px) {
+    .container {
+      padding-top: 90px; /* 44px title: page top -> letters 100 by eye */
+    }
     h1 {
       font-size: 44px;
+      margin-bottom: 89px; /* title letters -> next thing 100 by eye */
     }
     .tile {
       width: calc(50% - 8px);
@@ -381,15 +388,149 @@
     }
   }
   @media (max-width: 359px) {
+    .container {
+      padding-top: 92px; /* 38px title: page top -> letters 100 by eye */
+    }
     h1 {
       font-size: 38px; /* "Masterboard" at 44px is ~290px wide: too wide for a 320px screen's 280px content box */
+      margin-bottom: 90px; /* title letters -> next thing 100 by eye */
     }
   }
+
+  /* ---- FRONT DOOR (owner-only, 2026-10-01) ----
+     This page IS PrimeLevel's one front door (door.js, loaded in <head>,
+     stamps <html data-view> before the first paint and does the checking).
+     Signed out ("door"): only the title + the LOCKED sign-in box
+     (SIGNIN-BOX-STANDARD.md, copied from docs/signin-box-reference.html; no
+     passkey button until passkeys genuinely work). After sending ("sent"),
+     another account or a failed check ("no-access"): the title + one
+     message line. The owner: everything private (.pl-private, hidden by
+     door.js for anyone else) + door.js's corner Sign out. */
+  :root:not([data-view="door"]) #signInBox { display: none; }
+  :root:not([data-view="sent"]):not([data-view="no-access"]) #doorMessage { display: none; }
+  .signin {
+    max-width: 540px;
+    margin: 0 auto;
+    background: #E9E9EB; /* 7.5% navy mixed into white: 0.925 x #F9F9FA + 0.075 x #1E2633 per channel */
+    color: var(--navy);
+    border-radius: 10px;
+    padding: 57px 60px 60px; /* 60 by eye on all four edges (the top is 3px less for the 20px heading's own space) */
+    text-align: left;
+  }
+  .signin h2 {
+    margin: 0 0 5px; /* "Sign in" -> intro letters = 15 */
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .signin p {
+    margin: 0 0 20px; /* intro -> "Email address" = 30 */
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 11px; /* "Email address" -> field = 15 */
+  }
+  .signin input {
+    width: 100%;
+    height: 45px;
+    padding: 0 16px; /* typed letters 16 above / 17 below by eye: the closest possible (odd 33px) */
+    font-size: 16px; /* 16px: also stops iPhone Safari zooming in on tap */
+    font-family: 'Montserrat', sans-serif;
+    color: var(--navy);
+    background: var(--white);
+    border: 1px solid var(--navy);
+    border-radius: 10px;
+    margin-bottom: 15px; /* field -> button = 15 */
+    text-align: left;
+  }
+  .signin input:focus-visible,
+  .signin button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .signin button {
+    width: 100%;
+    height: 45px;
+    padding: 2px 0 0; /* button text centred by eye: 16 above, 16 below */
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--navy);
+    background: var(--white);
+    border: 1px solid var(--navy);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  /* Hover + press: colour swap (owner's pick, 2026-09-30). Only the button moves. */
+  .signin button:hover {
+    background: var(--navy);
+    color: var(--white);
+    transform: scale(1.02);
+  }
+  .signin button:active {
+    background: var(--navy);
+    color: var(--white);
+    transform: scale(0.97);
+  }
+  /* Error line under the button: only for a genuine send failure. */
+  .signin .message {
+    margin: 16px 0 0;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .signin .message:empty { display: none; }
+  /* The one message line under the title (after-send "Done…", "no access"):
+     the opening-page standard's message, exactly. */
+  .door-message {
+    color: var(--placeholder);
+    font-size: 20px;
+    font-weight: 400;
+    text-align: center;
+    margin: 0;
+  }
+  /* With no tiles and no photo, the sign-in box and the one message line
+     sit 100px BY EYE under the title at every width (owner: "spacing must
+     be maintained all the time"). Measured: baseline of "Masterboard" ->
+     top edge of the box / top of the message letters. */
+  /* (The box needs nothing extra: the title's own margin already gives 100.) */
+  :root[data-view="sent"] h1,
+  :root[data-view="no-access"] h1 { margin-bottom: 81px; }
+  @media (max-width: 720px) {
+    .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye */
+    :root[data-view="sent"] h1,
+    :root[data-view="no-access"] h1 { margin-bottom: 85px; }
+  }
+  @media (max-width: 359px) {
+    :root[data-view="sent"] h1,
+    :root[data-view="no-access"] h1 { margin-bottom: 86px; }
+  }
 </style>
+<!-- PrimeLevel's one front door: decides what may show BEFORE the first
+     paint, checks, and draws Sign out. Shared by every private page. -->
+<script src="door.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Masterboard</h1>
+    <!-- FRONT DOOR: shown only to someone not signed in (door.js stamp "door"). -->
+    <div class="signin" id="signInBox">
+      <h2>Sign in</h2>
+      <p>Your Masterboard is private. Enter your email address and we’ll send you a link to sign in.</p>
+      <form id="signInForm">
+        <label for="signInEmail">Email address</label>
+        <input type="email" id="signInEmail" autocomplete="email" required>
+        <button type="submit">Send me a sign-in link</button>
+        <p class="message" id="signInMessage" aria-live="polite"></p>
+      </form>
+    </div>
+    <p class="door-message" id="doorMessage" aria-live="polite"></p>
+    <!-- Everything private lives in here: hidden by door.js for anyone but
+         the signed-in owner. -->
+    <div id="ownerArea" class="pl-private">
     <!-- Sits here (not before the container) so that below 1320px, where it
          stops being pinned to the left edge, it flows as a row between the
          title and the picture. On desktop it is position:fixed, so where it
@@ -404,6 +545,7 @@
       <img id="imagePreview" alt="" />
       <span class="image-placeholder-status"><span class="image-placeholder-status-text">Uploading…</span></span>
       <input type="file" id="imageInput" accept="image/*" hidden />
+    </div>
     </div>
   </div>
 
@@ -435,6 +577,9 @@
        (e.g. the very first time this runs after this fix ships). -->
   <script>
     (function () {
+      // The instant photo is private too: only for the confirmed owner
+      // (door.js's first decision, made in <head>).
+      if (!PrimeLevelDoor.isOwnerView()) return;
       try {
         var cached = JSON.parse(localStorage.getItem('masterboard-picture-cache-v1') || 'null');
         if (!cached) return; // nothing cached yet -- fine, the module script below handles this normally
@@ -523,19 +668,23 @@
       global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) },
     });
 
+    // FRONT DOOR: true only while the signed-in owner's Masterboard is on
+    // screen (door.js decides). Every private load below checks it first, so
+    // a stranger's browser never even fetches the photo or the report list.
+    const isOwnerView = () => PrimeLevelDoor.isOwnerView();
+
     // A dedicated public bucket, one fixed object key ('hero', no
     // extension -- Content-Type is set explicitly on upload, so the
     // browser renders it correctly regardless of the original file's
     // format, and the URL never needs to change). Every new upload
     // overwrites this same object (upsert:true) -- there's only ever
-    // one "current" picture, no version history to manage. Bucket read
-    // AND write are both open (no `to authenticated` restriction) --
-    // an explicit, accepted trade-off since Masterboard has no sign-in
-    // and its URL is private/never shared; real access control (a
-    // sign-in gate, reusing Renewals' own magic-link pattern, or a
-    // password-gated Edge Function) can be layered on later without
-    // touching the picture itself, since it only means swapping these
-    // two policies for stricter ones.
+    // one "current" picture, no version history to manage. WRITE is
+    // LOCKED since 2026-09-30 (owner-only rule: the upload/update storage
+    // policies were dropped, so nobody can replace the photo, this page
+    // included -- it is view-only). Read is still public until step 4 of
+    // the single sign-in makes the bucket private (signed URLs) with an
+    // owner-only edit; the front door already keeps the photo off screen
+    // for anyone but the signed-in owner.
     const PICTURE_BUCKET = 'masterboard-assets';
     const PICTURE_KEY = 'hero';
 
@@ -599,6 +748,7 @@
     // localStorage is shared) so there's only ever ONE "have I read this"
     // record, never two to keep in sync. ----
     async function checkInsiderEdgeUnread() {
+      if (!isOwnerView()) return; // private: the owner only
       const { data, error } = await supabase
         .from('insider_edge_reports')
         .select('id')
@@ -622,7 +772,7 @@
       // both ways makes this idempotent and safe to call repeatedly.
       insiderEdgeTile.classList.toggle('unread', !readIds.has(latestId));
     }
-    checkInsiderEdgeUnread();
+    // (First run: PrimeLevelDoor.whenOwner(...) at the end of this script.)
     // Real gap found and fixed: this only ran once, at initial page load
     // -- unlike loadSettings() below (see its own pageshow/visibilitychange
     // handling), nothing re-ran this check when the page was restored from
@@ -1026,6 +1176,7 @@
     }
 
     async function loadSettings() {
+      if (!isOwnerView()) return; // private: the owner only
       const { data, error } = await supabase
         .from('masterboard_settings')
         .select('image_position_x, image_position_y, picture_version, image_zoom')
@@ -1035,7 +1186,7 @@
 
       paintPicture({ x: data.image_position_x, y: data.image_position_y, version: data.picture_version, zoom: data.image_zoom });
     }
-    loadSettings();
+    // (First run: PrimeLevelDoor.whenOwner(...) at the end of this script.)
 
     // Real bug found and fixed: Renewals has no link back to Masterboard,
     // so the only way back is the browser's own Back button -- and for
@@ -1244,6 +1395,78 @@
     window.addEventListener('resize', renderTransform);
     window.addEventListener('load', alignTilesToPicture);
     alignTilesToPicture();
+
+    // ---- FRONT DOOR: this page IS PrimeLevel's one front door ----
+    // door.js (loaded in <head>) makes the first decision before the first
+    // paint, checks who is signed in, and draws Sign out. This page adds only
+    // what a front door needs: the sign-in box, and its one-line screens.
+    // Screens (<html data-view>): 'door' (the sign-in box), 'sent' ("Done…"),
+    // 'owner' (the Masterboard + Sign out), 'no-access' (another account, or
+    // the check failed: one message + Sign out), 'wait' (still checking:
+    // nothing shown).
+    const signInForm = document.getElementById('signInForm');
+    const signInEmail = document.getElementById('signInEmail');
+    const signInMessage = document.getElementById('signInMessage');
+    const doorMessage = document.getElementById('doorMessage');
+
+    function showMessage(view, text) {
+      doorMessage.textContent = text;
+      PrimeLevelDoor.setView(view);
+    }
+
+    // The owner's Masterboard: load the private parts (at once when door.js
+    // already knew the owner, otherwise the moment the check confirms it).
+    PrimeLevelDoor.whenOwner(() => {
+      loadSettings();
+      checkInsiderEdgeUnread();
+      alignTilesToPicture();
+    });
+    PrimeLevelDoor.gate(supabase, {
+      notSignedIn() {
+        if (document.documentElement.getAttribute('data-view') !== 'sent') PrimeLevelDoor.setView('door');
+      },
+      notOwner(session) {
+        showMessage('no-access', `${session.user.email || 'This account'} does not have access to the Masterboard.`);
+        PrimeLevelDoor.addSignOut(supabase);
+      },
+      checkFailed() {
+        showMessage('no-access', 'Could not check your access right now. Please try again in a moment.');
+        PrimeLevelDoor.addSignOut(supabase);
+      },
+    });
+
+    // Click -> "Done" (LOCKED behaviour, SIGNIN-BOX-STANDARD.md): no
+    // "Sending…", the button never changes, double clicks are ignored while
+    // Supabase replies (no duplicate emails). The link always comes back to
+    // the front door's exact address, as allow-listed in Supabase ->
+    // Authentication -> URL Configuration -> Redirect URLs (never
+    // location.href: an extra ?query or index.html would not match, and
+    // Supabase would send the link to the Site URL instead).
+    // shouldCreateUser: false: this Supabase project is shared with the
+    // customer app, so a stranger typing an address must never create an
+    // account. Supabase refuses unknown addresses ("signups not allowed",
+    // 422), and the page shows the SAME "Done" for them, so nobody learns
+    // which addresses are allowed. Only a genuine failure (no connection,
+    // rate limit, Supabase down) keeps the box and shows a short error.
+    let sending = false;
+    signInForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (sending) return;
+      sending = true;
+      signInMessage.textContent = '';
+      const { error } = await supabase.auth.signInWithOtp({
+        email: signInEmail.value.trim(),
+        options: { emailRedirectTo: PrimeLevelDoor.FRONT_DOOR_URL, shouldCreateUser: false },
+      });
+      sending = false;
+      const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
+      if (genuineFailure) {
+        console.error('Could not send the sign-in link:', error);
+        signInMessage.textContent = 'Could not send the link right now. Please try again in a minute.';
+        return;
+      }
+      showMessage('sent', 'Done. Check your email for your sign-in link.');
+    });
   </script>
 </body>
 </html>
