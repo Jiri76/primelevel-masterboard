@@ -12,7 +12,7 @@ the opening page). Examples today:
 - The Masterboard front door: "Done. Check your email for your sign-in link." and "Could
   not check your access right now ..." (its sign-in box itself sits 100px below the title
   too). An account without access is signed out automatically and gets the sign-in box
-  back with one line under the button (owner, 2026-10-02).
+  back with one line under the button: "Access denied for [address]." (owner, 2026-10-02).
 
 Every opening page, on every PrimeLevel tool, must look exactly like this.
 

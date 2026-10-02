@@ -81,7 +81,7 @@ so an exact split is physically impossible at 45px; this is the closest.
   whatever email was typed, so a stranger never learns which emails are allowed.
 - **An account without access** (owner, 2026-10-02: "the Sign out shouldn't be there… I'm
   not in"): after its emailed link it is signed out automatically and the box comes back,
-  with one line under the button: "[address] does not have access to the Masterboard."
+  with one line under the button: "Access denied for [address]." (owner: direct, it is for strangers)
   Nothing to press, no wrong account left signed in. Sign out appears for the owner only.
 - **Real failure** (network down, rate limit, Supabase down): the box comes back, with the
   address still typed in and a short error under the button. Rare; everything else stays

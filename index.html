@@ -1447,7 +1447,7 @@
       // reveals nothing new). No dead end, nothing to press, no wrong
       // account left signed in.
       notOwner(session) {
-        signInMessage.textContent = `${session.user.email || 'This account'} does not have access to the Masterboard.`;
+        signInMessage.textContent = session.user.email ? `Access denied for ${session.user.email}.` : 'Access denied.'; // direct, for strangers (owner, 2026-10-02)
         PrimeLevelDoor.setView('door');
         PrimeLevelDoor.endSession(supabase);
       },
