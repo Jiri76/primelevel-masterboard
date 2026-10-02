@@ -77,8 +77,15 @@
     ':root:not([data-view="owner"]) .pl-private { display: none !important; }' +
     '.signout { position: fixed; top: 37px; right: 40px; z-index: 10; margin: 0; padding: 0; border: 0;' +
     ' background: none; font-family: "Montserrat", sans-serif; font-size: 20px; font-weight: 700;' +
-    ' color: #B29B68; text-decoration: none; cursor: pointer; }' +
+    ' color: #B29B68; text-decoration: none; cursor: pointer; transition: transform 0.15s ease; }' +
     ':root:not([data-view="owner"]):not([data-view="no-access"]) .signout { display: none; }' +
+    // A gentle pop, like every other button in the family (owner, 2026-10-02:
+    // "the button is dead… pop out gently"): 5% on hover (a small word needs a
+    // little more than the tiles' 2.5% to show the same movement), a dip on
+    // press. Only where a real pointer hovers; none if the device asks for less motion.
+    '@media (hover: hover) { .signout:hover { transform: scale(1.05); } }' +
+    '.signout:active { transform: scale(0.97); }' +
+    '@media (prefers-reduced-motion: reduce) { .signout { transition: none; } .signout:hover, .signout:active { transform: none; } }' +
     '.signout:focus-visible { outline: 2px solid #B29B68; outline-offset: 2px; }' +
     '@media (max-width: 720px) { .signout { top: 17px; right: 20px; } }';
   document.head.appendChild(style);

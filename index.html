@@ -108,7 +108,7 @@
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
-    padding: 0 18px;
+    padding: 1px 18px 0; /* the 1px on top centres the text BY EYE (owner, 2026-10-02): capitals -> top edge = baseline -> bottom edge (was 18/19, 1px high) */
     color: var(--white);
     font-weight: 700;
     font-size: 18px;
@@ -379,7 +379,7 @@
     }
     .tile {
       width: calc(50% - 8px);
-      padding: 0 8px;
+      padding: 1px 8px 0; /* text centred by eye, as above */
     }
   }
   @media (max-width: 420px) {
@@ -446,9 +446,17 @@
     margin-bottom: 15px; /* field -> button = 15 */
     text-align: left;
   }
-  .signin input:focus-visible,
+  /* Focus in NAVY, not gold (owner, 2026-10-02): gold on the light card is
+     only ~2.3:1 contrast (below the 3:1 a focus marker needs); navy is ~13:1
+     and matches the box. Typing in the field: its navy border thickens
+     1px -> 2px (a 1px shadow outside the 1px border, so nothing moves).
+     Buttons, reached with the keyboard: a 2px navy ring. */
+  .signin input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--navy);
+  }
   .signin button:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--navy);
     outline-offset: 2px;
   }
   .signin button {
@@ -511,6 +519,12 @@
 </style>
 <!-- PrimeLevel's one front door: decides what may show BEFORE the first
      paint, checks, and draws Sign out. Shared by every private page. -->
+<!-- Seamless (owner, 2026-10-02): dial the database and the library server
+     while the page is still arriving, and start fetching the library (one
+     pinned, bundled file: 7 requests instead of 17) before the script needs it. -->
+<link rel="preconnect" href="https://kenlhcatkjthhzuaznpg.supabase.co" crossorigin />
+<link rel="preconnect" href="https://esm.sh" crossorigin />
+<link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.117.2?bundle" />
 <script src="door.js"></script>
 </head>
 <body>
@@ -635,7 +649,7 @@
   </script>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
 
     // Same Supabase project Renewals already uses -- same URL/key,
     // confirmed via get_publishable_keys, not guessed/copied blind.
@@ -1448,12 +1462,18 @@
     // 422), and the page shows the SAME "Done" for them, so nobody learns
     // which addresses are allowed. Only a genuine failure (no connection,
     // rate limit, Supabase down) keeps the box and shows a short error.
+    // SEAMLESS (owner, 2026-10-02: "I did have to wait a little bit"):
+    // "Done" shows the INSTANT the button is clicked; Supabase sends the email
+    // in the background (it waits for the mail to go out, ~1-2s, before it
+    // answers). Only a genuine failure brings the box back, with the short
+    // error under the button and the address still typed in.
     let sending = false;
     signInForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (sending) return;
       sending = true;
       signInMessage.textContent = '';
+      showMessage('sent', 'Done. Check your email for your sign-in link.');
       const { error } = await supabase.auth.signInWithOtp({
         email: signInEmail.value.trim(),
         options: { emailRedirectTo: PrimeLevelDoor.FRONT_DOOR_URL, shouldCreateUser: false },
@@ -1463,9 +1483,8 @@
       if (genuineFailure) {
         console.error('Could not send the sign-in link:', error);
         signInMessage.textContent = 'Could not send the link right now. Please try again in a minute.';
-        return;
+        PrimeLevelDoor.setView('door');
       }
-      showMessage('sent', 'Done. Check your email for your sign-in link.');
     });
   </script>
 </body>

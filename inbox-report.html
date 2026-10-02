@@ -75,7 +75,7 @@
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
-    padding: 0 18px;
+    padding: 1px 18px 0; /* the 1px on top centres the text BY EYE (owner, 2026-10-02): capitals -> top edge = baseline -> bottom edge (was 18/19); phones (15px) were already 19.5/19.5 and keep 0 8px */
     color: var(--white);
     font-weight: 700;
     font-size: 18px;
@@ -317,6 +317,12 @@
 <!-- PrimeLevel's one front door (shared by every private page): decides what
      may show BEFORE the first paint, sends anyone but the signed-in owner to
      the Masterboard front door, and draws Sign out. -->
+<!-- Seamless (owner, 2026-10-02): dial the database and the library server
+     while the page is still arriving, and start fetching the library (one
+     pinned, bundled file: 7 requests instead of 17) before the script needs it. -->
+<link rel="preconnect" href="https://kenlhcatkjthhzuaznpg.supabase.co" crossorigin />
+<link rel="preconnect" href="https://esm.sh" crossorigin />
+<link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.117.2?bundle" />
 <script src="door.js"></script>
 </head>
 <body>
@@ -327,7 +333,7 @@
   </div>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
     import DOMPurify from 'https://esm.sh/dompurify@3.1.6';
 
     const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
