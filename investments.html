@@ -1024,15 +1024,25 @@
      and Inbox Report (44px on phones, 38px on the smallest), so the
      whole family behaves identically. At 50px, "Investments" (~327px
      wide) did not fit the 280px of room on a 320px phone. */
+  /* 100 by eye on phones too (owner, 2026-10-01: "100 everywhere"): page
+     top -> title letters and title letters -> the portfolio bar's edge. */
   @media (max-width: 720px) {
+    .container {
+      padding-top: 88px;
+    }
     h1 {
       font-size: 44px;
       line-height: normal;
+      margin-bottom: 89px;
     }
   }
   @media (max-width: 359px) {
+    .container {
+      padding-top: 90px;
+    }
     h1 {
       font-size: 38px;
+      margin-bottom: 90px;
     }
   }
   /* Small phones (320px): the 300px holding cards and the 300px add card
@@ -1047,9 +1057,13 @@
     }
   }
 </style>
+<!-- PrimeLevel's one front door (shared by every private page): decides what
+     may show BEFORE the first paint, sends anyone but the signed-in owner to
+     the Masterboard front door, and draws Sign out. -->
+<script src="door.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container pl-private">
     <h1>Investments</h1>
 
     <div class="portfolio-summary" id="portfolioSummary"></div>
@@ -2023,7 +2037,11 @@
       return card;
     }
 
-    loadHoldings();
+    // Private: the holdings (and so the prices) load only for the signed-in
+    // owner (door.js; at once when it already knew the owner). Anyone else is
+    // sent to the Masterboard front door before anything loads.
+    PrimeLevelDoor.whenOwner(loadHoldings);
+    PrimeLevelDoor.gate(supabase);
   </script>
 </body>
 </html>

@@ -3,12 +3,15 @@
 Approved by the owner on 2026-09-26: "create this as a standard ... every time we'll
 have an opening page like that, it must follow the same principle."
 
-An **opening page** is any screen that shows only a page title, one message line and
-(optionally) a Sign out link. Examples today:
+An **opening page** is any screen that shows only a page title and one message line
+(on signed-in pages the corner Sign out is there too: it belongs to every page, not to
+the opening page). Examples today:
 
 - Insider Edge before a report is opened: "Click a date to open a report."
-- Inbox Report: "No reports to show yet ...", "... does not have access to this report.",
-  "Could not load your reports right now ..."
+- Inbox Report: "No reports to show yet ...", "Could not load your reports right now ..."
+- The Masterboard front door: "Done. Check your email for your sign-in link." and
+  "... does not have access to the Masterboard." (its sign-in box itself sits 100px below
+  the title too).
 
 Every opening page, on every PrimeLevel tool, must look exactly like this.
 
@@ -23,21 +26,28 @@ standard; never edit the standard to match the drift.
 |---|---|---|---|---|
 | Page title (e.g. "Insider Edge", "Inbox Report") | Montserrat | 50px (60 → 50 by the owner, 2026-09-28; the Masterboard home title stays 60px) | Bold (700) | Company gold `#B29B68` |
 | The message line (every message, no exceptions) | Montserrat | 20px | Regular (400) | Soft grey-blue `#8A93A3` |
-| Sign out (when shown) | Montserrat | 20px | Bold (700) | Company gold `#B29B68`, no underline |
+| Sign out (every signed-in page) | Montserrat | 20px | Bold (700) | Company gold `#B29B68`, no underline |
 
-**Planned change, decided by the owner on 2026-10-01 (not live yet):** Sign out moves to
-the **top-right corner of every page** (40px / 40px from the letters on desktop, 20 / 20 on
-phones; see "Sign out" in `SIGNIN-BOX-STANDARD.md`). It ships with the single Masterboard
-sign-in. From then on an opening page is the title + one message line, and the guard
-checks the corner Sign out instead of the centred one. Until then, the values below stay
-as they are.
+**Sign out lives in the top-right corner of every page** (owner, 2026-10-01; built
+2026-10-02): 40px / 40px from the letters on a computer, 20 / 20 on phones. It is drawn
+by `door.js`, the one front door every private page shares; full spec: "Sign out" in
+`SIGNIN-BOX-STANDARD.md`. It replaced the old centred Sign out 100px under the message.
 
-| Spacing (measured **by eye**, desktop) | Value |
+| Spacing (measured **by eye**) | Value |
 |---|---|
 | Top of the page → top of the title letters | **100px** |
 | Bottom of the title letters → top of the message letters | **100px** |
-| Bottom of the message letters → top of "Sign out" | **100px** |
 
+- **100 everywhere** (owner, 2026-10-01: "Everything must be those 100 pixels from the
+  top. Consistency across the whole board, across the whole website… until told
+  otherwise"). Page top → title letters = 100 and title letters → the first thing
+  under it = 100 by eye on EVERY page (the Masterboard home included) at EVERY
+  width, phones included. 50 on phones was considered and rejected by the owner:
+  "it gives more breathing room between the sections; 50-50 everything seems
+  crammed together". Only distances to the narrow SIDE edges shrink on phones
+  (sign-in box edges 60 → 30, Sign out corner 40 → 20).
+- By eye means letters for text and EDGES for boxes: never a glow or a shadow.
+- Every date shows a three-letter month: "28 Sep 2026" (owner rule, 2026-10-01).
 - Every line is **centred** on the screen (measured: 0px off the centre line).
 - **One style for every message.** No red, no bold, no per-message colours: a
   "no access" message looks exactly like "no reports yet".
@@ -56,8 +66,10 @@ They were measured live, not guessed, and **must be re-measured for any new page
 |---|---|---|
 | `.container` padding-top | 90px | 87px |
 | `h1` | 50px, 700, gold, `line-height: 65px`, `margin: 0 0 85px`, centred | same |
-| `.empty-state` (the message) | 20px, 400, `var(--placeholder)`, centred, `padding: 0 0 60px`; `margin-top: -4px` at ≥1728px | same |
-| `.signout` | n/a | 20px, 700, gold, no underline, `width: fit-content; margin: 31px auto 0` |
+| `.empty-state` (the message) | 20px, 400, `var(--placeholder)`, centred, `padding: 0 0 60px`; `margin-top: -4px` when no date buttons sit in between | same |
+
+Narrow screens (both pages, and the Masterboard home with its 60px title) carry their own
+measured values for 100 by eye at every width; each page's CSS comments name them.
 
 Why `line-height: 65px`: at 50px the title's letters are 8px shorter than at 60px,
 and a normal line would lose 2px of space above the letters and 2px below them. The
@@ -72,23 +84,30 @@ Nudging a gap by a few px: use **padding, not margin** on the message; a small
 
 1. **Automatic guard**: `tools/opening-page-check.mjs`, run by the GitHub Actions
    workflow **"Opening page guard"** (`.github/workflows/opening-page-check.yml`).
-   It opens every page in a real browser and measures, by eye: the three 100px gaps
-   (±1px), centring (±1px), each line's font, size, weight, colour and underline, and
-   no sideways scrolling at 375px. Any drift fails the run and opens (or comments
-   on) a GitHub Issue labelled `opening-page-drift`, listing the failing checks. That
-   Issue is the same alert path as the report watchdogs, which GitHub emails to
+   It opens every page in a real browser and measures, by eye: page top → title and
+   title → message (or → the sign-in box's edge) at 100px (±1px), centring (±1px),
+   each line's font, size, weight and colour, the corner Sign out (40 / 40 on a
+   computer, 20 / 20 on a phone, 20px bold gold, no underline) and no sideways
+   scrolling at 375px. Screens: the Masterboard front door (sign-in box; after
+   sending), Insider Edge (no report open) and the Inbox Report (no reports yet;
+   could not load). Any drift fails the run and opens (or comments on) a GitHub
+   Issue labelled `opening-page-drift`, listing the failing checks. That Issue is
+   the same alert path as the report watchdogs, which GitHub emails to
    info@primelevel.co.uk.
-   - Runs on every change to a guarded page, this file, the guard or its workflow;
-     every Monday 14:30 UTC; and on demand (Actions → Opening page guard → Run
-     workflow).
-   - The Inbox Report screens only appear after sign-in, so inside the guard's own
-     throwaway browser the Supabase library is swapped for a stand-in that plays
-     each situation (no access / no reports yet / could not load). No real account,
-     no real data.
+   - Runs on every change to a guarded page, `door.js`, the standards, the guard or
+     its workflow; every Monday 14:30 UTC; and on demand (Actions → Opening page
+     guard → Run workflow).
+   - Every private page sits behind `door.js` and the guard's throwaway browser is
+     never signed in, so the Supabase library is swapped for a stand-in
+     (`tools/guard-supabase.mjs`): signed out for the front door's screens, a
+     pretend owner for the inner pages. Insider Edge keeps reading its REAL reports
+     (pretend key, real data); the Inbox Report plays each situation. No real
+     account, no password, nothing written.
    - **Self-test**: run it on demand with "selftest" ticked. It deliberately breaks
-     every kind of rule on every page (title size and centring, message spacing and
-     colour, Sign out underline, a too-wide element) and only passes if every break
-     is caught. This proves the alarm itself still works.
+     every kind of rule on every page (title size and centring, the message's and
+     the sign-in box's spacing, message colour, Sign out position and underline, a
+     too-wide element) and only passes if every break is caught. This proves the
+     alarm itself still works.
    - **Alarm drill**: run it on demand with "drill" ticked. Same deliberate breaks,
      but the run fails on purpose and opens an "ALARM DRILL (test only)" Issue
      (label `opening-page-alarm-drill`). This proves the Issue and the email really
@@ -126,3 +145,9 @@ scrolling. The same day the guard itself was proven: the normal run passed on al
 change went live, both guards were run against the live pages and against the new
 version: every gap measured identical (100 / 100 / 100 on all 4 screens), only the
 title size differed.
+
+2026-10-02 (branch `front-door-wip`, before go-live): one front door (`door.js`) on every
+private page; Sign out moved to the corner; the Inbox Report's own sign-in and "no
+access" screen removed (the front door handles both). The rebuilt guard, run locally:
+all 5 screens pass (100 / 100, 0px off centre, Sign out 40.0 / 39.7 and 20.0 / 19.7, no
+sideways scroll), and the self-test caught every deliberate break on all 5.

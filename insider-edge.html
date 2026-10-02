@@ -488,14 +488,22 @@
     .report-tile {
       max-width: calc(50% - 8px);
     }
+    /* No reports at all: the empty date row takes no space, so the message
+       sits 100 by eye below the title (same as the Inbox Report). */
+    .report-tiles:empty { margin: 0; }
+    .report-tiles:empty + #content .empty-state { margin-top: -4px; }
     h1 {
-      margin-bottom: 40px;
+      margin-bottom: 85px; /* title letters -> top EDGE of the date tiles = 100 by eye (owner 2026-10-01: "100 everywhere"); measured to the tile edge, not the gold "unread" glow, which reaches ~7px higher and disappears once a report is read */
     }
   }
   @media (max-width: 720px) {
+    .container {
+      padding-top: 92px; /* 44px title: page top -> letters 100 by eye */
+    }
     h1 {
       font-size: 44px;
       line-height: normal; /* phone title unchanged by the 50px desktop change */
+      margin-bottom: 89px; /* title letters -> tile edge = 100 by eye */
     }
     .report-tile {
       font-size: 15px;
@@ -512,10 +520,23 @@
       padding: 0 24px 60px;
     }
   }
+  @media (max-width: 359px) {
+    .container {
+      padding-top: 93px; /* 38px title: page top -> letters 100 by eye */
+    }
+    h1 {
+      font-size: 38px; /* "Insider Edge" at 44px wrapped onto two lines on a 320px screen (same 38px as the other pages) */
+      margin-bottom: 90px; /* title letters -> tile edge = 100 by eye */
+    }
+  }
 </style>
+<!-- PrimeLevel's one front door (shared by every private page): decides what
+     may show BEFORE the first paint, sends anyone but the signed-in owner to
+     the Masterboard front door, and draws Sign out. -->
+<script src="door.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container pl-private">
     <h1>Insider Edge</h1>
     <!-- Sits here (not first in <body>) so that on screens too narrow to
          pin it to the left edge, it flows as a row between the title and
@@ -549,6 +570,9 @@
        upgrade quietly" pattern as the picture. -->
   <script>
     (function () {
+      // The cached reports are private: only for the confirmed owner
+      // (door.js's first decision, made in <head>).
+      if (!PrimeLevelDoor.isOwnerView()) return;
       try {
         var cached = JSON.parse(localStorage.getItem('insider-edge-reports-cache-v1') || 'null');
         if (!cached || cached.length === 0) return;
@@ -577,7 +601,12 @@
           // request. Derived from created_at (a real date value)
           // rather than trying to parse/shorten Cowork's own title
           // text, which has no guaranteed format.
-          tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          // Short month, the same on every screen (owner 2026-10-01): the
+          // full "28 September 2026" didn't fit a tile. Spelled out here, not
+          // the browser's en-GB short month, which writes September "Sept".
+          // KEEP IN STEP with the same label in renderTiles() below.
+          var tileDate = new Date(report.created_at);
+          tile.textContent = tileDate.getDate() + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][tileDate.getMonth()] + ' ' + tileDate.getFullYear();
           reportTiles.append(tile);
         });
 
@@ -705,8 +734,10 @@
         // Short date label, not the full title -- per explicit request.
         // Derived from created_at (a real date value) rather than
         // trying to parse/shorten Cowork's own title text, which has
-        // no guaranteed format.
-        tile.textContent = new Date(report.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        // no guaranteed format. Short month, the same on every screen
+        // (owner 2026-10-01; KEEP IN STEP with the instant-paint copy above).
+        const tileDate = new Date(report.created_at);
+        tile.textContent = `${tileDate.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][tileDate.getMonth()]} ${tileDate.getFullYear()}`;
         tile.title = report.title; // full title still available on hover
         tile.addEventListener('click', () => {
           selectedId = report.id;
@@ -749,7 +780,9 @@
       title.textContent = report.title;
       const date = document.createElement('div');
       date.className = 'report-content-date';
-      date.textContent = new Date(report.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      // Three-letter month on every date (owner rule 2026-10-01): "28 Sep 2026".
+      const reportDate = new Date(report.created_at);
+      date.textContent = `${reportDate.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][reportDate.getMonth()]} ${reportDate.getFullYear()}`;
       headerBand.append(title, date);
       const body = document.createElement('div');
       body.className = 'report-body';
@@ -864,7 +897,11 @@
         // Harmless if storage is unavailable -- just means no instant paint next time.
       }
     }
-    loadReports();
+    // Private: the reports load only for the signed-in owner (door.js; at
+    // once when it already knew the owner). Anyone else is sent to the
+    // Masterboard front door before anything loads.
+    PrimeLevelDoor.whenOwner(loadReports);
+    PrimeLevelDoor.gate(supabase);
   </script>
 </body>
 </html>

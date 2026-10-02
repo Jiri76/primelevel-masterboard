@@ -9,18 +9,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   /* LOCKED OPENING PAGE -- approved by the owner 2026-09-26. The opening
-     screens (no access / no reports yet / could not load) follow the
-     PrimeLevel opening-page standard exactly: title 50px bold gold, one
-     message line 20px regular soft grey-blue, Sign out 20px bold gold,
-     100px / 100px / 100px by eye, everything centred. The values that
-     produce it (.container padding-top, h1 margin, .empty-state, .signout)
-     must NOT change without an explicit request from the owner. Full spec:
-     OPENING-PAGE-STANDARD.md. Guarded automatically by
+     screens (no reports yet / could not load) follow the PrimeLevel
+     opening-page standard exactly: title 50px bold gold and one message line
+     20px regular soft grey-blue, 100px / 100px by eye, everything centred
+     (since 2026-10-02 Sign out is the corner one every page shares, drawn by
+     door.js). The values that produce it (.container padding-top, h1 margin,
+     .empty-state) must NOT change without an explicit request from the
+     owner. Full spec: OPENING-PAGE-STANDARD.md. Guarded automatically by
      tools/opening-page-check.mjs (workflow "Opening page guard"). */
   /* Same design tokens as the rest of Masterboard. PRIVATE PAGE: the reports
-     contain email content, so they live in private Supabase tables and are
-     only readable after signing in with an allowed address (see
-     email_report_viewers). Nothing is shown to a signed-out visitor. */
+     contain email content, so they live in private Supabase tables, readable
+     only by the allowed address (see email_report_viewers). There is no
+     sign-in here: door.js sends anyone but the signed-in owner to the
+     Masterboard front door (one door, owner 2026-10-02). */
   :root {
     --navy: #1E2633;
     --white: #F9F9FA;
@@ -92,72 +93,6 @@
   }
   .report-tile.failed {
     color: var(--red);
-  }
-
-  /* Sign-in card (shown only while signed out). */
-  .signin {
-    max-width: 520px;
-    margin: 0 auto;
-    background: var(--white);
-    color: var(--navy);
-    padding: 50px 40px;
-  }
-  .signin h2 {
-    margin: 0 0 12px;
-    font-size: 25px;
-  }
-  .signin p {
-    margin: 0 0 24px;
-    font-size: 15px;
-    line-height: 24px;
-  }
-  .signin label {
-    display: block;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  .signin input {
-    width: 100%;
-    height: 50px;
-    padding: 0 16px;
-    font-size: 16px;
-    font-family: 'Montserrat', sans-serif;
-    color: var(--white);
-    background: var(--input-bg);
-    border: 0.5px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 16px;
-  }
-  .signin input:focus-visible,
-  .signin button:focus-visible,
-  .signout:focus-visible {
-    outline: 2px solid var(--gold);
-    outline-offset: 2px;
-  }
-  .signin button {
-    width: 100%;
-    height: 50px;
-    font-size: 18px;
-    font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
-    color: var(--navy);
-    background: var(--gold);
-    border: 0;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  .signin button:disabled {
-    opacity: 0.55;
-    cursor: default;
-  }
-  .signin .message {
-    margin: 16px 0 0;
-    font-size: 15px;
-    line-height: 24px;
-  }
-  .signin .message.error {
-    color: #b33a3a;
   }
 
   .report-content {
@@ -308,11 +243,10 @@
   /* PRIMELEVEL OPENING-PAGE STANDARD (owner, 2026-09-26) -- identical to
      insider-edge.html's "Click a date to open a report." screen: title
      Montserrat 50px bold gold (60 -> 50 by the owner, 2026-09-28); ONE message line Montserrat 20px regular soft
-     grey-blue (--placeholder); Sign out Montserrat 20px bold gold; page top ->
-     title letters, title -> message letters and message -> Sign out all 100px
-     by eye; everything centred. EVERY message here (no access, no reports yet,
-     could not load) uses this one style -- no per-message colours or weights.
-     Spec: OPENING-PAGE-STANDARD.md. */
+     grey-blue (--placeholder); page top -> title letters and title ->
+     message letters 100px by eye; everything centred. EVERY message here (no
+     reports yet, could not load) uses this one style -- no per-message
+     colours or weights. Spec: OPENING-PAGE-STANDARD.md. */
   .empty-state {
     color: var(--placeholder);
     font-size: 20px;
@@ -321,23 +255,12 @@
     padding: 0 0 60px;
     width: 100%;
   }
-  .signout {
-    display: block;
-    width: fit-content;
-    margin: 31px auto 0; /* letters' baseline -> "Sign out" letters = 100px by eye. The .empty-state above already carries a 60px bottom padding, so only 31px more is needed here (measured live: 91px overshot to 160px). */
-    background: none;
-    border: 0;
-    color: var(--gold); /* same colour as the "Inbox Report" title, per explicit request */
-    font-family: 'Montserrat', sans-serif;
-    font-size: 20px; /* matches .empty-state's size, per explicit request */
-    font-weight: 700;
-    text-decoration: none; /* per explicit request -- no underline */
-    cursor: pointer;
-  }
 
-  @media (min-width: 1728px) {
-    .empty-state { margin-top: -4px; }
-  }
+  /* The message is 100px by eye below the title at EVERY width (owner,
+     2026-10-01: "100 everywhere"): the -4px makes up for the 20px letters
+     starting ~4px down their line. Messages only ever show when there are no
+     date buttons, so the empty button row takes no space (:empty below). */
+  .empty-state { margin-top: -4px; }
   @media (max-width: 1727px) {
     .report-tiles {
       position: static;
@@ -346,17 +269,19 @@
       flex-wrap: wrap;
       justify-content: center;
       margin: 0 0 40px;
+      padding-top: 1px; /* title letters -> button EDGE: 99 -> 100 by eye (padding, not margin: a margin would collapse into the title's) */
     }
-    h1 { margin-bottom: 40px; }
+    .report-tiles:empty { margin: 0; padding: 0; }
+    h1 { margin-bottom: 85px; } /* title letters -> top EDGE of the date buttons = 100 by eye (was 40 = 48 by eye) */
   }
   @media (max-width: 720px) {
-    h1 { font-size: 44px; line-height: normal; } /* phone title unchanged by the 50px desktop change */
+    .container { padding-top: 90px; } /* 44px title: page top -> letters 100 by eye */
+    h1 { font-size: 44px; line-height: normal; margin-bottom: 89px; } /* phone title unchanged by the 50px desktop change; margin: title -> next = 100 by eye */
     .report-tile {
       width: calc(50% - 8px);
       padding: 0 8px;
       font-size: 15px;
     }
-    .signin { padding: 36px 24px; }
     .report-header-band { padding: 40px 24px; }
     .report-content-title { font-size: 26px; }
     .report-body { padding: 40px 24px 50px; }
@@ -385,12 +310,17 @@
     }
   }
   @media (max-width: 359px) {
-    h1 { font-size: 38px; }
+    .container { padding-top: 91px; } /* 38px title: page top -> letters 100 by eye */
+    h1 { font-size: 38px; margin-bottom: 90px; }
   }
 </style>
+<!-- PrimeLevel's one front door (shared by every private page): decides what
+     may show BEFORE the first paint, sends anyone but the signed-in owner to
+     the Masterboard front door, and draws Sign out. -->
+<script src="door.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container pl-private">
     <h1>Inbox Report</h1>
     <div class="report-tiles" id="reportTiles"></div>
     <div id="content"></div>
@@ -448,69 +378,23 @@
       if (text !== undefined) node.textContent = text;
       return node;
     }
+    // Every date: three-letter month, "28 Sep 2026" (owner rule, 2026-10-01).
+    // Spelled out here: the browser's own short month writes September as
+    // "Sept" (British) or puts the month first (American).
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function toDate(value) {
+      // A plain "2026-09-28" (run_date) is a calendar day, not a moment:
+      // read it as local, so no timezone can shift it to the day before.
+      const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      return day ? new Date(+day[1], +day[2] - 1, +day[3]) : new Date(value);
+    }
     function formatDate(value) {
-      return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      const d = toDate(value);
+      return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     }
     function formatDateTime(value) {
-      return new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-    }
-
-    // ---- Signed-out view ------------------------------------------------
-    function showSignIn() {
-      tilesEl.replaceChildren();
-      const box = el('div', 'signin');
-      box.append(el('h2', '', 'Sign in'));
-      box.append(el('p', '', 'This page shows your daily inbox report, so it is private. Enter your email address and we will send you a one-time login link.'));
-      const form = document.createElement('form');
-      const label = el('label', '', 'Email address');
-      label.htmlFor = 'signInEmail';
-      const input = document.createElement('input');
-      input.type = 'email';
-      input.id = 'signInEmail';
-      input.name = 'email';
-      input.autocomplete = 'email';
-      input.required = true;
-      const button = el('button', '', 'Send me a login link');
-      button.type = 'submit';
-      const message = el('p', 'message');
-      message.setAttribute('aria-live', 'polite');
-      form.append(label, input, button, message);
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        button.disabled = true;
-        message.className = 'message';
-        message.textContent = 'Sending…';
-        // shouldCreateUser: false -- this page only ever signs in people who
-        // already exist. This Supabase project is shared with the customer
-        // app, where a trigger turns every NEW user into an app customer
-        // account; without this, a stranger typing any address here would
-        // create a junk customer. Unknown addresses are refused by Supabase
-        // (422, error_code "otp_disabled", verified 2026-09-26) and nothing
-        // is created. The page answers both cases with the same neutral
-        // message, so it never reveals which addresses exist.
-        const { error } = await supabase.auth.signInWithOtp({
-          email: input.value.trim(),
-          options: {
-            emailRedirectTo: window.location.origin + window.location.pathname,
-            shouldCreateUser: false,
-          },
-        });
-        const neutral = 'If this address is allowed to open the Inbox Report, a sign-in link is on its way. Check your inbox (and spam folder), then tap the link. It brings you straight back here.';
-        if (!error || error.code === 'otp_disabled' || /signups not allowed/i.test(error.message || '')) {
-          message.textContent = neutral;
-        } else if (error.status === 429) {
-          message.className = 'message error';
-          message.textContent = 'Too many sign-in requests. Please wait a minute and try again.';
-          button.disabled = false;
-        } else {
-          console.error('Could not send the sign-in link:', error);
-          message.className = 'message error';
-          message.textContent = 'Could not send the link right now. Please try again in a moment.';
-          button.disabled = false;
-        }
-      });
-      box.append(form);
-      contentEl.replaceChildren(box);
+      const d = toDate(value);
+      return `${formatDate(value)}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
     // ---- Signed-in view -------------------------------------------------
@@ -556,68 +440,38 @@
       }
     }
 
+    // Only ever runs for the signed-in owner (door.js checked the database's
+    // own allow-list first; anyone else was sent to the Masterboard front
+    // door, which shows them "no access").
     async function showReports() {
       contentEl.replaceChildren();
       tilesEl.replaceChildren();
-
-      // Check access FIRST, before ever querying the reports table itself --
-      // a signed-in visitor who isn't on the approved list is told so
-      // plainly and immediately (per explicit request: they already proved
-      // they own that exact address by clicking a real emailed link, so
-      // naming it back to them reveals nothing new). is_email_report_viewer()
-      // runs the exact same check the table's own RLS policy uses, so this
-      // can never disagree with what the table itself would allow.
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: allowed, error: authError } = await supabase.rpc('is_email_report_viewer');
-
-      if (authError) {
-        console.error('Could not check report access:', authError);
+      const { data, error } = await supabase
+        .from('email_reports')
+        .select('id, created_at, run_date, status, title, html_content, error_text')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (error) {
+        // A clean, plain-English message for the reader -- the real
+        // technical detail (table/column names, the raw Postgres error) is
+        // still logged to the console for whoever is debugging, never
+        // shown on the page.
+        console.error('Could not load email_reports:', error);
         contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
-      } else if (!allowed) {
-        contentEl.append(el('div', 'empty-state', `${user?.email || 'This account'} does not have access to this report.`));
+      } else if (!data.length) {
+        contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
       } else {
-        const { data, error } = await supabase
-          .from('email_reports')
-          .select('id, created_at, run_date, status, title, html_content, error_text')
-          .order('created_at', { ascending: false })
-          .limit(30);
-        if (error) {
-          // A clean, plain-English message for the reader -- the real
-          // technical detail (table/column names, the raw Postgres error) is
-          // still logged to the console for whoever is debugging, never
-          // shown on the page.
-          console.error('Could not load email_reports:', error);
-          contentEl.append(el('div', 'empty-state', 'Could not load your reports right now. Please try again in a moment.'));
-        } else if (!data.length) {
-          contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
-        } else {
-          renderTiles(data, data[0].id);
-          renderReport(data[0]);
-        }
+        renderTiles(data, data[0].id);
+        renderReport(data[0]);
       }
-      const out = el('button', 'signout', 'Sign out');
-      out.type = 'button';
-      out.addEventListener('click', () => supabase.auth.signOut());
-      contentEl.append(out);
     }
 
-    // ---- Routing on sign-in state ---------------------------------------
-    let shown = null;
-    async function route(session) {
-      const mode = session ? 'reports' : 'signin';
-      if (mode === shown) return;
-      shown = mode;
-      if (mode === 'reports') {
-        // The login link comes back with tokens in the address: tidy it.
-        if (window.location.hash.includes('access_token')) history.replaceState(null, '', window.location.pathname);
-        await showReports();
-      } else {
-        showSignIn();
-      }
-    }
-    supabase.auth.onAuthStateChange((_event, session) => { route(session); });
-    const { data: { session } } = await supabase.auth.getSession();
-    route(session);
+    // ---- One front door (owner, 2026-10-02) ----
+    // No sign-in here: door.js sends anyone but the signed-in owner to the
+    // Masterboard front door and draws the corner Sign out. The reports load
+    // only for the owner (at once when door.js already knew the owner).
+    PrimeLevelDoor.whenOwner(showReports);
+    PrimeLevelDoor.gate(supabase);
   </script>
 </body>
 </html>

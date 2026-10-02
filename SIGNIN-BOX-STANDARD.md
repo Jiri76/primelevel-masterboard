@@ -110,18 +110,34 @@ too. So it's top right on every page."
 | Spacing BY EYE (phones ≤720px) | **20px / 20px** (the page gutter) |
 | CSS that produces it (measured) | desktop `position: fixed; top: 37px; right: 40px;` · phones `top: 17px; right: 20px;` (the top is 3px less for the letters' own space inside the line) |
 
-Shown ONLY when signed in. It replaces the old centred Sign out under the Inbox
-Report's opening message: when the single sign-in ships, the opening-page standard
-becomes title + message only, and this corner Sign out is the one exit on every page
-(Masterboard, Inbox Report, Insider Edge, Investments, Renewals). Out of the way, so
-it can't be clicked by accident, and never competing with the page's content.
+Shown ONLY when signed in. Built 2026-10-02: `door.js` (the one front door every
+private page loads first) draws it, identical on every page (Masterboard, Inbox Report,
+Insider Edge, Investments, Renewals), and it signs out everywhere, wipes everything
+private the browser remembers and lands on the front door. It replaced the old centred
+Sign out under the Inbox Report's opening message. Out of the way, so it can't be
+clicked by accident, and never competing with the page's content.
+
+## One front door (owner, 2026-10-02)
+
+"One code, one door, which is accessed in the Masterboard. Once I access the Masterboard,
+no more boxes." This box exists ONLY on the Masterboard front door
+(`https://jiri76.github.io/primelevel-masterboard/`). Every other private page has no
+sign-in of its own: `door.js` sends anyone but the signed-in owner to the front door. The
+sign-in email (Supabase → Authentication → Emails → Magic link) has only the Masterboard
+version plus the general version the mobile app needs (VERSION 2026-10-02b).
 
 ## How it is locked
 
 1. This file, plus the reference implementation `docs/signin-box-reference.html`.
-2. **Guard:** the first real page that uses this box (the Masterboard front door) adds the
-   box AND its after-send screen to the automatic guards in the same commit: every value
-   above measured (±1px), desktop and phone, alarm by GitHub Issue + email, like the
-   opening-page guard. A page that is not in the guard is not protected.
+2. **Guard** (`tools/opening-page-check.mjs`, "Opening page guard"): the Masterboard
+   front door's box (100px by eye below the title, centred) and its after-send screen
+   ("Done…", the opening-page message exactly), plus the corner Sign out on every
+   signed-in page (40/40, phones 20/20, font, colour, no underline), AND the box's own
+   inside values on a computer and a phone (added 2026-10-02): the edges 60 (phones 30),
+   the 15 / 30 gaps, the 24 line pitch, 45px field and button, 540px width, every font and
+   colour, the 1px navy borders and the 10px corners. Alarm by GitHub Issue + email. Not
+   guarded: where the letters sit INSIDE the field and the button (16/17 and 16/16, set by
+   eye on 2026-09-30); they follow from the guarded 45px height and fixed padding. A value
+   that is not in the guard is not protected.
 3. Trigger phrases: "create a sign-in page", "standard sign-in box" → apply ALL of this
    without asking the owner to restate it.

@@ -9,10 +9,14 @@ name: Opening page guard
 on:
   push:
     paths:
+      - 'index.html'
       - 'insider-edge.html'
       - 'inbox-report.html'
+      - 'door.js'
       - 'OPENING-PAGE-STANDARD.md'
+      - 'SIGNIN-BOX-STANDARD.md'
       - 'tools/opening-page-check.mjs'
+      - 'tools/guard-supabase.mjs'
       - '.github/workflows/opening-page-check.yml'
   schedule:
     - cron: '30 14 * * 1'
