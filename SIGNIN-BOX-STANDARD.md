@@ -17,7 +17,7 @@ Reference implementation (CSS + HTML): `docs/signin-box-reference.html`.
 | Email field and both buttons | Company white `#F9F9FA`, 1px navy border |
 | All text in the card | Company navy `#1E2633` |
 | Page title above the card | Company gold `#B29B68` (the page title standard: 50px bold; Masterboard home 60px) |
-| Keyboard focus ring | 2px company gold outline, 2px offset |
+| Focus (owner, 2026-10-02: navy, not gold) | Email field: its navy border thickens 1px → 2px while typing. Buttons reached with the keyboard: 2px navy ring, 2px offset. (Gold on the light card is only ~2.3:1 contrast, below the 3:1 a focus marker needs; navy is ~13:1.) |
 
 No black anywhere (the body colour is set to navy). No gold on the buttons: the two sign-in
 routes are equal choices, and gold is reserved for buying.
@@ -72,13 +72,20 @@ so an exact split is physically impossible at 45px; this is the closest.
   white text and scales it to 1.02; pressing scales it to 0.97 (same colours).
   `transition: background-color .15s, color .15s, transform .1s`. Only the button moves.
   Phones have no hover, only the press.
-- **Click → "Done".** No "Sending…", no spinner, the button never changes its look. The page
-  waits for Supabase's reply (well under a second) before showing "Done", so Done is never
-  false; further clicks are ignored while waiting (no duplicate emails).
+- **Click → "Done", instantly** (owner, 2026-10-02: seamless). No "Sending…", no spinner, the
+  button never changes its look. "Done" shows the moment the button is clicked; Supabase
+  sends the email in the background (it answers only after the mail has gone, ~1-2s, which
+  the owner noticed as a lag). Further clicks are ignored while it sends (no duplicate
+  emails).
 - **Privacy:** `signInWithOtp` with `shouldCreateUser: false`. The page shows the SAME "Done"
   whatever email was typed, so a stranger never learns which emails are allowed.
-- **Real failure** (network down, rate limit): the box stays and a short error appears under
-  the button.
+- **An account without access** (owner, 2026-10-02: "the Sign out shouldn't be there… I'm
+  not in"): after its emailed link it is signed out automatically and the box comes back,
+  with one line under the button: "Access denied for [address]." (owner: direct, it is for strangers)
+  Nothing to press, no wrong account left signed in. Sign out appears for the owner only.
+- **Real failure** (network down, rate limit, Supabase down): the box comes back, with the
+  address still typed in and a short error under the button. Rare; everything else stays
+  "Done" (including an address that isn't allowed, so nobody learns which ones are).
 
 ## After-send screen
 

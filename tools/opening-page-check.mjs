@@ -50,7 +50,8 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.empty-state,.door-message{padding-top:9px!important;color:#ff0000!important}'
   + '#signInBox{position:relative!important;top:9px!important}' /* not margin-top: it would melt into the title's larger margin and move nothing */
   + '.signin p{margin-bottom:26px!important}.signin label{font-size:17px!important}.signin button{background:#B29B68!important;height:50px!important}'
-  + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}'
+  + '.signin input:focus-visible{box-shadow:none!important;outline:2px solid #B29B68!important}'
+  + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
 const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
@@ -159,6 +160,10 @@ for (const p of PAGES) {
   const desk = await openPage(browser, p, { width: 1920, height: 1080 });
   const r = await desk.evaluate(measure, { below: p.below, corner: !!p.corner });
   const boxDesk = p.below === '#signInBox' ? await desk.evaluate(measureBox) : null;
+  // Focus is navy (owner, 2026-10-02): typing in the field thickens its navy border.
+  const fieldFocus = boxDesk ? await desk.focus('#signInEmail').then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signInEmail')).boxShadow)) : null;
+  // Sign out pops gently on hover (owner, 2026-10-02: "the button is dead").
+  const signOutHover = p.corner && r.corner ? await desk.hover('#signOutButton').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signOutButton')).transform)) : null;
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
@@ -180,6 +185,13 @@ for (const p of PAGES) {
   if (boxDesk) {
     checkBox(check, 'computer', boxDesk, 60);
     checkBox(check, 'phone', boxPhone, 30);
+    const ok = /rgb\(30, 38, 51\) 0px 0px 0px 1px/.test(fieldFocus || '');
+    check('box colours', ok, `box: typing in the field thickens its navy border (focus: ${fieldFocus})`);
+  }
+  if (signOutHover !== null) {
+    const m = /matrix\(([\d.]+),/.exec(signOutHover || '');
+    const scale = m ? +m[1] : 1;
+    check('Sign out style', Math.abs(scale - 1.05) < 0.005, `Sign out pops on hover: scale ${scale.toFixed(3)} (expected 1.05)`);
   }
   if (p.corner) {
     const corners = [['computer', r.corner, 40], ['phone', rPhone.corner, 20]];

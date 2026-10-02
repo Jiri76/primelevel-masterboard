@@ -9,9 +9,10 @@ the opening page). Examples today:
 
 - Insider Edge before a report is opened: "Click a date to open a report."
 - Inbox Report: "No reports to show yet ...", "Could not load your reports right now ..."
-- The Masterboard front door: "Done. Check your email for your sign-in link." and
-  "... does not have access to the Masterboard." (its sign-in box itself sits 100px below
-  the title too).
+- The Masterboard front door: "Done. Check your email for your sign-in link." and "Could
+  not check your access right now ..." (its sign-in box itself sits 100px below the title
+  too). An account without access is signed out automatically and gets the sign-in box
+  back with one line under the button: "Access denied for [address]." (owner, 2026-10-02).
 
 Every opening page, on every PrimeLevel tool, must look exactly like this.
 
@@ -50,7 +51,7 @@ by `door.js`, the one front door every private page shares; full spec: "Sign out
 - Every date shows a three-letter month: "28 Sep 2026" (owner rule, 2026-10-01).
 - Every line is **centred** on the screen (measured: 0px off the centre line).
 - **One style for every message.** No red, no bold, no per-message colours: a
-  "no access" message looks exactly like "no reports yet".
+  "could not load" message looks exactly like "no reports yet".
 - "By eye" means from the bottom (baseline) of the letters above to the top of the
   tallest letters below, not CSS box to box. See `INSIDER-EDGE-SPACING-SPEC.md`,
   "How spacing is measured".

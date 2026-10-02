@@ -1060,6 +1060,12 @@
 <!-- PrimeLevel's one front door (shared by every private page): decides what
      may show BEFORE the first paint, sends anyone but the signed-in owner to
      the Masterboard front door, and draws Sign out. -->
+<!-- Seamless (owner, 2026-10-02): dial the database and the library server
+     while the page is still arriving, and start fetching the library (one
+     pinned, bundled file: 7 requests instead of 17) before the script needs it. -->
+<link rel="preconnect" href="https://kenlhcatkjthhzuaznpg.supabase.co" crossorigin />
+<link rel="preconnect" href="https://esm.sh" crossorigin />
+<link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.117.2?bundle" />
 <script src="door.js"></script>
 </head>
 <body>
@@ -1090,7 +1096,7 @@
   </div>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
 
     // Same Supabase project every other PrimeLevel tool uses -- same
     // URL/key pattern as index.html/insider-edge.html.

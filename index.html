@@ -108,7 +108,7 @@
     background: var(--input-bg);
     border: 0.5px solid var(--border);
     border-radius: 10px;
-    padding: 0 18px;
+    padding: 1px 18px 0; /* the 1px on top centres the text BY EYE (owner, 2026-10-02): capitals -> top edge = baseline -> bottom edge (was 18/19, 1px high) */
     color: var(--white);
     font-weight: 700;
     font-size: 18px;
@@ -379,7 +379,7 @@
     }
     .tile {
       width: calc(50% - 8px);
-      padding: 0 8px;
+      padding: 1px 8px 0; /* text centred by eye, as above */
     }
   }
   @media (max-width: 420px) {
@@ -402,12 +402,14 @@
      stamps <html data-view> before the first paint and does the checking).
      Signed out ("door"): only the title + the LOCKED sign-in box
      (SIGNIN-BOX-STANDARD.md, copied from docs/signin-box-reference.html; no
-     passkey button until passkeys genuinely work). After sending ("sent"),
-     another account or a failed check ("no-access"): the title + one
-     message line. The owner: everything private (.pl-private, hidden by
-     door.js for anyone else) + door.js's corner Sign out. */
+     passkey button until passkeys genuinely work). After sending ("sent")
+     or when the access check failed ("check-failed"): the title + one
+     message line. Another account is signed out automatically and gets the
+     box back, with one line under the button. The owner: everything private
+     (.pl-private, hidden by door.js for anyone else) + door.js's corner
+     Sign out (shown to the owner only). */
   :root:not([data-view="door"]) #signInBox { display: none; }
-  :root:not([data-view="sent"]):not([data-view="no-access"]) #doorMessage { display: none; }
+  :root:not([data-view="sent"]):not([data-view="check-failed"]) #doorMessage { display: none; }
   .signin {
     max-width: 540px;
     margin: 0 auto;
@@ -446,9 +448,17 @@
     margin-bottom: 15px; /* field -> button = 15 */
     text-align: left;
   }
-  .signin input:focus-visible,
+  /* Focus in NAVY, not gold (owner, 2026-10-02): gold on the light card is
+     only ~2.3:1 contrast (below the 3:1 a focus marker needs); navy is ~13:1
+     and matches the box. Typing in the field: its navy border thickens
+     1px -> 2px (a 1px shadow outside the 1px border, so nothing moves).
+     Buttons, reached with the keyboard: a 2px navy ring. */
+  .signin input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--navy);
+  }
   .signin button:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--navy);
     outline-offset: 2px;
   }
   .signin button {
@@ -483,7 +493,7 @@
     line-height: 24px;
   }
   .signin .message:empty { display: none; }
-  /* The one message line under the title (after-send "Done…", "no access"):
+  /* The one message line under the title (after-send "Done…", "could not check"):
      the opening-page standard's message, exactly. */
   .door-message {
     color: var(--placeholder);
@@ -498,19 +508,25 @@
      top edge of the box / top of the message letters. */
   /* (The box needs nothing extra: the title's own margin already gives 100.) */
   :root[data-view="sent"] h1,
-  :root[data-view="no-access"] h1 { margin-bottom: 81px; }
+  :root[data-view="check-failed"] h1 { margin-bottom: 81px; }
   @media (max-width: 720px) {
     .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye */
     :root[data-view="sent"] h1,
-    :root[data-view="no-access"] h1 { margin-bottom: 85px; }
+    :root[data-view="check-failed"] h1 { margin-bottom: 85px; }
   }
   @media (max-width: 359px) {
     :root[data-view="sent"] h1,
-    :root[data-view="no-access"] h1 { margin-bottom: 86px; }
+    :root[data-view="check-failed"] h1 { margin-bottom: 86px; }
   }
 </style>
 <!-- PrimeLevel's one front door: decides what may show BEFORE the first
      paint, checks, and draws Sign out. Shared by every private page. -->
+<!-- Seamless (owner, 2026-10-02): dial the database and the library server
+     while the page is still arriving, and start fetching the library (one
+     pinned, bundled file: 7 requests instead of 17) before the script needs it. -->
+<link rel="preconnect" href="https://kenlhcatkjthhzuaznpg.supabase.co" crossorigin />
+<link rel="preconnect" href="https://esm.sh" crossorigin />
+<link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.117.2?bundle" />
 <script src="door.js"></script>
 </head>
 <body>
@@ -635,7 +651,7 @@
   </script>
 
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
 
     // Same Supabase project Renewals already uses -- same URL/key,
     // confirmed via get_publishable_keys, not guessed/copied blind.
@@ -1401,9 +1417,8 @@
     // paint, checks who is signed in, and draws Sign out. This page adds only
     // what a front door needs: the sign-in box, and its one-line screens.
     // Screens (<html data-view>): 'door' (the sign-in box), 'sent' ("Done…"),
-    // 'owner' (the Masterboard + Sign out), 'no-access' (another account, or
-    // the check failed: one message + Sign out), 'wait' (still checking:
-    // nothing shown).
+    // 'owner' (the Masterboard + Sign out), 'check-failed' (the access check
+    // could not run: one message), 'wait' (still checking: nothing shown).
     const signInForm = document.getElementById('signInForm');
     const signInEmail = document.getElementById('signInEmail');
     const signInMessage = document.getElementById('signInMessage');
@@ -1425,13 +1440,21 @@
       notSignedIn() {
         if (document.documentElement.getAttribute('data-view') !== 'sent') PrimeLevelDoor.setView('door');
       },
+      // Another account (owner, 2026-10-02: "the Sign out shouldn't be
+      // there… I'm not in"): it is signed out automatically, and the sign-in
+      // box comes back with one line under the button naming the address
+      // (they just proved they own it by clicking the emailed link, so this
+      // reveals nothing new). No dead end, nothing to press, no wrong
+      // account left signed in.
       notOwner(session) {
-        showMessage('no-access', `${session.user.email || 'This account'} does not have access to the Masterboard.`);
-        PrimeLevelDoor.addSignOut(supabase);
+        signInMessage.textContent = session.user.email ? `Access denied for ${session.user.email}.` : 'Access denied.'; // direct, for strangers (owner, 2026-10-02)
+        PrimeLevelDoor.setView('door');
+        PrimeLevelDoor.endSession(supabase);
       },
+      // The check could not run (no connection, Supabase down): this may
+      // well be the owner, so nothing is signed out; trying again fixes it.
       checkFailed() {
-        showMessage('no-access', 'Could not check your access right now. Please try again in a moment.');
-        PrimeLevelDoor.addSignOut(supabase);
+        showMessage('check-failed', 'Could not check your access right now. Please try again in a moment.');
       },
     });
 
@@ -1448,12 +1471,18 @@
     // 422), and the page shows the SAME "Done" for them, so nobody learns
     // which addresses are allowed. Only a genuine failure (no connection,
     // rate limit, Supabase down) keeps the box and shows a short error.
+    // SEAMLESS (owner, 2026-10-02: "I did have to wait a little bit"):
+    // "Done" shows the INSTANT the button is clicked; Supabase sends the email
+    // in the background (it waits for the mail to go out, ~1-2s, before it
+    // answers). Only a genuine failure brings the box back, with the short
+    // error under the button and the address still typed in.
     let sending = false;
     signInForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (sending) return;
       sending = true;
       signInMessage.textContent = '';
+      showMessage('sent', 'Done. Check your email for your sign-in link.');
       const { error } = await supabase.auth.signInWithOtp({
         email: signInEmail.value.trim(),
         options: { emailRedirectTo: PrimeLevelDoor.FRONT_DOOR_URL, shouldCreateUser: false },
@@ -1463,9 +1492,8 @@
       if (genuineFailure) {
         console.error('Could not send the sign-in link:', error);
         signInMessage.textContent = 'Could not send the link right now. Please try again in a minute.';
-        return;
+        PrimeLevelDoor.setView('door');
       }
-      showMessage('sent', 'Done. Check your email for your sign-in link.');
     });
   </script>
 </body>

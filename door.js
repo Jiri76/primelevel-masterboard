@@ -69,16 +69,24 @@
     return view === 'owner';
   }
 
-  // Private parts hidden unless owner; the Sign out style (shown for the
-  // owner, and on the front door's "no access" screen so another account
-  // can leave).
+  // Private parts hidden unless owner; the Sign out style (owner only).
   var style = document.createElement('style');
   style.textContent =
     ':root:not([data-view="owner"]) .pl-private { display: none !important; }' +
     '.signout { position: fixed; top: 37px; right: 40px; z-index: 10; margin: 0; padding: 0; border: 0;' +
     ' background: none; font-family: "Montserrat", sans-serif; font-size: 20px; font-weight: 700;' +
-    ' color: #B29B68; text-decoration: none; cursor: pointer; }' +
-    ':root:not([data-view="owner"]):not([data-view="no-access"]) .signout { display: none; }' +
+    ' color: #B29B68; text-decoration: none; cursor: pointer; transition: transform 0.15s ease; }' +
+    // Only ever for the signed-in owner (owner, 2026-10-02: "the Sign out
+    // shouldn't be there… I'm not in"): another account is signed out
+    // automatically instead (endSession, used by the front door).
+    ':root:not([data-view="owner"]) .signout { display: none; }' +
+    // A gentle pop, like every other button in the family (owner, 2026-10-02:
+    // "the button is dead… pop out gently"): 5% on hover (a small word needs a
+    // little more than the tiles' 2.5% to show the same movement), a dip on
+    // press. Only where a real pointer hovers; none if the device asks for less motion.
+    '@media (hover: hover) { .signout:hover { transform: scale(1.05); } }' +
+    '.signout:active { transform: scale(0.97); }' +
+    '@media (prefers-reduced-motion: reduce) { .signout { transition: none; } .signout:hover, .signout:active { transform: none; } }' +
     '.signout:focus-visible { outline: 2px solid #B29B68; outline-offset: 2px; }' +
     '@media (max-width: 720px) { .signout { top: 17px; right: 20px; } }';
   document.head.appendChild(style);
@@ -88,6 +96,21 @@
   }
 
   // ---- 3. Sign out ----
+  // Ends the session on this browser: wipes everything private, signs out
+  // with Supabase, and if Supabase can't be reached (no connection: it then
+  // keeps the session) removes the session directly. Never leaves a page
+  // signed in. Used by the Sign out button and by the front door to sign
+  // another account out automatically.
+  function endSession(supabase) {
+    forgetPrivate();
+    return supabase.auth.signOut().then(function (result) {
+      if (result && result.error) {
+        console.error('Sign out could not reach Supabase:', result.error);
+        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) { /* nothing stored */ }
+      }
+    });
+  }
+
   var signOutButton = null;
   function addSignOut(supabase) {
     if (signOutButton) return;
@@ -97,17 +120,7 @@
     signOutButton.id = 'signOutButton';
     signOutButton.textContent = 'Sign out';
     signOutButton.addEventListener('click', function () {
-      forgetPrivate();
-      supabase.auth.signOut().then(function (result) {
-        if (result && result.error) {
-          // No connection: Supabase keeps the session when it can't reach
-          // the server, so remove it from this browser directly. Sign out
-          // must never leave a page signed in.
-          console.error('Sign out could not reach Supabase:', result.error);
-          try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (e) { /* nothing stored */ }
-        }
-        goToFrontDoor();
-      });
+      endSession(supabase).then(goToFrontDoor);
     });
     document.body.appendChild(signOutButton);
   }
@@ -186,6 +199,7 @@
     isOwnerView: isOwnerView,
     setView: setView,
     addSignOut: addSignOut,
+    endSession: endSession,
     forgetPrivate: forgetPrivate,
   };
 })();

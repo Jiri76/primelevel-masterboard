@@ -87,9 +87,17 @@
     margin-bottom: 15px; /* field -> button = 15 */
     text-align: left;
   }
-  .signin input:focus-visible,
+  /* Focus in NAVY, not gold (owner, 2026-10-02): gold on the light card is
+     only ~2.3:1 contrast (below the 3:1 a focus marker needs); navy is ~13:1
+     and matches the box. Typing in the field: its navy border thickens
+     1px -> 2px (a 1px shadow outside the 1px border, so nothing moves).
+     Buttons, reached with the keyboard: a 2px navy ring. */
+  .signin input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--navy);
+  }
   .signin button:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--navy);
     outline-offset: 2px;
   }
   .signin button {
@@ -185,8 +193,10 @@
     <p class="empty-state" id="sentMessage" hidden>Done. Check your email for your sign-in link.</p>
   </div>
   <script>
-    // LOCKED BEHAVIOUR. Click -> "Done": no "Sending…", no spinner, the button
-    // never changes. On a real page `sendLink` is:
+    // LOCKED BEHAVIOUR. Click -> "Done", INSTANTLY (owner 2026-10-02: seamless):
+    // no "Sending…", no spinner, the button never changes; the email is sent in
+    // the background and only a genuine failure brings the box back with the
+    // error. On a real page `sendLink` is:
     //   supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: <this page> } })
     // and the SAME "Done" shows whatever email was typed (a stranger never learns
     // which emails are allowed). Only a genuine failure (network, rate limit)
@@ -196,17 +206,18 @@
     let sending = false;
     document.getElementById('signInForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (sending) return; // ignore double clicks while Supabase replies: no duplicate emails
+      if (sending) return; // ignore double clicks while Supabase sends: no duplicate emails
       sending = true;
+      document.querySelector('.signin').hidden = true; // "Done" at once
+      document.getElementById('sentMessage').hidden = false;
       const { error } = await sendLink(document.getElementById('signInEmail').value.trim());
       sending = false;
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
-      if (genuineFailure) {
+      if (genuineFailure) { // rare: the box comes back with the error
         document.getElementById('signInMessage').textContent = 'Could not send the link right now. Please try again in a minute.';
-        return;
+        document.getElementById('sentMessage').hidden = true;
+        document.querySelector('.signin').hidden = false;
       }
-      document.querySelector('.signin').hidden = true;
-      document.getElementById('sentMessage').hidden = false;
     });
   </script>
 </body>
