@@ -402,12 +402,14 @@
      stamps <html data-view> before the first paint and does the checking).
      Signed out ("door"): only the title + the LOCKED sign-in box
      (SIGNIN-BOX-STANDARD.md, copied from docs/signin-box-reference.html; no
-     passkey button until passkeys genuinely work). After sending ("sent"),
-     another account or a failed check ("no-access"): the title + one
-     message line. The owner: everything private (.pl-private, hidden by
-     door.js for anyone else) + door.js's corner Sign out. */
+     passkey button until passkeys genuinely work). After sending ("sent")
+     or when the access check failed ("check-failed"): the title + one
+     message line. Another account is signed out automatically and gets the
+     box back, with one line under the button. The owner: everything private
+     (.pl-private, hidden by door.js for anyone else) + door.js's corner
+     Sign out (shown to the owner only). */
   :root:not([data-view="door"]) #signInBox { display: none; }
-  :root:not([data-view="sent"]):not([data-view="no-access"]) #doorMessage { display: none; }
+  :root:not([data-view="sent"]):not([data-view="check-failed"]) #doorMessage { display: none; }
   .signin {
     max-width: 540px;
     margin: 0 auto;
@@ -491,7 +493,7 @@
     line-height: 24px;
   }
   .signin .message:empty { display: none; }
-  /* The one message line under the title (after-send "Done…", "no access"):
+  /* The one message line under the title (after-send "Done…", "could not check"):
      the opening-page standard's message, exactly. */
   .door-message {
     color: var(--placeholder);
@@ -506,15 +508,15 @@
      top edge of the box / top of the message letters. */
   /* (The box needs nothing extra: the title's own margin already gives 100.) */
   :root[data-view="sent"] h1,
-  :root[data-view="no-access"] h1 { margin-bottom: 81px; }
+  :root[data-view="check-failed"] h1 { margin-bottom: 81px; }
   @media (max-width: 720px) {
     .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye */
     :root[data-view="sent"] h1,
-    :root[data-view="no-access"] h1 { margin-bottom: 85px; }
+    :root[data-view="check-failed"] h1 { margin-bottom: 85px; }
   }
   @media (max-width: 359px) {
     :root[data-view="sent"] h1,
-    :root[data-view="no-access"] h1 { margin-bottom: 86px; }
+    :root[data-view="check-failed"] h1 { margin-bottom: 86px; }
   }
 </style>
 <!-- PrimeLevel's one front door: decides what may show BEFORE the first
@@ -1415,9 +1417,8 @@
     // paint, checks who is signed in, and draws Sign out. This page adds only
     // what a front door needs: the sign-in box, and its one-line screens.
     // Screens (<html data-view>): 'door' (the sign-in box), 'sent' ("Done…"),
-    // 'owner' (the Masterboard + Sign out), 'no-access' (another account, or
-    // the check failed: one message + Sign out), 'wait' (still checking:
-    // nothing shown).
+    // 'owner' (the Masterboard + Sign out), 'check-failed' (the access check
+    // could not run: one message), 'wait' (still checking: nothing shown).
     const signInForm = document.getElementById('signInForm');
     const signInEmail = document.getElementById('signInEmail');
     const signInMessage = document.getElementById('signInMessage');
@@ -1439,13 +1440,21 @@
       notSignedIn() {
         if (document.documentElement.getAttribute('data-view') !== 'sent') PrimeLevelDoor.setView('door');
       },
+      // Another account (owner, 2026-10-02: "the Sign out shouldn't be
+      // there… I'm not in"): it is signed out automatically, and the sign-in
+      // box comes back with one line under the button naming the address
+      // (they just proved they own it by clicking the emailed link, so this
+      // reveals nothing new). No dead end, nothing to press, no wrong
+      // account left signed in.
       notOwner(session) {
-        showMessage('no-access', `${session.user.email || 'This account'} does not have access to the Masterboard.`);
-        PrimeLevelDoor.addSignOut(supabase);
+        signInMessage.textContent = `${session.user.email || 'This account'} does not have access to the Masterboard.`;
+        PrimeLevelDoor.setView('door');
+        PrimeLevelDoor.endSession(supabase);
       },
+      // The check could not run (no connection, Supabase down): this may
+      // well be the owner, so nothing is signed out; trying again fixes it.
       checkFailed() {
-        showMessage('no-access', 'Could not check your access right now. Please try again in a moment.');
-        PrimeLevelDoor.addSignOut(supabase);
+        showMessage('check-failed', 'Could not check your access right now. Please try again in a moment.');
       },
     });
 

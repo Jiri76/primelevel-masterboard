@@ -448,7 +448,7 @@
 
     // Only ever runs for the signed-in owner (door.js checked the database's
     // own allow-list first; anyone else was sent to the Masterboard front
-    // door, which shows them "no access").
+    // door, which signs that account out and says it has no access).
     async function showReports() {
       contentEl.replaceChildren();
       tilesEl.replaceChildren();
