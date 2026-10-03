@@ -55,7 +55,7 @@
     background: var(--card);
     color: var(--navy);
     border-radius: 10px;
-    padding: 57px 60px 60px; /* 60 by eye on all four edges (the top is 3px less for the 20px heading's own space) */
+    padding: 99px 60px 60px; /* ONE card size: top -> "Sign in" 102 by eye = button -> bottom (with the kept line slot); sides 60 */
     text-align: left;
   }
   .signin h2 {
@@ -126,19 +126,23 @@
     transform: scale(0.97);
   }
   /* Error line under the button: only for a genuine send failure. */
-  /* The line under the button ("Access denied for…", "Could not send…"),
-     BY EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro ->
-     "Email address": a separate group); its last baseline -> card bottom =
-     card top -> "Sign in" letters (60, phones 30) when it is the last thing
-     in the card. The -7px takes back the space a 24px line keeps below its
+  /* The line under the button ("Access denied for…", "Sending failed…"), BY
+     EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro -> "Email
+     address": a separate group); its baseline -> card bottom 60 (phones 30).
+     The -7px (below) takes back the space a 24px line keeps under its letters. */
      letters. Hidden while empty, so it never moves anything. */
   .signin .message {
     margin: 25px 0 0;
     font-size: 15px;
     line-height: 24px;
   }
-  .signin form:last-child .message { margin-bottom: -7px; }
+  /* ONE card size (owner, 2026-10-03): when the line is the last thing in the
+     card, its slot is ALWAYS kept, so the card never grows or shrinks and
+     nothing moves when "Access denied for…" or "Sending failed…" appears.
+     Card top -> "Sign in" = button -> card bottom = 30 + the 12px letters +
+     60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60 (phones 30). */
   .signin .message:empty { display: none; }
+  .signin form:last-child .message { display: block; min-height: 24px; margin-bottom: -7px; }
   .signin .or {
     display: flex;
     align-items: center;
@@ -174,7 +178,7 @@
   }
   @media (max-width: 720px) {
     h1 { font-size: 44px; line-height: normal; }
-    .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye (half of desktop's 60) */
+    .signin { padding: 69px 30px 30px; } /* phones: top = bottom = 72 by eye (30 + 12 + 30); sides 30 */
   }
   @media (max-width: 359px) {
     h1 { font-size: 38px; }
@@ -222,7 +226,7 @@
       sending = false;
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
       if (genuineFailure) { // rare: the box comes back with the error
-        document.getElementById('signInMessage').textContent = 'Could not send the link right now. Please try again in a minute.';
+        document.getElementById('signInMessage').textContent = 'Sending failed. Please try again.';
         document.getElementById('sentMessage').hidden = true;
         document.querySelector('.signin').hidden = false;
       }

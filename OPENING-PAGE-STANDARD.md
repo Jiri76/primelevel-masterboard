@@ -46,7 +46,7 @@ by `door.js`, the one front door every private page shares; full spec: "Sign out
   width, phones included. 50 on phones was considered and rejected by the owner:
   "it gives more breathing room between the sections; 50-50 everything seems
   crammed together". Only distances to the narrow SIDE edges shrink on phones
-  (sign-in box edges 60 → 30, Sign out corner 40 → 20).
+  (sign-in box sides 60 → 30, Sign out corner 40 → 20).
 - By eye means letters for text and EDGES for boxes: never a glow or a shadow.
 - Every date shows a three-letter month: "28 Sep 2026" (owner rule, 2026-10-01).
 - Every line is **centred** on the screen (measured: 0px off the centre line).

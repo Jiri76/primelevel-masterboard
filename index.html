@@ -416,7 +416,7 @@
     background: #E9E9EB; /* 7.5% navy mixed into white: 0.925 x #F9F9FA + 0.075 x #1E2633 per channel */
     color: var(--navy);
     border-radius: 10px;
-    padding: 57px 60px 60px; /* 60 by eye on all four edges (the top is 3px less for the 20px heading's own space) */
+    padding: 99px 60px 60px; /* ONE card size (owner, 2026-10-03): card top -> "Sign in" letters = button -> card bottom = 102 by eye (30 + the line's 12px letters + 60, the line's slot always kept); sides 60 */
     text-align: left;
   }
   .signin h2 {
@@ -486,19 +486,22 @@
     color: var(--white);
     transform: scale(0.97);
   }
-  /* Error line under the button: only for a genuine send failure. */
-  /* The line under the button ("Access denied for…", "Could not send…"),
-     BY EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro ->
-     "Email address": a separate group); its last baseline -> card bottom =
-     card top -> "Sign in" letters (60, phones 30). The -7px takes back the
-     space a 24px line keeps below its letters. */
+  /* The line under the button ("Access denied for…", "Sending failed…"), BY
+     EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro -> "Email
+     address": a separate group); its baseline -> card bottom 60 (phones 30).
+     The -7px (below) takes back the space a 24px line keeps under its letters. */
   .signin .message {
     margin: 25px 0 0;
     font-size: 15px;
     line-height: 24px;
   }
-  .signin form:last-child .message { margin-bottom: -7px; }
+  /* ONE card size (owner, 2026-10-03): when the line is the last thing in the
+     card, its slot is ALWAYS kept, so the card never grows or shrinks and
+     nothing moves when "Access denied for…" or "Sending failed…" appears.
+     Card top -> "Sign in" = button -> card bottom = 30 + the 12px letters +
+     60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60 (phones 30). */
   .signin .message:empty { display: none; }
+  .signin form:last-child .message { display: block; min-height: 24px; margin-bottom: -7px; }
   /* The one message line under the title (after-send "Done…", "could not check"):
      the opening-page standard's message, exactly. */
   .door-message {
@@ -516,7 +519,7 @@
   :root[data-view="sent"] h1,
   :root[data-view="check-failed"] h1 { margin-bottom: 81px; }
   @media (max-width: 720px) {
-    .signin { padding: 27px 30px 30px; } /* phones: 30px on all four edges by eye */
+    .signin { padding: 69px 30px 30px; } /* phones: top = bottom = 72 by eye (30 + 12 + 30); sides 30 */
     :root[data-view="sent"] h1,
     :root[data-view="check-failed"] h1 { margin-bottom: 85px; }
   }
@@ -1497,7 +1500,7 @@
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
       if (genuineFailure) {
         console.error('Could not send the sign-in link:', error);
-        signInMessage.textContent = 'Could not send the link right now. Please try again in a minute.';
+        signInMessage.textContent = 'Sending failed. Please try again.';
         PrimeLevelDoor.setView('door');
       }
     });

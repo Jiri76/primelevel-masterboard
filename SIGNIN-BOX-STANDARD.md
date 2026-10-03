@@ -47,21 +47,27 @@ Rule behind it: everything INSIDE a field or button is 16px; text AROUND them is
 
 | Gap | Desktop | Phone (≤720px) |
 |---|---|---|
-| Card edges: top → "Sign in", sides, last button → bottom | **60px** | **30px** |
+| Card top → "Sign in" letters | **102px** | **72px** |
+| Last button → card bottom (the line's slot always kept, see below) | **102px** = 30 + 12 + 60 | **72px** = 30 + 12 + 30 |
+| Card sides | **60px** | **30px** |
 | Inside a group: "Sign in" → intro, "Email address" → field, field → first button | **15px** | 15px |
 | Between groups: intro → "Email address", first button → "or" line, "or" line → second button | **30px** | 30px |
 | Intro line pitch | 24px | 24px |
 
-Only four sizes in the whole box (15, 24, 30, 60; 30 on phones at the edges).
+Inside the card only four sizes (15, 24, 30, 60; 30 on phones), plus the card's top and
+bottom, which are the same number (102, phones 72).
 
-**Two principles behind these numbers (owner, 2026-10-03), for anything ever placed in the
-card:** (1) the card's edges are EQUAL ON EVERY SIDE, measured to whatever is first or last
-inside it (60, phones 30); (2) every separate line is its own group: 30 from its neighbour
-(15 only within a group). So when the line under the button appears ("Access denied for…",
-"Could not send…"): button edge → its letters **30** (= intro → "Email address"), its last
-baseline → card bottom **60** (phones 30), the same as card top → "Sign in". Without the
-line, button → card bottom stays 60 / 30. CSS: `.signin .message { margin: 25px 0 0 }` and,
-when it is the last thing in the card, `margin-bottom: -7px` (measured 2026-10-03).
+**ONE card size (owner, 2026-10-03: "I don't want one card smaller, one card bigger, just
+one type of card").** The slot for the line under the button ("Access denied for [address].",
+"Sending failed. Please try again.") is ALWAYS kept, so the card is the same height with or
+without it (433px on a computer, 397px on a phone) and nothing moves when it appears. With
+the line: button edge → its letters **30** (= intro → "Email address": every separate line
+is its own group), its letters 12px tall, its baseline → card bottom **60** (phones 30):
+30 + 12 + 60 = **102**. Without it: button → card bottom = **102** (phones 72). The card
+top matches: card top → "Sign in" = **102** (phones 72). Every message must fit ONE line,
+so it never grows the card ("punchy, direct, no fluff"). CSS: `.signin { padding: 99px 60px
+60px }` (phones `69px 30px 30px`); `.signin .message { margin: 25px 0 0 }`; when the line
+is the last thing in the card `display: block; min-height: 24px; margin-bottom: -7px`.
 Text inside the buttons is centred by eye (16px above the letters, 16px below). In the
 email field it is 16 / 17: typed 16px regular letters are 12px tall, leaving an odd 33px,
 so an exact split is physically impossible at 45px; this is the closest.
@@ -93,7 +99,8 @@ so an exact split is physically impossible at 45px; this is the closest.
   with one line under the button: "Access denied for [address]." (owner: direct, it is for strangers)
   Nothing to press, no wrong account left signed in. Sign out appears for the owner only.
 - **Real failure** (network down, rate limit, Supabase down): the box comes back, with the
-  address still typed in and a short error under the button. Rare; everything else stays
+  address still typed in and one line under the button: "Sending failed. Please try again."
+  (owner, 2026-10-03: punchy, direct, one line). Rare; everything else stays
   "Done" (including an address that isn't allowed, so nobody learns which ones are).
 
 ## After-send screen
@@ -149,7 +156,7 @@ version plus the general version the mobile app needs (VERSION 2026-10-02b).
    front door's box (100px by eye below the title, centred) and its after-send screen
    ("Done…", the opening-page message exactly), plus the corner Sign out on every
    signed-in page (40/40, phones 20/20, font, colour, no underline), AND the box's own
-   inside values on a computer and a phone (added 2026-10-02): the edges 60 (phones 30),
+   inside values on a computer and a phone (added 2026-10-02): top and bottom 102 (phones 72, one card size with the line shown or not, added 2026-10-03), sides 60 (phones 30),
    the 15 / 30 gaps, the 24 line pitch, 45px field and button, 540px width, every font and
    colour, the 1px navy borders and the 10px corners. Alarm by GitHub Issue + email. Not
    guarded: where the letters sit INSIDE the field and the button (16/17 and 16/16, set by
