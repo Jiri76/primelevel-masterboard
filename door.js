@@ -242,15 +242,14 @@
     supabase.auth.getSession().then(function (r) { route(r.data.session); });
   }
 
+  // Only what the pages use (Sign out, the back arrow and the private wipe
+  // are drawn / run by this file itself).
   window.PrimeLevelDoor = {
     FRONT_DOOR_URL: FRONT_DOOR_URL,
     gate: gate,
     whenOwner: whenOwner,
     isOwnerView: isOwnerView,
     setView: setView,
-    addSignOut: addSignOut,
-    addBack: addBack,
     endSession: endSession,
-    forgetPrivate: forgetPrivate,
   };
 })();
