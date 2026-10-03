@@ -125,12 +125,10 @@
     color: var(--white);
     transform: scale(0.97);
   }
-  /* Error line under the button: only for a genuine send failure. */
-  /* The line under the button ("Access denied for…", "Sending failed…"), BY
+  /* The line under the button ("Access denied.", "Sending failed…"), BY
      EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro -> "Email
      address": a separate group); its baseline -> card bottom 60 (phones 30).
      The -7px (below) takes back the space a 24px line keeps under its letters. */
-     letters. Hidden while empty, so it never moves anything. */
   .signin .message {
     margin: 25px 0 0;
     font-size: 15px;
@@ -138,9 +136,12 @@
   }
   /* ONE card size (owner, 2026-10-03): when the line is the last thing in the
      card, its slot is ALWAYS kept, so the card never grows or shrinks and
-     nothing moves when "Access denied for…" or "Sending failed…" appears.
-     Card top -> "Sign in" = button -> card bottom = 30 + the 12px letters +
-     60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60 (phones 30). */
+     nothing moves when "Access denied." or "Sending failed. Try again."
+     appears. Card top -> "Sign in" = button -> card bottom = 30 + the 12px
+     letters + 60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60
+     (phones 30). Every line must fit ONE row in the 220px a 320px phone
+     leaves, so it never names anything of varying length (an address goes
+     in the field instead). */
   .signin .message:empty { display: none; }
   .signin form:last-child .message { display: block; min-height: 24px; margin-bottom: -7px; }
   .signin .or {
@@ -226,7 +227,7 @@
       sending = false;
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
       if (genuineFailure) { // rare: the box comes back with the error
-        document.getElementById('signInMessage').textContent = 'Sending failed. Please try again.';
+        document.getElementById('signInMessage').textContent = 'Sending failed. Try again.';
         document.getElementById('sentMessage').hidden = true;
         document.querySelector('.signin').hidden = false;
       }

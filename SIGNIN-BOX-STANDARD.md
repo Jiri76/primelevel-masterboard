@@ -58,14 +58,17 @@ Inside the card only four sizes (15, 24, 30, 60; 30 on phones), plus the card's 
 bottom, which are the same number (102, phones 72).
 
 **ONE card size (owner, 2026-10-03: "I don't want one card smaller, one card bigger, just
-one type of card").** The slot for the line under the button ("Access denied for [address].",
-"Sending failed. Please try again.") is ALWAYS kept, so the card is the same height with or
-without it (433px on a computer, 397px on a phone) and nothing moves when it appears. With
+one type of card").** The slot for the line under the button ("Access denied.",
+"Sending failed. Try again.") is ALWAYS kept, so the card is the same height with or
+without it (433px on a computer, 397px on a 375px phone) and nothing moves when it appears. With
 the line: button edge → its letters **30** (= intro → "Email address": every separate line
 is its own group), its letters 12px tall, its baseline → card bottom **60** (phones 30):
 30 + 12 + 60 = **102**. Without it: button → card bottom = **102** (phones 72). The card
-top matches: card top → "Sign in" = **102** (phones 72). Every message must fit ONE line,
-so it never grows the card ("punchy, direct, no fluff"). CSS: `.signin { padding: 99px 60px
+top matches: card top → "Sign in" = **102** (phones 72). Every message must fit ONE line
+in the narrowest card (220px of room on a 320px phone; 15px Montserrat), so it never grows
+the card ("punchy, direct, no fluff"), and it never names anything whose length varies (an
+address, a name, a number): that goes in the field instead (owner, 2026-10-03, after
+"Access denied for [address]." wrapped on a 320px phone). CSS: `.signin { padding: 99px 60px
 60px }` (phones `69px 30px 30px`); `.signin .message { margin: 25px 0 0 }`; when the line
 is the last thing in the card `display: block; min-height: 24px; margin-bottom: -7px`.
 Text inside the buttons is centred by eye (16px above the letters, 16px below). In the
@@ -96,10 +99,12 @@ so an exact split is physically impossible at 45px; this is the closest.
   whatever email was typed, so a stranger never learns which emails are allowed.
 - **An account without access** (owner, 2026-10-02: "the Sign out shouldn't be there… I'm
   not in"): after its emailed link it is signed out automatically and the box comes back,
-  with one line under the button: "Access denied for [address]." (owner: direct, it is for strangers)
-  Nothing to press, no wrong account left signed in. Sign out appears for the owner only.
+  with the refused address already in the field and one line under the button: "Access
+  denied." (owner: direct, it is for strangers; the address sits in the field so the line
+  fits one row at every width, 2026-10-03). Nothing to press, no wrong account left signed
+  in. Sign out appears for the owner only.
 - **Real failure** (network down, rate limit, Supabase down): the box comes back, with the
-  address still typed in and one line under the button: "Sending failed. Please try again."
+  address still typed in and one line under the button: "Sending failed. Try again."
   (owner, 2026-10-03: punchy, direct, one line). Rare; everything else stays
   "Done" (including an address that isn't allowed, so nobody learns which ones are).
 
@@ -156,7 +161,9 @@ version plus the general version the mobile app needs (VERSION 2026-10-02b).
    front door's box (100px by eye below the title, centred) and its after-send screen
    ("Done…", the opening-page message exactly), plus the corner Sign out on every
    signed-in page (40/40, phones 20/20, font, colour, no underline), AND the box's own
-   inside values on a computer and a phone (added 2026-10-02): top and bottom 102 (phones 72, one card size with the line shown or not, added 2026-10-03), sides 60 (phones 30),
+   inside values on a computer, a 375px phone and a 320px small phone (added 2026-10-02;
+   320 added 2026-10-03): top and bottom 102 (phones 72, one card size with the line
+   shown or not, each message on ONE line), sides 60 (phones 30),
    the 15 / 30 gaps, the 24 line pitch, 45px field and button, 540px width, every font and
    colour, the 1px navy borders and the 10px corners. Alarm by GitHub Issue + email. Not
    guarded: where the letters sit INSIDE the field and the button (16/17 and 16/16, set by

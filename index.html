@@ -486,7 +486,7 @@
     color: var(--white);
     transform: scale(0.97);
   }
-  /* The line under the button ("Access denied for…", "Sending failed…"), BY
+  /* The line under the button ("Access denied.", "Sending failed…"), BY
      EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro -> "Email
      address": a separate group); its baseline -> card bottom 60 (phones 30).
      The -7px (below) takes back the space a 24px line keeps under its letters. */
@@ -497,9 +497,12 @@
   }
   /* ONE card size (owner, 2026-10-03): when the line is the last thing in the
      card, its slot is ALWAYS kept, so the card never grows or shrinks and
-     nothing moves when "Access denied for…" or "Sending failed…" appears.
-     Card top -> "Sign in" = button -> card bottom = 30 + the 12px letters +
-     60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60 (phones 30). */
+     nothing moves when "Access denied." or "Sending failed. Try again."
+     appears. Card top -> "Sign in" = button -> card bottom = 30 + the 12px
+     letters + 60 = 102 by eye (phones 30 + 12 + 30 = 72); sides stay 60
+     (phones 30). Every line must fit ONE row in the 220px a 320px phone
+     leaves, so it never names anything of varying length (an address goes
+     in the field instead). */
   .signin .message:empty { display: none; }
   .signin form:last-child .message { display: block; min-height: 24px; margin-bottom: -7px; }
   /* The one message line under the title (after-send "Done…", "could not check"):
@@ -1451,12 +1454,15 @@
       },
       // Another account (owner, 2026-10-02: "the Sign out shouldn't be
       // there… I'm not in"): it is signed out automatically, and the sign-in
-      // box comes back with one line under the button naming the address
-      // (they just proved they own it by clicking the emailed link, so this
-      // reveals nothing new). No dead end, nothing to press, no wrong
-      // account left signed in.
+      // box comes back with "Access denied." under the button and the refused
+      // address already in the field (they just proved they own it by
+      // clicking the emailed link, so this reveals nothing new). The address
+      // sits in the field, not in the line, so the line fits one row at
+      // every width whatever its length (owner, 2026-10-03). No dead end,
+      // nothing to press, no wrong account left signed in.
       notOwner(session) {
-        signInMessage.textContent = session.user.email ? `Access denied for ${session.user.email}.` : 'Access denied.'; // direct, for strangers (owner, 2026-10-02)
+        signInEmail.value = session.user.email || '';
+        signInMessage.textContent = 'Access denied.'; // direct, for strangers (owner, 2026-10-02)
         PrimeLevelDoor.setView('door');
         PrimeLevelDoor.endSession(supabase);
       },
@@ -1500,7 +1506,7 @@
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
       if (genuineFailure) {
         console.error('Could not send the sign-in link:', error);
-        signInMessage.textContent = 'Sending failed. Please try again.';
+        signInMessage.textContent = 'Sending failed. Try again.';
         PrimeLevelDoor.setView('door');
       }
     });

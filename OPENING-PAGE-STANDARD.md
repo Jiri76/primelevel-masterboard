@@ -12,7 +12,8 @@ the opening page). Examples today:
 - The Masterboard front door: "Done. Check your email for your sign-in link." and "Could
   not check your access right now ..." (its sign-in box itself sits 100px below the title
   too). An account without access is signed out automatically and gets the sign-in box
-  back with one line under the button: "Access denied for [address]." (owner, 2026-10-02).
+  back, the refused address in the field and one line under the button: "Access denied."
+  (owner, 2026-10-02; the address moved into the field 2026-10-03).
 
 Every opening page, on every PrimeLevel tool, must look exactly like this.
 
@@ -89,7 +90,8 @@ Nudging a gap by a few px: use **padding, not margin** on the message; a small
    title → message (or → the sign-in box's edge) at 100px (±1px), centring (±1px),
    each line's font, size, weight and colour, the corner Sign out (40 / 40 on a
    computer, 20 / 20 on a phone, 20px bold gold, no underline) and no sideways
-   scrolling at 375px. Screens: the Masterboard front door (sign-in box; after
+   scrolling at 375px and 320px. The sign-in box is measured on a computer, a
+   375px phone and a 320px small phone. Screens: the Masterboard front door (sign-in box; after
    sending), Insider Edge (no report open) and the Inbox Report (no reports yet;
    could not load). Any drift fails the run and opens (or comments on) a GitHub
    Issue labelled `opening-page-drift`, listing the failing checks. That Issue is

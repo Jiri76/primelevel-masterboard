@@ -10,7 +10,10 @@
 //   * SIGNIN-BOX-STANDARD.md "Sign out": on every signed-in page, Sign out sits
 //     top-right, 40px / 40px by eye on a computer and 20px / 20px on a phone,
 //     Montserrat 20px bold gold, no underline (drawn by door.js).
-//   * no sideways scrolling on a 375px phone.
+//   * no sideways scrolling on a 375px phone or a 320px small phone.
+//   * the LOCKED sign-in box (SIGNIN-BOX-STANDARD.md) on a computer, a 375px
+//     phone AND a 320px small phone (2026-10-03: its message line once wrapped
+//     only at 320, which a two-width check could not see).
 //
 // Since 2026-10-02 every private page sits behind door.js (one front door).
 // The guard's throwaway browser is never signed in, so the Supabase library is
@@ -140,7 +143,7 @@ function measureBox() {
     colours: { box: cs(box).backgroundColor, field: cs(input).backgroundColor, button: cs(button).backgroundColor, 'field border': `${cs(input).borderTopWidth} ${cs(input).borderTopColor}`, 'button border': `${cs(button).borderTopWidth} ${cs(button).borderTopColor}`, corners: `${cs(box).borderTopLeftRadius} ${cs(input).borderTopLeftRadius} ${cs(button).borderTopLeftRadius}` },
   };
 }
-// The card message line ("Access denied for…", "Sending failed…"), shown for the
+// The card message line ("Access denied.", "Sending failed…"), shown for the
 // measurement and cleared again (owner, 2026-10-03, ONE card size): it fits ONE
 // line; button edge -> its letters 30; its baseline -> card bottom = the card's
 // side value (60, phones 30); the card keeps the SAME height as without it.
@@ -159,7 +162,7 @@ function measureBoxLine(text) {
   msg.textContent = '';
   return out;
 }
-const BOX_MESSAGES = ['Access denied for name@post.cz.', 'Sending failed. Please try again.'];
+const BOX_MESSAGES = ['Access denied.', 'Sending failed. Try again.'];
 const NAVY = 'rgb(30, 38, 51)';
 const BOX_FONTS = { '"Sign in"': `Montserrat 20px 700 ${NAVY}`, intro: `Montserrat 15px 400 ${NAVY}`, '"Email address"': `Montserrat 15px 700 ${NAVY}`, field: `Montserrat 16px 400 ${NAVY}`, button: `Montserrat 16px 700 ${NAVY}` };
 const BOX_COLOURS = { box: 'rgb(233, 233, 235)', field: 'rgb(249, 249, 250)', button: 'rgb(249, 249, 250)', 'field border': `1px ${NAVY}`, 'button border': `1px ${NAVY}`, corners: '10px 10px 10px' };
@@ -207,10 +210,18 @@ for (const p of PAGES) {
   const linePhone = boxDesk ? await Promise.all(BOX_MESSAGES.map((t) => phone.evaluate(measureBoxLine, t))) : null;
   await phone.close();
   check('phone width', overflow <= 0, `phone 375px sideways scrolling: ${overflow}px`);
+  // Small phones (320px): the narrowest screen in the six-width rule.
+  const small = await openPage(browser, p, { width: 320, height: 640 });
+  const overflowSmall = await small.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const boxSmall = boxDesk ? await small.evaluate(measureBox) : null;
+  const lineSmall = boxDesk ? await Promise.all(BOX_MESSAGES.map((t) => small.evaluate(measureBoxLine, t))) : null;
+  await small.close();
+  check('phone width', overflowSmall <= 0, `small phone 320px sideways scrolling: ${overflowSmall}px`);
   if (boxDesk) {
     checkBox(check, 'computer', boxDesk, 60, 102);
     checkBox(check, 'phone', boxPhone, 30, 72);
-    for (const [where, results, side] of [['computer', lineDesk, 60], ['phone', linePhone, 30]]) {
+    checkBox(check, 'small phone', boxSmall, 30, 72);
+    for (const [where, results, side] of [['computer', lineDesk, 60], ['phone', linePhone, 30], ['small phone', lineSmall, 30]]) {
       results.forEach((r, i) => {
         const name = `"${BOX_MESSAGES[i].slice(0, 15)}…"`;
         check('box sizes', r.lines === 1, `box (${where}) ${name} fits one line: ${r.lines} line(s)`);
