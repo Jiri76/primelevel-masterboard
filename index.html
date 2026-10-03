@@ -487,11 +487,17 @@
     transform: scale(0.97);
   }
   /* Error line under the button: only for a genuine send failure. */
+  /* The line under the button ("Access denied for…", "Could not send…"),
+     BY EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro ->
+     "Email address": a separate group); its last baseline -> card bottom =
+     card top -> "Sign in" letters (60, phones 30). The -7px takes back the
+     space a 24px line keeps below its letters. */
   .signin .message {
-    margin: 16px 0 0;
+    margin: 25px 0 0;
     font-size: 15px;
     line-height: 24px;
   }
+  .signin form:last-child .message { margin-bottom: -7px; }
   .signin .message:empty { display: none; }
   /* The one message line under the title (after-send "Done…", "could not check"):
      the opening-page standard's message, exactly. */

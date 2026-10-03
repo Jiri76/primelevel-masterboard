@@ -138,6 +138,24 @@ function measureBox() {
     colours: { box: cs(box).backgroundColor, field: cs(input).backgroundColor, button: cs(button).backgroundColor, 'field border': `${cs(input).borderTopWidth} ${cs(input).borderTopColor}`, 'button border': `${cs(button).borderTopWidth} ${cs(button).borderTopColor}`, corners: `${cs(box).borderTopLeftRadius} ${cs(input).borderTopLeftRadius} ${cs(button).borderTopLeftRadius}` },
   };
 }
+// The line under the button ("Access denied for…"), shown for the measurement
+// and cleared again: button edge -> its letters 30; its baseline -> card bottom
+// = the card's edge (60, phones 30). Owner, 2026-10-03.
+function measureBoxLine() {
+  const msg = document.getElementById('signInMessage');
+  msg.textContent = 'Access denied for guard@example.com.';
+  const c = document.createElement('canvas').getContext('2d'), s = getComputedStyle(msg);
+  c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  // The line may wrap (a long address on a phone): measure the FIRST line's
+  // letters from the button, and the LAST line's baseline to the box bottom.
+  const g = document.createRange(); g.selectNodeContents(msg); const rs = [...g.getClientRects()].filter((q) => q.width > 0);
+  const fa = c.measureText('x').fontBoundingBoxAscent;
+  const top = rs[0].top + fa - c.measureText(msg.textContent).actualBoundingBoxAscent, lastBase = rs[rs.length - 1].top + fa;
+  const box = document.getElementById('signInBox').getBoundingClientRect(), btn = document.querySelector('#signInBox button').getBoundingClientRect();
+  const out = { 'button -> "Access denied" letters': top - btn.bottom, '"Access denied" -> box bottom': box.bottom - lastBase };
+  msg.textContent = '';
+  return out;
+}
 const NAVY = 'rgb(30, 38, 51)';
 const BOX_FONTS = { '"Sign in"': `Montserrat 20px 700 ${NAVY}`, intro: `Montserrat 15px 400 ${NAVY}`, '"Email address"': `Montserrat 15px 700 ${NAVY}`, field: `Montserrat 16px 400 ${NAVY}`, button: `Montserrat 16px 700 ${NAVY}` };
 const BOX_COLOURS = { box: 'rgb(233, 233, 235)', field: 'rgb(249, 249, 250)', button: 'rgb(249, 249, 250)', 'field border': `1px ${NAVY}`, 'button border': `1px ${NAVY}`, corners: '10px 10px 10px' };
@@ -160,6 +178,7 @@ for (const p of PAGES) {
   const desk = await openPage(browser, p, { width: 1920, height: 1080 });
   const r = await desk.evaluate(measure, { below: p.below, corner: !!p.corner });
   const boxDesk = p.below === '#signInBox' ? await desk.evaluate(measureBox) : null;
+  const lineDesk = boxDesk ? await desk.evaluate(measureBoxLine) : null;
   // Focus is navy (owner, 2026-10-02): typing in the field thickens its navy border.
   const fieldFocus = boxDesk ? await desk.focus('#signInEmail').then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signInEmail')).boxShadow)) : null;
   // Sign out pops gently on hover (owner, 2026-10-02: "the button is dead").
@@ -180,11 +199,18 @@ for (const p of PAGES) {
   const overflow = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const rPhone = p.corner ? await phone.evaluate(measure, { below: p.below, corner: true }) : null;
   const boxPhone = boxDesk ? await phone.evaluate(measureBox) : null;
+  const linePhone = boxDesk ? await phone.evaluate(measureBoxLine) : null;
   await phone.close();
   check('phone width', overflow <= 0, `phone 375px sideways scrolling: ${overflow}px`);
   if (boxDesk) {
     checkBox(check, 'computer', boxDesk, 60);
     checkBox(check, 'phone', boxPhone, 30);
+    for (const [where, line, edge] of [['computer', lineDesk, 60], ['phone', linePhone, 30]]) {
+      for (const [k, v] of Object.entries(line)) {
+        const want = k.startsWith('button') ? 30 : edge;
+        check('box spacing', Math.abs(v - want) <= TOL, `box (${where}) with the line under the button: ${k}: ${v.toFixed(1)}px (expected ${want})`);
+      }
+    }
     const ok = /rgb\(30, 38, 51\) 0px 0px 0px 1px/.test(fieldFocus || '');
     check('box colours', ok, `box: typing in the field thickens its navy border (focus: ${fieldFocus})`);
   }

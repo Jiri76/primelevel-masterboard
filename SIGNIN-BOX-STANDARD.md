@@ -53,6 +53,15 @@ Rule behind it: everything INSIDE a field or button is 16px; text AROUND them is
 | Intro line pitch | 24px | 24px |
 
 Only four sizes in the whole box (15, 24, 30, 60; 30 on phones at the edges).
+
+**Two principles behind these numbers (owner, 2026-10-03), for anything ever placed in the
+card:** (1) the card's edges are EQUAL ON EVERY SIDE, measured to whatever is first or last
+inside it (60, phones 30); (2) every separate line is its own group: 30 from its neighbour
+(15 only within a group). So when the line under the button appears ("Access denied for…",
+"Could not send…"): button edge → its letters **30** (= intro → "Email address"), its last
+baseline → card bottom **60** (phones 30), the same as card top → "Sign in". Without the
+line, button → card bottom stays 60 / 30. CSS: `.signin .message { margin: 25px 0 0 }` and,
+when it is the last thing in the card, `margin-bottom: -7px` (measured 2026-10-03).
 Text inside the buttons is centred by eye (16px above the letters, 16px below). In the
 email field it is 16 / 17: typed 16px regular letters are 12px tall, leaving an odd 33px,
 so an exact split is physically impossible at 45px; this is the closest.

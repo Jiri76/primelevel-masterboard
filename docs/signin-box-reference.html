@@ -126,11 +126,19 @@
     transform: scale(0.97);
   }
   /* Error line under the button: only for a genuine send failure. */
+  /* The line under the button ("Access denied for…", "Could not send…"),
+     BY EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro ->
+     "Email address": a separate group); its last baseline -> card bottom =
+     card top -> "Sign in" letters (60, phones 30) when it is the last thing
+     in the card. The -7px takes back the space a 24px line keeps below its
+     letters. Hidden while empty, so it never moves anything. */
   .signin .message {
-    margin: 16px 0 0;
+    margin: 25px 0 0;
     font-size: 15px;
     line-height: 24px;
   }
+  .signin form:last-child .message { margin-bottom: -7px; }
+  .signin .message:empty { display: none; }
   .signin .or {
     display: flex;
     align-items: center;

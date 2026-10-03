@@ -21,6 +21,7 @@ fix the page; never the standard. Detailed standards for some items live in thei
 | Spacing, vertical | **100px by eye**: page top → title letters, title letters → the first thing under it, on EVERY page at EVERY width (phones too) |
 | Spacing, sideways | page gutter 20px; distances to the narrow SIDE edges halve on phones (sign-in box edges 60 → 30, Sign out corner 40 → 20) |
 | "By eye" | letters for text (baseline of the letters above → top of the tallest letters below), EDGES for boxes; never a glow or a shadow |
+| Inside a card | (owner, 2026-10-03) the card's edges are EQUAL ON EVERY SIDE, measured to whatever is first or last inside it; every separate line is its own group, 30 from its neighbour (15 only within a group). A line that appears later (e.g. "Access denied for…") follows the same two rules. |
 | Dates | three-letter months: "28 Sep 2026" (spelled out in code, never the browser's "Sept") |
 | Every device | 320, 375, 768, 1024, 1440, 1920px: nothing cut off, nothing scrolls sideways |
 | Seamless | instant feedback; keep the last good value instead of blanking; time limits on outside calls; show at once what is already known |
