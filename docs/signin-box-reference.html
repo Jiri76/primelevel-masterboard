@@ -125,7 +125,7 @@
     color: var(--white);
     transform: scale(0.97);
   }
-  /* The line under the button ("Access denied.", "Sending failed…"), BY
+  /* The line under the card's last button ("Access denied.", "Sending failed…"), BY
      EYE (owner, 2026-10-03): button edge -> its letters 30 (= intro -> "Email
      address": a separate group); its baseline -> card bottom 60 (phones 30).
      The -7px (below) takes back the space a 24px line keeps under its letters. */
@@ -143,7 +143,11 @@
      leaves, so it never names anything of varying length (an address goes
      in the field instead). */
   .signin .message:empty { display: none; }
-  .signin form:last-child .message { display: block; min-height: 24px; margin-bottom: -7px; }
+  /* The line always sits under the card's LAST button: inside the form when the
+     form ends the card (today's live page), after the passkey button when that
+     route is shown (this reference), so top = bottom = 102 in both. */
+  .signin form:last-child .message,
+  .signin > .message:last-child { display: block; min-height: 24px; margin-bottom: -7px; }
   .signin .or {
     display: flex;
     align-items: center;
@@ -197,11 +201,12 @@
         <label for="signInEmail">Email address</label>
         <input type="email" id="signInEmail" autocomplete="email" required>
         <button type="submit">Send me a sign-in link</button>
-        <p class="message" id="signInMessage" aria-live="polite"></p>
       </form>
       <!-- The passkey route: show ONLY once passkeys genuinely work (no dead buttons). -->
       <div class="or">or</div>
       <button type="button" class="passkey">Sign in with passkey</button>
+      <!-- The card message line: under the card's LAST button, slot always kept. -->
+      <p class="message" id="signInMessage" aria-live="polite"></p>
     </div>
     <p class="empty-state" id="sentMessage" hidden>Done. Check your email for your sign-in link.</p>
   </div>
