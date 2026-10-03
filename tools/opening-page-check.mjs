@@ -10,6 +10,9 @@
 //   * SIGNIN-BOX-STANDARD.md "Sign out": on every signed-in page, Sign out sits
 //     top-right, 40px / 40px by eye on a computer and 20px / 20px on a phone,
 //     Montserrat 20px bold gold, no underline (drawn by door.js).
+//   * the back arrow (2026-10-03): Sign out's mirror, top-LEFT, 40 / 40 (phones
+//     20 / 20), on Sign out's line (top of its letters -> baseline), as long as
+//     "Sign out", gold, 3.2px lines, the same pop, leading to the Masterboard.
 //   * no sideways scrolling on a 375px phone or a 320px small phone.
 //   * the LOCKED sign-in box (SIGNIN-BOX-STANDARD.md) on a computer, a 375px
 //     phone AND a 320px small phone (2026-10-03: its message line once wrapped
@@ -55,6 +58,7 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signin p{margin-bottom:26px!important}.signin label{font-size:17px!important}.signin button{background:#B29B68!important;height:50px!important}'
   + '.signin input:focus-visible{box-shadow:none!important;outline:2px solid #B29B68!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
+  + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
 const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
@@ -111,6 +115,12 @@ function measure({ below, corner }) {
     const s = cs(so); c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText('Sign out');
     const base = t.top + m.fontBoundingBoxAscent + (t.height - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2;
     out.corner = { top: base - m.actualBoundingBoxAscent, right: doc.documentElement.clientWidth - (t.left + m.actualBoundingBoxRight), font: font(so) };
+    // The back arrow: Sign out's mirror (its ink is exactly its drawing's box).
+    const back = doc.getElementById('backLink'), svg = back && back.querySelector('svg');
+    out.back = back && cs(back).display !== 'none' && svg ? (() => {
+      const r = svg.getBoundingClientRect(), path = svg.querySelector('path');
+      return { top: r.top, left: r.left, width: r.width, height: r.height, letters: { top: base - m.actualBoundingBoxAscent, base, width: m.actualBoundingBoxRight + m.actualBoundingBoxLeft }, color: cs(back).color, stroke: cs(path).strokeWidth, href: back.href };
+    })() : null;
   }
   return out;
 }
@@ -191,6 +201,8 @@ for (const p of PAGES) {
   const fieldFocus = boxDesk ? await desk.focus('#signInEmail').then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signInEmail')).boxShadow)) : null;
   // Sign out pops gently on hover (owner, 2026-10-02: "the button is dead").
   const signOutHover = p.corner && r.corner ? await desk.hover('#signOutButton').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signOutButton')).transform)) : null;
+  // The back arrow pops exactly like Sign out (owner, 2026-10-03: "everything identical").
+  const backHover = p.corner && r.back ? await desk.hover('#backLink').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('backLink')).transform)) : null;
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
@@ -215,6 +227,7 @@ for (const p of PAGES) {
   const overflowSmall = await small.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const boxSmall = boxDesk ? await small.evaluate(measureBox) : null;
   const lineSmall = boxDesk ? await Promise.all(BOX_MESSAGES.map((t) => small.evaluate(measureBoxLine, t))) : null;
+  const rSmall = p.corner ? await small.evaluate(measure, { below: p.below, corner: true }) : null;
   await small.close();
   check('phone width', overflowSmall <= 0, `small phone 320px sideways scrolling: ${overflowSmall}px`);
   if (boxDesk) {
@@ -238,12 +251,27 @@ for (const p of PAGES) {
     const scale = m ? +m[1] : 1;
     check('Sign out style', Math.abs(scale - 1.05) < 0.005, `Sign out pops on hover: scale ${scale.toFixed(3)} (expected 1.05)`);
   }
+  if (backHover !== null) {
+    const m = /matrix\(([\d.]+),/.exec(backHover || '');
+    const scale = m ? +m[1] : 1;
+    check('Back arrow style', Math.abs(scale - 1.05) < 0.005, `back arrow pops on hover like Sign out: scale ${scale.toFixed(3)} (expected 1.05)`);
+  }
   if (p.corner) {
-    const corners = [['computer', r.corner, 40], ['phone', rPhone.corner, 20]];
-    for (const [where, cr, want40] of corners) {
+    const corners = [['computer', r, 40], ['phone', rPhone, 20], ['small phone', rSmall, 20]];
+    for (const [where, rr, want40] of corners) {
+      const cr = rr.corner;
       if (!cr) { check('Sign out position', false, `Sign out (${where}): not shown`); continue; }
       check('Sign out position', Math.abs(cr.top - want40) <= TOL && Math.abs(cr.right - want40) <= TOL, `Sign out (${where}): ${cr.top.toFixed(1)}px from the top, ${cr.right.toFixed(1)}px from the right (expected ${want40} / ${want40})`);
+      // The back arrow (owner, 2026-10-03): Sign out's mirror, top-LEFT.
+      const bk = rr.back;
+      if (!bk) { check('Back arrow position', false, `back arrow (${where}): not shown`); continue; }
+      check('Back arrow position', Math.abs(bk.left - want40) <= TOL && Math.abs(bk.top - want40) <= TOL, `back arrow (${where}): ${bk.left.toFixed(1)}px from the left, ${bk.top.toFixed(1)}px from the top (expected ${want40} / ${want40}, Sign out's mirror)`);
+      check('Back arrow position', Math.abs(bk.top - bk.letters.top) <= TOL && Math.abs(bk.top + bk.height - bk.letters.base) <= TOL, `back arrow (${where}) on Sign out's line: top ${bk.top.toFixed(1)} / bottom ${(bk.top + bk.height).toFixed(1)} vs its letters ${bk.letters.top.toFixed(1)} / baseline ${bk.letters.base.toFixed(1)}`);
+      check('Back arrow style', Math.abs(bk.width - bk.letters.width) <= TOL, `back arrow (${where}) as long as "Sign out": ${bk.width.toFixed(1)}px vs ${bk.letters.width.toFixed(1)}px`);
     }
+    const bk = r.back;
+    const okBack = bk && bk.color === GOLD && bk.stroke === '3.2px' && bk.href === 'https://jiri76.github.io/primelevel-masterboard/';
+    check('Back arrow style', !!okBack, `back arrow: ${bk ? `${bk.color}, lines ${bk.stroke}, leads to ${bk.href}` : 'not shown'} (expected gold, 3.2px like the bold letters, the Masterboard)`);
     const f = r.corner ? r.corner.font : null;
     const ok = f && f.family === 'Montserrat' && f.size === '20px' && f.weight === '700' && f.color === GOLD && f.underline === 'none';
     check('Sign out style', !!ok, `Sign out: ${f ? `${f.family} ${f.size} ${f.weight} ${f.color} underline ${f.underline}` : 'not shown'}`);
@@ -251,7 +279,7 @@ for (const p of PAGES) {
   totalFails += failed.size;
   if (failed.size) pagesThatFailed += 1;
   if (SELFTEST) {
-    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
+    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }

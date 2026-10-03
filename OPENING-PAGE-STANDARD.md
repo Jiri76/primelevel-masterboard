@@ -89,7 +89,8 @@ Nudging a gap by a few px: use **padding, not margin** on the message; a small
    It opens every page in a real browser and measures, by eye: page top → title and
    title → message (or → the sign-in box's edge) at 100px (±1px), centring (±1px),
    each line's font, size, weight and colour, the corner Sign out (40 / 40 on a
-   computer, 20 / 20 on a phone, 20px bold gold, no underline) and no sideways
+   computer, 20 / 20 on a phone, 20px bold gold, no underline), the back arrow (its
+   mirror, top-left: position, line, length, colour, thickness, pop, link) and no sideways
    scrolling at 375px and 320px. The sign-in box is measured on a computer, a
    375px phone and a 320px small phone. Screens: the Masterboard front door (sign-in box; after
    sending), Insider Edge (no report open) and the Inbox Report (no reports yet;

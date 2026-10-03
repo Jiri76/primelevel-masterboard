@@ -1449,6 +1449,7 @@
       alignTilesToPicture();
     });
     PrimeLevelDoor.gate(supabase, {
+      frontDoor: true, // this IS the Masterboard: no back arrow here
       notSignedIn() {
         if (document.documentElement.getAttribute('data-view') !== 'sent') PrimeLevelDoor.setView('door');
       },

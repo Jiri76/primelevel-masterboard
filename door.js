@@ -28,6 +28,9 @@
       by this file, identical on every page: top-right, 40/40 by eye
       (phones 20/20), Montserrat 20px bold gold. It signs out everywhere and
       wipes everything private this browser remembers (PRIVATE_KEYS).
+   4. BACK ARROW (owner, 2026-10-03): Sign out's mirror, top-LEFT, on every
+      page except the Masterboard home (which tells gate() frontDoor: true);
+      always leads to the Masterboard, the hub. Owner only, like Sign out.
 
    This file only decides what the SCREEN shows. The real lock is the
    database, which refuses anyone but the owner whatever a page shows. */
@@ -88,7 +91,23 @@
     '.signout:active { transform: scale(0.97); }' +
     '@media (prefers-reduced-motion: reduce) { .signout { transition: none; } .signout:hover, .signout:active { transform: none; } }' +
     '.signout:focus-visible { outline: 2px solid #B29B68; outline-offset: 2px; }' +
-    '@media (max-width: 720px) { .signout { top: 17px; right: 20px; } }';
+    '@media (max-width: 720px) { .signout { top: 17px; right: 20px; } }' +
+    // The back arrow (owner, 2026-10-03): Sign out's mirror in the top-LEFT
+    // corner, identical in everything but the words. Its ink is exactly its
+    // drawing's box (see BACK_ARROW_SVG), so: drawing at 40 / 40 by eye
+    // (phones 20 / 20), as long as the letters "Sign out" (88px), as tall as
+    // their letters (16px: top of the tallest letters -> baseline), lines as
+    // thick as the bold letters (3.2px), the same gold, the same pop. The 14px
+    // padding is an invisible tap area (116 x 44); 26 + 14 = 40, 6 + 14 = 20.
+    '.back { position: fixed; top: 26px; left: 26px; z-index: 10; padding: 14px; line-height: 0;' +
+    ' color: #B29B68; transition: transform 0.15s ease; }' +
+    '.back svg { display: block; width: 88px; height: 16px; overflow: visible; }' +
+    ':root:not([data-view="owner"]) .back { display: none; }' +
+    '@media (hover: hover) { .back:hover { transform: scale(1.05); } }' +
+    '.back:active { transform: scale(0.97); }' +
+    '@media (prefers-reduced-motion: reduce) { .back { transition: none; } .back:hover, .back:active { transform: none; } }' +
+    '.back:focus-visible { outline: none; } .back:focus-visible svg { outline: 2px solid #B29B68; outline-offset: 2px; }' +
+    '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }';
   document.head.appendChild(style);
 
   function goToFrontDoor() {
@@ -123,6 +142,36 @@
       endSession(supabase).then(goToFrontDoor);
     });
     document.body.appendChild(signOutButton);
+  }
+
+  // ---- 3b. The back arrow (every page but the Masterboard itself) ----
+  // Always to the Masterboard, the hub (owner, 2026-10-03: "the Masterboard is
+  // the hub"): the same place every time, even when a page was opened from an
+  // email link, a bookmark or a new tab. A plain link, so it is instant and
+  // the keyboard reaches it; the Masterboard is fetched ahead of time the
+  // moment the arrow appears, so the click lands without waiting.
+  // The drawing: a "<" head and a shaft, stroke 3.2. With butt ends and a
+  // mitred tip the ink sits EXACTLY on the 88 x 16 box: the tip's mitre
+  // reaches 1.6 / sin 45 = 2.263 left of its point, each arm's end 1.6 x
+  // cos 45 = 1.131 above / below its point, the shaft ends square at 88.
+  var BACK_ARROW_SVG =
+    '<svg viewBox="0 0 88 16" aria-hidden="true" focusable="false">' +
+    '<path d="M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H88" fill="none" stroke="currentColor"' +
+    ' stroke-width="3.2" stroke-linejoin="miter" stroke-miterlimit="4" stroke-linecap="butt"/></svg>';
+  var backLink = null;
+  function addBack() {
+    if (backLink) return;
+    backLink = document.createElement('a');
+    backLink.className = 'back';
+    backLink.id = 'backLink';
+    backLink.href = FRONT_DOOR_URL;
+    backLink.setAttribute('aria-label', 'Back to the Masterboard');
+    backLink.innerHTML = BACK_ARROW_SVG;
+    document.body.appendChild(backLink);
+    var ahead = document.createElement('link');
+    ahead.rel = 'prefetch';
+    ahead.href = FRONT_DOOR_URL;
+    document.head.appendChild(ahead);
   }
 
   // ---- 2. The real check ----
@@ -166,6 +215,7 @@
           try { localStorage.setItem(OWNER_KEY, session.user.id); } catch (e) { /* just not instant next time */ }
           setView('owner');
           addSignOut(supabase);
+          if (!handlers.frontDoor) addBack(); // the Masterboard itself is where the arrow leads
           var waiting = ownerWaiting;
           ownerWaiting = [];
           waiting.forEach(function (fn) { fn(); });
@@ -199,6 +249,7 @@
     isOwnerView: isOwnerView,
     setView: setView,
     addSignOut: addSignOut,
+    addBack: addBack,
     endSession: endSession,
     forgetPrivate: forgetPrivate,
   };
