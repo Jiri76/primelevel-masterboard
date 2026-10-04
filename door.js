@@ -78,16 +78,18 @@
     // NO JUMP WHEN THE FONT ARRIVES (owner, 2026-10-04: seamless). Until
     // Montserrat has downloaded, the browser draws with a stand-in; Arial made
     // the title move 1px and the sign-in card 4px at ~0.4s. "Montserrat
-    // Fallback" is Arial resized to Montserrat's width (measured on the pages'
-    // own texts: 110.4% regular, 109.09% bold) with Montserrat's line metrics
-    // (ascent 0.968, descent 0.251, no line gap, divided by that size), so
-    // every line sits and wraps where Montserrat will put it (the Next.js /
-    // Capsize method). Every page lists it: 'Montserrat', 'Montserrat
+    // Fallback" is Arial resized to Montserrat's width with Montserrat's line
+    // metrics (ascent 0.968, descent 0.251, no line gap, divided by that
+    // size), so every line sits and wraps where Montserrat will put it (the
+    // Next.js / Capsize method). The sizes keep the WORST word closest,
+    // measured on the pages' own texts at their real sizes: 111.59% regular
+    // (worst 2.8px), 110.74% bold (worst 3.4px; the 60px "Masterboard" title
+    // 0.05px). A plain average left the big titles 6-8px off, so they slid. Every page lists it: 'Montserrat', 'Montserrat
     // Fallback', sans-serif. Phones without Arial (Android) keep sans-serif.
     '@font-face { font-family: "Montserrat Fallback"; src: local("Arial"), local("ArialMT"); font-weight: 400;' +
-    ' size-adjust: 110.4%; ascent-override: 87.68%; descent-override: 22.74%; line-gap-override: 0%; }' +
+    ' size-adjust: 111.59%; ascent-override: 86.75%; descent-override: 22.49%; line-gap-override: 0%; }' +
     '@font-face { font-family: "Montserrat Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"); font-weight: 700;' +
-    ' size-adjust: 109.09%; ascent-override: 88.73%; descent-override: 23.01%; line-gap-override: 0%; }' +
+    ' size-adjust: 110.74%; ascent-override: 87.41%; descent-override: 22.67%; line-gap-override: 0%; }' +
     ':root:not([data-view="owner"]) .pl-private { display: none !important; }' +
     '.signout { position: fixed; top: 37px; right: 40px; z-index: 10; margin: 0; padding: 0; border: 0;' +
     ' background: none; font-family: "Montserrat", "Montserrat Fallback", sans-serif; font-size: 20px; font-weight: 700;' +
