@@ -669,6 +669,13 @@
     // confirmed via get_publishable_keys, not guessed/copied blind.
     const SUPABASE_URL = 'https://kenlhcatkjthhzuaznpg.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-gt5PPGL45s3hRsfOosH6g_q3yP-b-_';
+    // A sign-in link that no longer works (owner, 2026-10-04: "I'm always in
+    // this sign-in loop"): Supabase sends the browser back here with
+    // #error_code=otp_expired ("Email link is invalid or has expired": already
+    // used, replaced by a newer link, or older than an hour). Read it before
+    // the library starts, so the front door can say so instead of silently
+    // showing the box again.
+    const linkFailed = /[#&]error(_code)?=/.test(window.location.hash);
     // Real root cause found and fixed: the settings GET (which fetches
     // picture_version, the whole basis for the picture's cache-busted
     // URL) hits the EXACT SAME URL every single time -- unlike the
@@ -1441,9 +1448,26 @@
       PrimeLevelDoor.setView(view);
     }
 
+    // FRICTIONLESS (owner, 2026-10-04): the address typed when a link is sent
+    // is remembered on THIS browser only, until the owner is signed in, so the
+    // box always comes back ready: one click sends a fresh link.
+    const LAST_EMAIL_KEY = 'masterboard-last-email-v1';
+    function rememberEmail(address) {
+      try {
+        if (address) localStorage.setItem(LAST_EMAIL_KEY, address);
+        else localStorage.removeItem(LAST_EMAIL_KEY);
+      } catch (e) { /* storage blocked: the field just starts empty */ }
+    }
+    try { signInEmail.value = localStorage.getItem(LAST_EMAIL_KEY) || ''; } catch (e) { /* storage blocked */ }
+    if (linkFailed) {
+      signInMessage.textContent = 'Link expired. Send again.'; // one row at every width (187px of 220)
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
     // The owner's Masterboard: load the private parts (at once when door.js
     // already knew the owner, otherwise the moment the check confirms it).
     PrimeLevelDoor.whenOwner(() => {
+      rememberEmail(''); // signed in: nothing left to remember
       loadSettings();
       checkInsiderEdgeUnread();
       alignTilesToPicture();
@@ -1498,6 +1522,7 @@
       if (sending) return;
       sending = true;
       signInMessage.textContent = '';
+      rememberEmail(signInEmail.value.trim());
       showMessage('sent', 'Done. Check your email for your sign-in link.');
       const { error } = await supabase.auth.signInWithOtp({
         email: signInEmail.value.trim(),

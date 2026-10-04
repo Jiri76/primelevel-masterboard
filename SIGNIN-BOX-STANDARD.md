@@ -59,7 +59,7 @@ bottom, which are the same number (102, phones 72).
 
 **ONE card size (owner, 2026-10-03: "I don't want one card smaller, one card bigger, just
 one type of card").** The slot for the line under the button ("Access denied.",
-"Sending failed. Try again.") is ALWAYS kept, so the card is the same height with or
+"Sending failed. Try again.", "Link expired. Send again.") is ALWAYS kept, so the card is the same height with or
 without it (433px on a computer, 397px on a 375px phone) and nothing moves when it appears. With
 the line: button edge → its letters **30** (= intro → "Email address": every separate line
 is its own group), its letters 12px tall, its baseline → card bottom **60** (phones 30):
@@ -103,6 +103,16 @@ so an exact split is physically impossible at 45px; this is the closest.
   denied." (owner: direct, it is for strangers; the address sits in the field so the line
   fits one row at every width, 2026-10-03). Nothing to press, no wrong account left signed
   in. Sign out appears for the owner only.
+- **A link that no longer works** (owner, 2026-10-04, after a sign-in "loop": every new
+  link cancels the previous one, and an older email in the same Gmail conversation was
+  clicked): Supabase sends the browser back with `#error_code=otp_expired`. The box shows
+  one line under the button, "Link expired. Send again." (187px: one row at every width;
+  "Link expired. Send a new one." measured 222px and would wrap on a 320px phone), the
+  address already in the field, and the error is cleared from the address bar. One click
+  sends a fresh link.
+- **The address is remembered** (owner, 2026-10-04: frictionless): what was typed when a
+  link was sent stays on THIS browser only (`localStorage` `masterboard-last-email-v1`)
+  until the owner is signed in, then it is forgotten. So the box always comes back ready.
 - **Real failure** (network down, rate limit, Supabase down): the box comes back, with the
   address still typed in and one line under the button: "Sending failed. Try again."
   (owner, 2026-10-03: punchy, direct, one line). Rare; everything else stays

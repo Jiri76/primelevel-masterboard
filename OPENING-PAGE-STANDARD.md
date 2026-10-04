@@ -13,7 +13,8 @@ the opening page). Examples today:
   not check your access right now ..." (its sign-in box itself sits 100px below the title
   too). An account without access is signed out automatically and gets the sign-in box
   back, the refused address in the field and one line under the button: "Access denied."
-  (owner, 2026-10-02; the address moved into the field 2026-10-03).
+  (owner, 2026-10-02; the address moved into the field 2026-10-03). A sign-in link that
+  no longer works brings the box back with "Link expired. Send again." (2026-10-04).
 
 Every opening page, on every PrimeLevel tool, must look exactly like this.
 
