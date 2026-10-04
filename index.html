@@ -640,7 +640,13 @@
           // -- this loads the RAW, un-cropped photo at its true natural
           // size, so it genuinely does need the full pan/zoom math
           // applied, same as the module script's own paintPicture().
-          var url = 'https://kenlhcatkjthhzuaznpg.supabase.co/storage/v1/object/public/masterboard-assets/hero?v=' + encodeURIComponent(cached.version);
+          // The photo is private (2026-10-05): only through the signed
+          // address this browser already holds for this version (see
+          // pictureAddress() in the module script); without a valid one,
+          // the module script loads the photo normally.
+          var signed = JSON.parse(localStorage.getItem('masterboard-picture-url-v1') || 'null');
+          if (!signed || signed.version !== cached.version || signed.expiresAt - Date.now() < 3600000) return;
+          var url = signed.url;
           img.onload = function () {
             placeholder.classList.add('has-image');
             var frameRect = placeholder.getBoundingClientRect();
@@ -1194,10 +1200,32 @@
     // runs inside onload, not before -- it needs the image's real
     // naturalWidth/Height, which isn't available until it's actually
     // decoded.
-    function paintPicture({ x, y, version, zoom = 1 }) {
+    // PRIVATE PHOTO (owner, 2026-10-05, step 4: "nobody can view my personal
+    // data"): the storage box is private, so the photo opens only through a
+    // SIGNED address, a time-limited key that only the signed-in owner can
+    // get. One address is kept per photo version for its whole life (7 days,
+    // replaced a day early) in this browser's private store, wiped by Sign
+    // out (door.js PRIVATE_KEYS), so most visits need no extra request.
+    const PICTURE_URL_KEY = 'masterboard-picture-url-v1';
+    const SIGNED_URL_SECONDS = 7 * 24 * 3600;
+    async function pictureAddress(version) {
+      try {
+        const kept = JSON.parse(localStorage.getItem(PICTURE_URL_KEY) || 'null');
+        if (kept && kept.version === version && kept.expiresAt - Date.now() > 24 * 3600 * 1000) return kept.url;
+      } catch { /* unreadable: ask for a new one */ }
+      const { data, error } = await supabase.storage.from(PICTURE_BUCKET).createSignedUrl(PICTURE_KEY, SIGNED_URL_SECONDS);
+      if (error || !data) { console.error('Could not open the photo:', error); return null; }
+      try {
+        localStorage.setItem(PICTURE_URL_KEY, JSON.stringify({ version, url: data.signedUrl, expiresAt: Date.now() + SIGNED_URL_SECONDS * 1000 }));
+      } catch { /* storage blocked: a new address next time */ }
+      return data.signedUrl;
+    }
+
+    async function paintPicture({ x, y, version, zoom = 1 }) {
       posX = x;
       posY = y;
-      const { data: urlData } = supabase.storage.from(PICTURE_BUCKET).getPublicUrl(PICTURE_KEY);
+      const url = await pictureAddress(version);
+      if (!url) return; // no address: whatever is on screen (the instant snapshot) stays
       imagePreview.onload = () => {
         imagePlaceholder.classList.add('has-image');
         currentZoom = zoom;
@@ -1207,7 +1235,7 @@
       imagePreview.onerror = () => {
         // Nothing saved yet -- stay on the normal empty-state label.
       };
-      imagePreview.src = `${urlData.publicUrl}?v=${encodeURIComponent(version)}`;
+      imagePreview.src = url;
     }
 
     async function loadSettings() {
