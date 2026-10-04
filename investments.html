@@ -1266,7 +1266,12 @@
     // transition has even started -- same reasoning as every other
     // "click strands due to a layout/geometry shift mid-press" fix on
     // this project.
-    addTrigger.addEventListener('mousedown', () => {
+    addTrigger.addEventListener('mousedown', (e) => {
+      // The browser's own response to pressing a button is to focus that
+      // button, and it runs AFTER this handler, so it took the focus back
+      // from the Ticker field below (found 2026-10-04: the field was never
+      // ready to type in). Cancelling it keeps the cursor in the field.
+      e.preventDefault();
       if (addPopover.classList.contains('open')) {
         closeAddPopover();
         return;
