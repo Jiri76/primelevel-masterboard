@@ -47,6 +47,8 @@ const PAGES = [
   { name: 'Masterboard front door: sign-in box', path: '/', standIn: signedOut(), ready: '#signInBox', below: '#signInBox', title: '60px' },
   { name: 'Masterboard front door: after sending', path: '/', standIn: signedOut(), ready: '#signInBox', send: true, below: '#doorMessage', title: '60px' },
   { name: 'Insider Edge: no report open', path: '/insider-edge.html', standIn: ownerReal(), ready: '.empty-state', prefer: '.closed-state', below: '#content .empty-state', title: '50px', corner: true },
+  { name: 'Insider Edge: no reports yet', path: '/insider-edge.html', standIn: ownerFake({ insider_edge_reports: [] }), ready: '.empty-state', below: '#content .empty-state', title: '50px', corner: true },
+  { name: 'Insider Edge: could not load', path: '/insider-edge.html', standIn: ownerFake({ insider_edge_reports: 'error' }), ready: '.empty-state', below: '#content .empty-state', title: '50px', corner: true },
   { name: 'Inbox Report: no reports yet', path: '/inbox-report.html', standIn: ownerFake({ email_reports: [] }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
   { name: 'Inbox Report: could not load', path: '/inbox-report.html', standIn: ownerFake({ email_reports: 'error' }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
 ];

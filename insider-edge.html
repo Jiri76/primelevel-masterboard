@@ -550,7 +550,13 @@
          in the DOM makes no visual difference. -->
     <div class="report-tiles" id="reportTiles"></div>
     <div id="content">
-      <div class="empty-state" id="emptyState">
+      <!-- Hidden until the reports have actually been checked (owner,
+           2026-10-04: seamless). It used to show while the reports were
+           still loading, then the date tiles arrived and pushed it down
+           (159px, 224 on phones): the wrong message, then a jump. Now the
+           space under the title stays empty for that split second, and the
+           real answer decides what appears (loadReports below). -->
+      <div class="empty-state" id="emptyState" hidden>
         No reports yet — check back after the next scheduled report.
       </div>
     </div>
@@ -675,7 +681,7 @@
     // genuinely swaps in.
     function alignReportTiles() {
       const target = contentEl.firstElementChild;
-      if (!target) return;
+      if (!target || target.hidden) return; // nothing on screen yet (still loading): nothing to line up with
       // Real bug found and fixed: getBoundingClientRect().top is
       // VIEWPORT-relative (changes with scroll position), but .report-
       // tiles is `position: fixed`, which needs a scroll-INDEPENDENT
@@ -876,7 +882,21 @@
       // display as-is rather than reverting to the empty state -- a
       // stale-but-real cached report is a better fallback than a false
       // "no reports yet" while this is a transient network hiccup.
-      if (error || !data || data.length === 0) return;
+      // Nothing cached (a first visit, or after Sign out wiped it): say
+      // exactly what happened, once the answer is in (owner, 2026-10-04):
+      // genuinely no reports -> "No reports yet…"; the check failed -> the
+      // Inbox Report's own wording, never a false "No reports yet".
+      if (error || !data || data.length === 0) {
+        if (!reports.length && emptyStateEl) {
+          if (error || !data) {
+            console.error('Could not load insider_edge_reports:', error);
+            emptyStateEl.textContent = 'Could not load your reports right now. Please try again in a moment.';
+          }
+          emptyStateEl.hidden = false;
+          alignReportTiles();
+        }
+        return;
+      }
 
       reports = data;
       // selectedId is deliberately left untouched here -- per explicit

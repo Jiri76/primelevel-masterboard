@@ -7,7 +7,11 @@ An **opening page** is any screen that shows only a page title and one message l
 (on signed-in pages the corner Sign out is there too: it belongs to every page, not to
 the opening page). Examples today:
 
-- Insider Edge before a report is opened: "Click a date to open a report."
+- Insider Edge before a report is opened: "Click a date to open a report."; with no
+  reports at all: "No reports yet — check back after the next scheduled report."; when
+  the reports could not be loaded: "Could not load your reports right now. Please try
+  again in a moment." (2026-10-04: shown only once the answer is in, never while the
+  reports are still loading)
 - Inbox Report: "No reports to show yet ...", "Could not load your reports right now ..."
 - The Masterboard front door: "Done. Check your email for your sign-in link." and "Could
   not check your access right now ..." (its sign-in box itself sits 100px below the title
@@ -94,8 +98,8 @@ Nudging a gap by a few px: use **padding, not margin** on the message; a small
    mirror, top-left: position, line, length, colour, thickness, pop, link) and no sideways
    scrolling at 375px and 320px. The sign-in box is measured on a computer, a
    375px phone and a 320px small phone. Screens: the Masterboard front door (sign-in box; after
-   sending), Insider Edge (no report open) and the Inbox Report (no reports yet;
-   could not load). Any drift fails the run and opens (or comments on) a GitHub
+   sending), Insider Edge (no report open; no reports yet; could not load) and the
+   Inbox Report (no reports yet; could not load). Any drift fails the run and opens (or comments on) a GitHub
    Issue labelled `opening-page-drift`, listing the failing checks. That Issue is
    the same alert path as the report watchdogs, which GitHub emails to
    info@primelevel.co.uk.
