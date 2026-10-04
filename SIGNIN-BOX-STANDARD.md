@@ -110,6 +110,18 @@ so an exact split is physically impossible at 45px; this is the closest.
   "Link expired. Send a new one." measured 222px and would wrap on a 320px phone), the
   address already in the field, and the error is cleared from the address bar. One click
   sends a fresh link.
+- **One email per link** (owner, 2026-10-04: "every single link comes as a separate
+  email… they were all stuck on top of each other"): the page asks for each link with
+  the front door's address plus the time, `…/primelevel-masterboard/?sent=15:32`
+  (allow-listed in Supabase → Redirect URLs as `…/primelevel-masterboard/?sent=*`), and
+  the Magic Link template (VERSION 2026-10-04, text in the backup's
+  `reference-files/email-templates/`) prints that time in the subject: "Your Masterboard
+  sign-in link (15:32)". Every email has its own subject, so Gmail never stacks them and
+  the newest is always on top; the email itself says "Only your newest link works."
+  `door.js` clears `?sent=` (and the library's leftover `#`) from the address bar on
+  arrival. Not used: the 6-digit code or any part of the link's hash in the subject
+  (the code is the key itself; a few characters of the hash narrow the code down to ~15
+  guesses).
 - **The address is remembered** (owner, 2026-10-04: frictionless): what was typed when a
   link was sent stays on THIS browser only (`localStorage` `masterboard-last-email-v1`)
   until the owner is signed in, then it is forgotten. So the box always comes back ready.

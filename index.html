@@ -1461,7 +1461,7 @@
     try { signInEmail.value = localStorage.getItem(LAST_EMAIL_KEY) || ''; } catch (e) { /* storage blocked */ }
     if (linkFailed) {
       signInMessage.textContent = 'Link expired. Send again.'; // one row at every width (187px of 220)
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+      PrimeLevelDoor.tidyAddress();
     }
 
     // The owner's Masterboard: load the private parts (at once when door.js
@@ -1501,10 +1501,17 @@
     // Click -> "Done" (LOCKED behaviour, SIGNIN-BOX-STANDARD.md): no
     // "Sending…", the button never changes, double clicks are ignored while
     // Supabase replies (no duplicate emails). The link always comes back to
-    // the front door's exact address, as allow-listed in Supabase ->
-    // Authentication -> URL Configuration -> Redirect URLs (never
-    // location.href: an extra ?query or index.html would not match, and
-    // Supabase would send the link to the Site URL instead).
+    // the front door's own address plus "?sent=" and the time it was asked
+    // for, e.g. ".../?sent=15:32", as allow-listed in Supabase ->
+    // Authentication -> URL Configuration -> Redirect URLs
+    // ("https://jiri76.github.io/primelevel-masterboard/?sent=*"; never
+    // location.href: anything else would not match, and Supabase would send
+    // the link to the Site URL instead). ONE EMAIL PER LINK (owner,
+    // 2026-10-04): the Magic Link template (VERSION 2026-10-04) puts that time
+    // in the subject, "Your Masterboard sign-in link (15:32)", so Gmail never
+    // stacks several links in one conversation and the newest is always on
+    // top. The time holds only digits and ":" (the allow-list's "*" stops at
+    // "." and "/"); Supabase sends at most one email a minute per address.
     // shouldCreateUser: false: this Supabase project is shared with the
     // customer app, so a stranger typing an address must never create an
     // account. Supabase refuses unknown addresses ("signups not allowed",
@@ -1516,6 +1523,7 @@
     // in the background (it waits for the mail to go out, ~1-2s, before it
     // answers). Only a genuine failure brings the box back, with the short
     // error under the button and the address still typed in.
+    const sentAt = () => new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }).replace(/[^0-9:]/g, '');
     let sending = false;
     signInForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1526,7 +1534,7 @@
       showMessage('sent', 'Done. Check your email for your sign-in link.');
       const { error } = await supabase.auth.signInWithOtp({
         email: signInEmail.value.trim(),
-        options: { emailRedirectTo: PrimeLevelDoor.FRONT_DOOR_URL, shouldCreateUser: false },
+        options: { emailRedirectTo: `${PrimeLevelDoor.FRONT_DOOR_URL}?sent=${sentAt()}`, shouldCreateUser: false },
       });
       sending = false;
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);

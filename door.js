@@ -110,6 +110,18 @@
     '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }';
   document.head.appendChild(style);
 
+  // An emailed link comes back to the front door as
+  // ".../?sent=15:32#access_token=…" (or "#error=…" when it no longer works).
+  // The time is only there to give every sign-in email its own subject, so
+  // Gmail never stacks them (owner, 2026-10-04); once read, the address bar
+  // goes back to the plain address.
+  function tidyAddress() {
+    var params = new URLSearchParams(window.location.search);
+    params.delete('sent');
+    var query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? '?' + query : ''));
+  }
+
   function goToFrontDoor() {
     window.location.replace(FRONT_DOOR_URL); // replace: Back never returns to a private page
   }
@@ -199,10 +211,11 @@
         return;
       }
 
-      // The emailed link comes back with tokens in the address: tidy it.
-      if (window.location.hash.indexOf('access_token') !== -1) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
+      // The emailed link comes back with tokens in the address: tidy it. The
+      // library reads the tokens first and blanks the hash itself, leaving a
+      // bare "#" (seen live 2026-10-04: ".../primelevel-masterboard/#"), so
+      // the "?sent=" time and a trailing "#" are cleared here too.
+      if (/[?&]sent=/.test(window.location.search) || window.location.hash.indexOf('access_token') !== -1 || /#$/.test(window.location.href)) tidyAddress();
 
       supabase.rpc('is_email_report_viewer').then(function (result) {
         if (result.error) {
@@ -251,5 +264,6 @@
     isOwnerView: isOwnerView,
     setView: setView,
     endSession: endSession,
+    tidyAddress: tidyAddress,
   };
 })();
