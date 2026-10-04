@@ -75,9 +75,22 @@
   // Private parts hidden unless owner; the Sign out style (owner only).
   var style = document.createElement('style');
   style.textContent =
+    // NO JUMP WHEN THE FONT ARRIVES (owner, 2026-10-04: seamless). Until
+    // Montserrat has downloaded, the browser draws with a stand-in; Arial made
+    // the title move 1px and the sign-in card 4px at ~0.4s. "Montserrat
+    // Fallback" is Arial resized to Montserrat's width (measured on the pages'
+    // own texts: 110.4% regular, 109.09% bold) with Montserrat's line metrics
+    // (ascent 0.968, descent 0.251, no line gap, divided by that size), so
+    // every line sits and wraps where Montserrat will put it (the Next.js /
+    // Capsize method). Every page lists it: 'Montserrat', 'Montserrat
+    // Fallback', sans-serif. Phones without Arial (Android) keep sans-serif.
+    '@font-face { font-family: "Montserrat Fallback"; src: local("Arial"), local("ArialMT"); font-weight: 400;' +
+    ' size-adjust: 110.4%; ascent-override: 87.68%; descent-override: 22.74%; line-gap-override: 0%; }' +
+    '@font-face { font-family: "Montserrat Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"); font-weight: 700;' +
+    ' size-adjust: 109.09%; ascent-override: 88.73%; descent-override: 23.01%; line-gap-override: 0%; }' +
     ':root:not([data-view="owner"]) .pl-private { display: none !important; }' +
     '.signout { position: fixed; top: 37px; right: 40px; z-index: 10; margin: 0; padding: 0; border: 0;' +
-    ' background: none; font-family: "Montserrat", sans-serif; font-size: 20px; font-weight: 700;' +
+    ' background: none; font-family: "Montserrat", "Montserrat Fallback", sans-serif; font-size: 20px; font-weight: 700;' +
     ' color: #B29B68; text-decoration: none; cursor: pointer; transition: transform 0.15s ease; }' +
     // Only ever for the signed-in owner (owner, 2026-10-02: "the Sign out
     // shouldn't be there… I'm not in"): another account is signed out

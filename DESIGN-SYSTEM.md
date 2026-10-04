@@ -16,7 +16,7 @@ fix the page; never the standard. Detailed standards for some items live in thei
 
 | | Locked value |
 |---|---|
-| Font | Montserrat, Regular 400 and Bold 700 only |
+| Font | Montserrat, Regular 400 and Bold 700 only; every font list reads `'Montserrat', 'Montserrat Fallback', sans-serif`. "Montserrat Fallback" (defined once in `door.js`) is Arial resized to Montserrat's width and line metrics, so nothing jumps when Montserrat finishes downloading (owner, 2026-10-04: seamless; measured: stand-in vs final ≤ 0.6px on every page at six widths, was up to 30px) |
 | Colours | navy `#1E2633` (page background, text on light surfaces) · white `#F9F9FA` · company gold `#B29B68` (titles, Sign out, glows; never on buttons) · card `#2A3441` · border `#3A4453` · soft grey-blue `#8A93A3` (messages, quiet text) · green `#4CAF7D` · orange `#D9A441` · red `#E45858` (errors) · light card `#E9E9EB` (the sign-in box only) |
 | Spacing, vertical | **100px by eye**: page top → title letters, title letters → the first thing under it, on EVERY page at EVERY width (phones too) |
 | Spacing, sideways | page gutter 20px; distances to the narrow SIDE edges halve on phones (sign-in box sides 60 → 30, Sign out corner 40 → 20) |
@@ -52,7 +52,8 @@ fix the page; never the standard. Detailed standards for some items live in thei
 2. Everything private inside `class="pl-private"`; private loading through
    `PrimeLevelDoor.whenOwner(...)`; then `PrimeLevelDoor.gate(supabase)`. Any private cache
    joins `PRIVATE_KEYS` in `door.js`.
-3. Title, opening page, tiles, cards, buttons: copy the items above exactly.
+3. Title, opening page, tiles, cards, buttons: copy the items above exactly. Every font
+   list: `'Montserrat', 'Montserrat Fallback', sans-serif`.
 4. Measure: 100 by eye at all six widths, nothing cut off, nothing sideways, centred text.
 5. Add the page to the guards in the same commit. A page that is not guarded is not protected.
 

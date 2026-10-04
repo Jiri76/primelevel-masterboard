@@ -15,6 +15,12 @@
      opening-page spacing), because the after-send line must sit exactly like
      an opening-page message. Do NOT change a value without the owner's
      explicit request. */
+  /* The metric-matched stand-in while Montserrat downloads (no jump when it
+     arrives): the same faces door.js gives every real page. */
+  @font-face { font-family: "Montserrat Fallback"; src: local("Arial"), local("ArialMT"); font-weight: 400;
+    size-adjust: 110.4%; ascent-override: 87.68%; descent-override: 22.74%; line-gap-override: 0%; }
+  @font-face { font-family: "Montserrat Fallback"; src: local("Arial Bold"), local("Arial-BoldMT"); font-weight: 700;
+    size-adjust: 109.09%; ascent-override: 88.73%; descent-override: 23.01%; line-gap-override: 0%; }
   :root {
     --navy: #1E2633;
     --white: #F9F9FA;
@@ -27,7 +33,7 @@
     padding: 0;
     background: var(--navy);
     color: var(--navy); /* no browser-default black anywhere */
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
     min-height: 100%;
   }
   .container {
@@ -79,7 +85,7 @@
     height: 45px;
     padding: 0 16px; /* typed letters 16 above / 17 below by eye: the closest possible (odd 33px) */
     font-size: 16px; /* 16px: also stops iPhone Safari zooming in on tap */
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
     color: var(--navy);
     background: var(--white);
     border: 1px solid var(--navy);
@@ -106,7 +112,7 @@
     padding: 2px 0 0; /* button text centred by eye: 16 above, 16 below */
     font-size: 16px;
     font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
     color: var(--navy);
     background: var(--white); /* both buttons white: two equal choices, neither is gold */
     border: 1px solid var(--navy);
