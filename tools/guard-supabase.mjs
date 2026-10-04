@@ -38,7 +38,7 @@ const rows = ${JSON.stringify(rows)};
 const session = ${OWNER};
 const chain = (t) => {
   const answer = () => rows[t] === 'error' ? { data: null, error: { message: 'guard stand-in' } } : { data: rows[t] || [], error: null };
-  const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, single: async () => answer(),
+  const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, abortSignal: () => q, single: async () => answer(),
     then: (ok, bad) => Promise.resolve(answer()).then(ok, bad) };
   return q;
 };

@@ -1086,9 +1086,11 @@
     <h1>Investments</h1>
     <!-- "loading" keeps the bar, the + button and the cards out of sight
          until the first answer about the holdings (see .loading in the CSS,
-         and loadHoldings). The time limit makes sure they always appear,
-         even if that answer never comes or the page's script cannot load. -->
-    <script>setTimeout(function () { document.getElementById('investmentsPage').classList.remove('loading'); }, 3000);</script>
+         and loadHoldings). The holdings read has its own 8 s time limit (a
+         slow answer shows "Could not load holdings" instead of arriving late
+         and pushing things down); this 10 s one is only the safety net for
+         when the page's script cannot load at all. -->
+    <script>setTimeout(function () { document.getElementById('investmentsPage').classList.remove('loading'); }, 10000);</script>
 
     <div class="portfolio-summary" id="portfolioSummary"></div>
 
@@ -1441,11 +1443,15 @@
       // created_at timestamp down to the microsecond, so ordering by
       // created_at alone left their relative order undefined -- a
       // second, always-unique sort key (id) makes it deterministic.
+      // Time limit (owner rule 9b: time limits on outside calls): an answer
+      // slower than 8 s counts as failed, so the page says so instead of the
+      // whole section arriving late and pushing everything down.
       const { data, error } = await supabase
         .from('investment_holdings')
         .select('*')
         .order('created_at', { ascending: true })
-        .order('id', { ascending: true });
+        .order('id', { ascending: true })
+        .abortSignal(AbortSignal.timeout(8000));
       if (error) {
         holdingsEl.innerHTML = '<div class="empty-state">Could not load holdings. Please refresh.</div>';
         showPageContent();
