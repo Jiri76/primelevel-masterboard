@@ -569,6 +569,19 @@
      value, not yet tuned against real content.
      Colors mirror .holding-card exactly (same background/border/
      radius), per explicit request. */
+  /* NO JUMP WHILE LOADING (owner, 2026-10-04: seamless). Below 1020px the
+     bar grows to fit its chart, and the chart used to be built only when the
+     first prices arrived (~1s), so ~400px popped in and pushed the + button
+     and every card down (again at ~5s when gold's retry added a legend row).
+     Now the bar, the + button and the cards stay out of sight until the
+     holdings are known, then appear together with the chart's frame and
+     legend already drawn (loadHoldings); prices only fill in numbers and
+     slices, so nothing changes size. Same on every screen. */
+  .container.loading .portfolio-summary,
+  .container.loading .add-wrapper,
+  .container.loading .holdings {
+    display: none;
+  }
   .portfolio-summary {
     width: 980px;
     /* 300px -> 600px, 2026-09-03, per explicit request: more room
@@ -1069,8 +1082,13 @@
 <script src="door.js"></script>
 </head>
 <body>
-  <div class="container pl-private">
+  <div class="container pl-private loading" id="investmentsPage">
     <h1>Investments</h1>
+    <!-- "loading" keeps the bar, the + button and the cards out of sight
+         until the first answer about the holdings (see .loading in the CSS,
+         and loadHoldings). The time limit makes sure they always appear,
+         even if that answer never comes or the page's script cannot load. -->
+    <script>setTimeout(function () { document.getElementById('investmentsPage').classList.remove('loading'); }, 3000);</script>
 
     <div class="portfolio-summary" id="portfolioSummary"></div>
 
@@ -1407,6 +1425,11 @@
     }
     addHoldingBtn.addEventListener('mousedown', saveNewHolding);
 
+    // The bar, the + button and the cards appear together (see .loading).
+    function showPageContent() {
+      document.getElementById('investmentsPage').classList.remove('loading');
+    }
+
     async function loadHoldings() {
       // Real bug found and fixed during live testing: the 3 seed rows
       // were all inserted in one batch and share the exact same
@@ -1420,10 +1443,16 @@
         .order('id', { ascending: true });
       if (error) {
         holdingsEl.innerHTML = '<div class="empty-state">Could not load holdings. Please refresh.</div>';
+        showPageContent();
         return;
       }
       holdings = data;
       renderHoldings();
+      // The chart's frame and legend are drawn NOW, from the holdings, so
+      // the bar already has its final size when it appears; the prices
+      // fetched next only fill in the numbers and slices.
+      if (holdings.length) updatePortfolioSummary();
+      showPageContent();
       // Refresh on every reload -- covers the real page-load case AND
       // every mutation that already calls loadHoldings() (add/save/
       // delete), so a newly added or renamed holding gets a real price
@@ -1703,18 +1732,27 @@
       // legend built below can label each slice by the exact same
       // color it's drawn with -- was just a bare value, no way to say
       // which slice belonged to which holding.
+      // ONE COLOUR PER HOLDING, fixed (owner, 2026-10-04: no jumps): given
+      // in the holdings' own order, gold and the brand colours first, so a
+      // price arriving late can never re-colour the others, and the legend
+      // can be drawn from the holdings before any price is known (it then
+      // never grows or shrinks when prices arrive). With every holding
+      // priced, the colours are exactly the ones the chart always had.
+      let paletteIndex = 0;
+      const colours = holdings.map((h) => TICKER_COLOR_OVERRIDES[h.ticker]
+        ?? PORTFOLIO_SUMMARY_PALETTE[paletteIndex++ % PORTFOLIO_SUMMARY_PALETTE.length]);
       const segments = [];
-      for (const h of holdings) {
+      holdings.forEach((h, i) => {
         const quote = livePrices[h.ticker];
-        if (!quote) continue;
+        if (!quote) return;
         const value = quote.price * h.units;
         totalValue += value;
         if (quote.change != null) {
           totalChange += quote.change * h.units;
           totalPrevValue += (quote.price - quote.change) * h.units;
         }
-        if (value > 0) segments.push({ ticker: h.ticker, value });
-      }
+        if (value > 0) segments.push({ ticker: h.ticker, value, color: colours[i] });
+      });
 
       const R = 160, STROKE = 40, CX = 200, CY = 200;
       const circumference = 2 * Math.PI * R;
@@ -1735,18 +1773,12 @@
       // rotate(-90) starts the first slice at 12 o'clock, the standard
       // pie/donut convention, instead of SVG's own 3-o'clock zero angle.
       let offset = 0;
-      // Separate counter for the general palette, 2026-09-03 -- a gold
-      // holding (assigned var(--gold) directly, below) must NOT also
-      // consume a slot from PORTFOLIO_SUMMARY_PALETTE's own cycle, or
-      // every OTHER holding after it would silently shift one color
-      // off from where it'd otherwise land.
-      let paletteIndex = 0;
-      portfolioLegendEl.innerHTML = '';
-      segments.forEach(({ ticker, value }, i) => {
+      // (A gold or brand-coloured holding never uses up a slot of the
+      // general palette -- see `colours` above -- so the others never
+      // shift one colour along.)
+      segments.forEach(({ value, color }) => {
         const fraction = totalValue > 0 ? value / totalValue : 0;
         const dash = fraction * circumference;
-        const color = TICKER_COLOR_OVERRIDES[ticker]
-          ?? PORTFOLIO_SUMMARY_PALETTE[paletteIndex++ % PORTFOLIO_SUMMARY_PALETTE.length];
         const slice = document.createElementNS(SVG_NS, 'circle');
         slice.setAttribute('cx', CX);
         slice.setAttribute('cy', CY);
@@ -1759,20 +1791,30 @@
         slice.setAttribute('transform', `rotate(-90 ${CX} ${CY})`);
         portfolioDonutEl.appendChild(slice);
         offset += dash;
+      });
 
-        // Legend item: a small dot in the SAME color this slice was
-        // just drawn with, plus its ticker -- built in the same loop
-        // as the slice itself so the two can never drift out of sync
-        // (same color source, same order, computed once).
+      // Legend: one item per holding, a dot in that holding's own colour
+      // (the same `colours` its slice uses, so the two can never drift
+      // apart) plus its ticker. Drawn from the holdings, not from the
+      // prices, so it is complete from the first moment.
+      portfolioLegendEl.innerHTML = '';
+      holdings.forEach((h, i) => {
         const item = document.createElement('span');
         item.className = 'portfolio-legend-item';
         const dot = document.createElement('span');
         dot.className = 'portfolio-legend-dot';
-        dot.style.background = color;
-        item.append(dot, document.createTextNode(ticker));
+        dot.style.background = colours[i];
+        item.append(dot, document.createTextNode(h.ticker));
         portfolioLegendEl.appendChild(item);
       });
 
+      // Before the first price answer, the figures stay blank (never a false
+      // "$0.00"); they sit over the ring, so filling them in moves nothing.
+      if (!holdings.some((h) => livePrices[h.ticker] !== undefined)) {
+        portfolioTotalValueEl.textContent = '';
+        portfolioDailyChangeEl.textContent = '';
+        return;
+      }
       portfolioTotalValueEl.textContent = formatMoneyTotal(totalValue);
       const isUp = totalChange >= 0;
       const changePct = totalPrevValue > 0 ? (totalChange / totalPrevValue) * 100 : 0;
