@@ -2067,6 +2067,7 @@
     function buildHoldingCard(holding) {
       const card = document.createElement('div');
       card.className = 'holding-card';
+      card.dataset.holdingId = holding.id; // which holding a press landed on (see closeOtherCards)
 
       if (editingIds.has(holding.id)) {
         buildEditView(card, holding);
@@ -2097,6 +2098,30 @@
       }
       return card;
     }
+
+    // CLOSING AN OPEN CARD (owner, 2026-10-05: an open card "just stays
+    // there"; the same rule on Investments and Renewals, "just mirror them";
+    // chosen for consistency with the "+" panel). An open card used to close
+    // only through Save or Delete. Now, like the "+" panel: a press anywhere
+    // outside it closes it WITHOUT saving; pressing another card opens that
+    // one and closes this one; Escape closes it. A press inside it (fields,
+    // Save, Delete) keeps it open. This check runs FIRST (capture phase),
+    // before the card's own opener, while the press can still be traced to
+    // its card (the same order as on Renewals, where opening removes the
+    // pressed line; mirrored here so both pages work identically).
+    function closeOtherCards(keepId) {
+      const before = editingIds.size;
+      editingIds = new Set([...editingIds].filter((id) => String(id) === keepId));
+      if (editingIds.size !== before) renderHoldings();
+    }
+    document.addEventListener('mousedown', (e) => {
+      if (!editingIds.size) return;
+      const card = e.target.closest && e.target.closest('.holding-card');
+      closeOtherCards(card ? card.dataset.holdingId : null);
+    }, true);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && editingIds.size) closeOtherCards(null);
+    });
 
     // INSTANT FROM MEMORY (owner, 2026-10-05: "save the latest data there,
     // and then silently, quietly, it can update… so nothing looks broken"):
