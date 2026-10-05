@@ -85,8 +85,29 @@ Measured to the button's edge, never to the gold "unread" glow, which reaches
 The months are spelled out in the page script (the browser's British short
 month writes September as "Sept").
 
-The guard checks desktop width; the narrow values were proven with the
-spacing survey and the clipped-text check (`ClaudeCode-Backup/reference-files/test-scripts/`)
+### Phones: one 70 rhythm INSIDE the report card (owner, 2026-10-05)
+
+Owner, after the side-by-side ruler mock-up: "go with seventy… we want to have
+one nice rhythm". On screens ≤720px wide, every gap that is 100px by eye INSIDE
+the report card is **70px by eye**: card top → title letters, date line → band
+bottom, band bottom → "New Discoveries", every heading underline → its first
+line, last line of a section → next heading, last Verdict line → first check
+line, last check line → card bottom. (Before: 52 / 44 / 57 at the card's edges
+but still 100 between sections, so the gaps inside were bigger than the frame.)
+The page's own 100s are unchanged (page top → title, title → date buttons, card
+bottom → page bottom), and so are the 30 / 24 / 15 gaps and every font size.
+Computers and tablets (721px and wider) are exactly as above.
+
+| Selector (inside `@media (max-width: 720px)`) | Value |
+|---|---|
+| `.report-header-band` | `padding: 66px 24px 66px; margin-bottom: 61px` |
+| `.report-body h3` | `margin: 53.5px 0 61px` |
+| First check line after Verdict (both selectors) | `margin-top: 58px` |
+| `.report-body` | `padding: 0 24px 63px` |
+
+The guard checks the computer width (1920) AND a phone (iPhone, 375 wide: 70
+inside the card, 100 for the page, titles 44 / 26). The other narrow values
+were proven with the spacing survey and the clipped-text check (`ClaudeCode-Backup/reference-files/test-scripts/`)
 at 320–1920px.
 
 ## If the guard fails

@@ -519,15 +519,30 @@
       font-size: 15px;
       padding: 0 8px;
     }
+    /* PHONES: ONE 70 RHYTHM INSIDE THE REPORT CARD (owner, 2026-10-05:
+       "we want to have one nice rhythm"). Every gap that is 100 by eye on
+       a computer is 70 by eye here: card top -> title, date line -> band
+       bottom, band -> first heading, above and below every heading, last
+       Verdict line -> first check line, last check line -> card bottom.
+       (Before: 52 / 44 / 57 at the edges but still 100 between sections.)
+       The page's own 100s (page top -> title, title -> date tiles) stay.
+       Each value = 70 + the same by-eye offset the computer value uses. */
     .report-header-band {
-      margin-bottom: 48px;
-      padding: 48px 24px 40px;
+      margin-bottom: 61px; /* band bottom -> first heading letters = 70 by eye */
+      padding: 66px 24px 66px; /* card top -> title letters = 70; date line -> band bottom = 70 */
     }
     .report-content-title {
       font-size: 26px;
     }
     .report-body {
-      padding: 0 24px 60px;
+      padding: 0 24px 63px; /* last check line -> card bottom = 70 by eye */
+    }
+    .report-body h3 {
+      margin: 53.5px 0 61px; /* 70 by eye above and below every heading */
+    }
+    .report-body p:has(strong.verdict-ticker) + p:has(> em),
+    .report-body h3:last-of-type ~ p:not(:has(> em)) + p:has(> em) {
+      margin-top: 58px; /* last Verdict line -> first check line = 70 by eye */
     }
   }
   @media (max-width: 359px) {

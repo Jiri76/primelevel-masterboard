@@ -2,8 +2,10 @@
 //
 // Opens the real page at desktop width, opens the newest report, and measures
 // every spacing and font size against LOCKED-SPEC below (see
-// INSIDER-EDGE-SPACING-SPEC.md). Exits 1 (fails the workflow) if anything has
-// drifted. Spacings are measured BY EYE: from the bottom (baseline) of the
+// INSIDER-EDGE-SPACING-SPEC.md). Since 2026-10-05 it does the same on a PHONE
+// (iPhone, 375 wide): there every 100 inside the report card is 70 by eye
+// (owner: "one nice rhythm"), the page's own 100s stay 100, titles 44 / 26.
+// Exits 1 (fails the workflow) if anything has drifted. Spacings are measured BY EYE: from the bottom (baseline) of the
 // letters above to the top of the tallest letters below, or to the edge of the
 // card / underline -- exactly how the person reading the page sees them.
 //
@@ -11,7 +13,7 @@
 // guard's throwaway browser is never signed in: it enters as a pretend owner
 // ("pretend key") while every report is still read from the REAL database
 // (tools/guard-supabase.mjs, ownerReal). Nothing is written.
-import { chromium } from 'playwright';
+import { chromium, devices } from 'playwright';
 import { ownerReal, useStandIn } from './guard-supabase.mjs';
 
 const URL = process.env.SPACING_URL || 'http://localhost:8091/insider-edge.html';
@@ -41,7 +43,7 @@ await page.waitForSelector('.report-body', { timeout: 30000 });
 await page.evaluate(() => document.fonts.ready);
 await page.waitForTimeout(1500);
 
-const m = await page.evaluate(() => {
+const measureReport = () => {
   const cs = getComputedStyle, doc = document;
   const c = doc.createElement('canvas').getContext('2d');
   const met = (el, txt) => {
@@ -130,7 +132,20 @@ const m = await page.evaluate(() => {
   }
   Object.keys(cat).forEach((k) => (fonts[k] = [...cat[k]]));
   return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length };
-});
+};
+const m = await page.evaluate(measureReport);
+
+// The same report on a phone (real iPhone emulation, 375 wide).
+const phone = await browser.newPage({ ...devices['iPhone 13'], viewport: { width: 375, height: 900 } });
+await useStandIn(phone, ownerReal());
+await phone.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
+await phone.goto(URL, { waitUntil: 'networkidle' });
+await phone.waitForSelector('.report-tile', { timeout: 30000 });
+await phone.click('.report-tile');
+await phone.waitForSelector('.report-body', { timeout: 30000 });
+await phone.evaluate(() => document.fonts.ready);
+await phone.waitForTimeout(1500);
+const mp = await phone.evaluate(measureReport);
 
 await browser.close();
 
@@ -164,6 +179,35 @@ Object.entries(want).forEach(([k, px]) => {
 const pitchOk = m.pitches.every((p) => p === 24);
 console.log(`${pitchOk ? 'PASS' : 'FAIL'}  line pitch inside paragraphs: ${m.pitches.join(', ') || '(none)'} (expected 24)`);
 if (!pitchOk) fails.push(`line pitch: ${m.pitches.join(', ')}, expected 24`);
+
+// PHONE (owner, 2026-10-05: "one nice rhythm"): every 100 inside the report
+// card is 70 by eye; the page's own gaps stay 100. "Insider Edge" -> card top
+// is not a card gap on a phone (the date tiles sit between them; the opening
+// page guard checks title -> tiles).
+console.log('\nPHONE (iPhone, 375 wide): 70 inside the card, 100 for the page');
+const PAGE_LEVEL = { 'page top -> "Insider Edge" letters': 100, 'card bottom -> page bottom': 100 };
+Object.entries(mp.g100).forEach(([k, v]) => {
+  if (k === '"Insider Edge" bottom -> card top') return;
+  row(`phone: ${k}`, v, PAGE_LEVEL[k] || 70, TOL_100);
+});
+Object.entries(mp.g30).forEach(([k, v]) => row(`phone: ${k}`, v, 30, TOL_30));
+Object.entries(mp.g15).forEach(([k, v]) => row(`phone: ${k}`, v, 15, TOL_30));
+const wantPagePhone = { 'page title "Insider Edge"': '44px', 'title inside the dark band': '26px', 'date line under the title': '15px' };
+Object.entries(wantPagePhone).forEach(([k, px]) => {
+  const ok = mp.pageFonts[k] === px;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  phone: font ${k}: ${mp.pageFonts[k]} (expected ${px})`);
+  if (!ok) fails.push(`phone: font ${k}: ${mp.pageFonts[k]}, expected ${px}`);
+});
+Object.entries(want).forEach(([k, px]) => {
+  const got = mp.fonts[k];
+  if (!got) return;
+  const ok = got.length === 1 && got[0] === px;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  phone: font ${k}: ${got.join(', ')} (expected ${px})`);
+  if (!ok) fails.push(`phone: font ${k}: ${got.join(', ')}, expected ${px}`);
+});
+const pitchOkP = mp.pitches.every((p) => p === 24);
+console.log(`${pitchOkP ? 'PASS' : 'FAIL'}  phone: line pitch inside paragraphs: ${mp.pitches.join(', ') || '(none)'} (expected 24)`);
+if (!pitchOkP) fails.push(`phone: line pitch: ${mp.pitches.join(', ')}, expected 24`);
 
 if (fails.length) {
   console.error(`\n${fails.length} spacing/font check(s) FAILED:\n - ${fails.join('\n - ')}`);
