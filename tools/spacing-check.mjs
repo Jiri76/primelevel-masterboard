@@ -1,30 +1,38 @@
 // Insider Edge layout guard.
 //
-// Opens the real page at desktop width, opens the newest report, and measures
-// every spacing and font size against LOCKED-SPEC below (see
+// Opens the real page at desktop width, opens a report, and measures every
+// spacing and font size against LOCKED-SPEC below (see
 // INSIDER-EDGE-SPACING-SPEC.md). Since 2026-10-05 it does the same on a PHONE
 // (iPhone, 375 wide): there every 100 inside the report card is 70 by eye
 // (owner: "one nice rhythm"), the page's own 100s stay 100, titles 44 / 26.
-// Exits 1 (fails the workflow) if anything has drifted. Spacings are measured BY EYE: from the bottom (baseline) of the
-// letters above to the top of the tallest letters below, or to the edge of the
-// card / underline -- exactly how the person reading the page sees them.
+// Exits 1 (fails the workflow) if anything has drifted. Spacings are measured
+// BY EYE: from the bottom (baseline) of the letters above to the top of the
+// tallest letters below, or to the edge of the card / underline -- exactly how
+// the person reading the page sees them.
 //
 // Since 2026-10-02 Insider Edge sits behind door.js (one front door), and this
 // guard's throwaway browser is never signed in: it enters as a pretend owner
-// ("pretend key") while every report is still read from the REAL database
-// (tools/guard-supabase.mjs, ownerReal). Nothing is written.
+// ("pretend key"). Since 2026-10-05 the real reports are OWNER-ONLY and this
+// project is public, so the report it measures is a MADE-UP sample with the
+// real report's exact shape (tools/fixtures/insider-edge-samples.mjs):
+// SAMPLE=picks (default) or SAMPLE=nopicks. Nothing is read from or written
+// to the real database.
 import { chromium, devices } from 'playwright';
-import { ownerReal, useStandIn } from './guard-supabase.mjs';
+import { ownerFake, useStandIn } from './guard-supabase.mjs';
+import { withPicks, noPicks } from './fixtures/insider-edge-samples.mjs';
 
 const URL = process.env.SPACING_URL || 'http://localhost:8091/insider-edge.html';
+const SAMPLE = process.env.SAMPLE === 'nopicks' ? noPicks : withPicks;
+const standIn = () => ownerFake({ insider_edge_reports: [SAMPLE] });
+console.log(`Sample report: ${process.env.SAMPLE === 'nopicks' ? 'no picks' : 'with picks'} (made up, not a real report)`);
 const TOL_100 = 1;   // px, for every 100px gap
 const TOL_30 = 1.5;  // px, for every 30px gap (line boxes round to whole px)
 
 // CHROME_PATH lets it run on a computer that has Chrome but no Playwright browser.
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-await useStandIn(page, ownerReal());
-await page.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
+await useStandIn(page, standIn());
+await page.route(/supabase\.co/, (route) => route.abort()); // the stand-in answers everything; nothing reaches the real database
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.waitForSelector('.report-tile', { timeout: 30000 });
 // 1) Before any report is open: title -> "Click a date to open a report." must be 100px.
@@ -137,8 +145,8 @@ const m = await page.evaluate(measureReport);
 
 // The same report on a phone (real iPhone emulation, 375 wide).
 const phone = await browser.newPage({ ...devices['iPhone 13'], viewport: { width: 375, height: 900 } });
-await useStandIn(phone, ownerReal());
-await phone.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
+await useStandIn(phone, standIn());
+await phone.route(/supabase\.co/, (route) => route.abort());
 await phone.goto(URL, { waitUntil: 'networkidle' });
 await phone.waitForSelector('.report-tile', { timeout: 30000 });
 await phone.click('.report-tile');

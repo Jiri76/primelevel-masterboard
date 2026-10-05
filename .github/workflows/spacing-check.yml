@@ -1,8 +1,11 @@
 name: Insider Edge layout guard
 
 # Fails loudly if the Insider Edge page ever drifts from the locked spacing and
-# font-size settings (see INSIDER-EDGE-SPACING-SPEC.md). Runs on every change to
-# the page or to this check, after each Monday report has landed, and on demand.
+# font-size settings (see INSIDER-EDGE-SPACING-SPEC.md), on a computer AND a
+# phone. Runs on every change to the page or to this check, every Monday, and
+# on demand. Since 2026-10-05 it measures two MADE-UP sample reports (a week
+# with picks, a week with none: tools/fixtures/insider-edge-samples.mjs): the
+# real reports are owner-only, and this project's logs are public.
 on:
   push:
     paths:
@@ -10,6 +13,7 @@ on:
       - 'door.js'
       - 'tools/spacing-check.mjs'
       - 'tools/guard-supabase.mjs'
+      - 'tools/fixtures/insider-edge-samples.mjs'
       - '.github/workflows/spacing-check.yml'
   schedule:
     - cron: '0 14 * * 1'
@@ -32,5 +36,11 @@ jobs:
         run: |
           python3 -m http.server 8091 >/dev/null 2>&1 &
           sleep 2
-      - name: Measure spacing and font sizes
+      - name: Measure spacing and font sizes (sample week with picks)
         run: node tools/spacing-check.mjs
+        env:
+          SAMPLE: picks
+      - name: Measure spacing and font sizes (sample week with no picks)
+        run: node tools/spacing-check.mjs
+        env:
+          SAMPLE: nopicks
