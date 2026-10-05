@@ -42,7 +42,7 @@ fix the page; never the standard. Detailed standards for some items live in thei
 | **Buttons on a light card** (sign-in) | white, 1px navy border, navy 16px bold text; hover: navy fill + white text + scale 1.02; press 0.97 | sign-in box | Opening page guard |
 | **Motion** | gentle pops only: tiles 1.025, buttons on a light card 1.02, small round buttons 1.03, a single word (Sign out) and the back arrow 1.05; presses dip to 0.97; transitions 0.1–0.15s; none when the device asks for less motion | each item | per item |
 | **Focus** (keyboard / typing) | navy on light surfaces (the field's border thickens 1 → 2px; buttons get a 2px navy ring); gold on the navy page | each item | Opening page guard (sign-in field) |
-| **Renewals controls** (the "+" circle, item rows, Save / Delete) and **Investments cards** | locked in their pages' CSS comments (owner decisions 2026-08/09) | `primelevel-renewals/index.html`, `investments.html` | spacing checks; to be moved into the shared stylesheet |
+| **Renewals controls** (the "+" circle, item rows, Save / Delete) and **Investments cards** | locked in their pages' CSS comments (owner decisions 2026-08/09). **An open card / item closes ONLY through Save or Delete** (owner, 2026-10-05: "the safest option… once you press save, you know that nothing has been lost"): no close on an outside press or Escape — deliberately, on both pages alike. The "+" panel is different: it does close on an outside press | `primelevel-renewals/index.html`, `investments.html` | spacing checks; to be moved into the shared stylesheet |
 
 ## 3. Building a new private page (checklist)
 
