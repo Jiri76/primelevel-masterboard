@@ -714,18 +714,17 @@
     // a stranger's browser never even fetches the photo or the report list.
     const isOwnerView = () => PrimeLevelDoor.isOwnerView();
 
-    // A dedicated public bucket, one fixed object key ('hero', no
-    // extension -- Content-Type is set explicitly on upload, so the
-    // browser renders it correctly regardless of the original file's
-    // format, and the URL never needs to change). Every new upload
-    // overwrites this same object (upsert:true) -- there's only ever
-    // one "current" picture, no version history to manage. WRITE is
-    // LOCKED since 2026-09-30 (owner-only rule: the upload/update storage
-    // policies were dropped, so nobody can replace the photo, this page
-    // included -- it is view-only). Read is still public until step 4 of
-    // the single sign-in makes the bucket private (signed URLs) with an
-    // owner-only edit; the front door already keeps the photo off screen
-    // for anyone but the signed-in owner.
+    // A dedicated PRIVATE bucket (private since 2026-10-05, step 4: only the
+    // signed-in owner can read it, through a signed address -- see
+    // pictureAddress()), one fixed object key ('hero', no extension --
+    // Content-Type is set explicitly on upload, so the browser renders it
+    // correctly regardless of the original file's format). Every new upload
+    // overwrites this same object (upsert:true) -- there's only ever one
+    // "current" picture, no version history to manage. WRITE is LOCKED
+    // since 2026-09-30 (owner-only rule: the upload/update storage policies
+    // were dropped, so nobody can replace the photo, this page included --
+    // it is view-only). The settings row (masterboard_settings) is readable
+    // by the signed-in owner only since 2026-10-05.
     const PICTURE_BUCKET = 'masterboard-assets';
     const PICTURE_KEY = 'hero';
 
