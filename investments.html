@@ -1464,6 +1464,7 @@
       // fetched next only fill in the numbers and slices.
       if (holdings.length) updatePortfolioSummary();
       showPageContent();
+      rememberInvestments(); // the fresh holdings, for the next visit's instant paint
       // Refresh on every reload -- covers the real page-load case AND
       // every mutation that already calls loadHoldings() (add/save/
       // delete), so a newly added or renamed holding gets a real price
@@ -1930,6 +1931,7 @@
         applyPriceDisplay(holding.ticker, holding.units, els.priceEl, els.positionEl);
       }
       updatePortfolioSummary();
+      rememberInvestments(); // the fresh prices, for the next visit's instant paint
     }
     setInterval(refreshPrices, 60000);
 
@@ -2095,6 +2097,34 @@
       }
       return card;
     }
+
+    // INSTANT FROM MEMORY (owner, 2026-10-05: "save the latest data there,
+    // and then silently, quietly, it can update… so nothing looks broken"):
+    // the last holdings and their last known prices are kept in this
+    // browser's private store (wiped by Sign out: door.js PRIVATE_KEYS) and
+    // drawn at once on the next visit -- cards, chart colours and total --
+    // while the fresh holdings and prices load; they then replace them in
+    // place. Owner only: door.js already knew the owner at first paint.
+    const INVESTMENTS_CACHE_KEY = 'investments-cache-v1';
+    function rememberInvestments() {
+      try {
+        const prices = Object.fromEntries(Object.entries(livePrices).filter(([, q]) => q && q.price != null));
+        localStorage.setItem(INVESTMENTS_CACHE_KEY, JSON.stringify({ holdings, prices }));
+      } catch { /* storage blocked: no head start next time */ }
+    }
+    function paintFromMemory() {
+      if (!PrimeLevelDoor.isOwnerView()) return;
+      try {
+        const kept = JSON.parse(localStorage.getItem(INVESTMENTS_CACHE_KEY) || 'null');
+        if (!kept || !Array.isArray(kept.holdings) || !kept.holdings.length) return;
+        holdings = kept.holdings;
+        livePrices = { ...kept.prices };
+        renderHoldings();
+        updatePortfolioSummary();
+        showPageContent();
+      } catch { /* unreadable: the normal load below draws everything */ }
+    }
+    paintFromMemory();
 
     // Private: the holdings (and so the prices) load only for the signed-in
     // owner (door.js; at once when it already knew the owner). Anyone else is

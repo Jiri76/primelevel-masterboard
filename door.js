@@ -44,7 +44,7 @@
   // that finds no owner) wipes it all. ADD every new private cache here.
   // (insider-edge-read-reports-v1 is NOT here on purpose: it only holds
   // report id numbers, and wiping it would make every report glow as new.)
-  var PRIVATE_KEYS = [OWNER_KEY, 'masterboard-picture-cache-v1', 'masterboard-picture-url-v1', 'insider-edge-reports-cache-v1'];
+  var PRIVATE_KEYS = [OWNER_KEY, 'masterboard-picture-cache-v1', 'masterboard-picture-url-v1', 'insider-edge-reports-cache-v1', 'investments-cache-v1'];
 
   function read(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
