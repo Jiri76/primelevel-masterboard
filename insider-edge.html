@@ -285,7 +285,11 @@
   /* A "None. ..." line (no ticker inside) starts closer to the top of its
      box than a ticker line does, so its heading needs 4px more to land
      the same 100px from the underline. */
-  .report-body h3 + ul:not(:has(strong)) {
+  .report-body h3 + ul:not(:has(strong)),
+  /* The same for a plain sentence right under a heading, e.g. a Verdict
+     with no picks ("No candidates to assess this week.", first seen on
+     5 Oct 2026: measured 96 instead of 100). */
+  .report-body h3 + p:not(:has(strong)) {
     padding-top: 4px;
   }
   /* Verdict is always the last section by design (see the fixed
@@ -386,7 +390,13 @@
      Verdict ticker <p> (has a child .verdict-ticker) and itself opens the
      audit block (has a child <em>) -- both real, structural signals
      Cowork's own HTML already provides, no class needed. */
-  .report-body p:has(strong.verdict-ticker) + p:has(> em) {
+  .report-body p:has(strong.verdict-ticker) + p:has(> em),
+  /* A Verdict with no picks has a plain sentence instead of a ticker
+     entry (first seen on 5 Oct 2026: "No candidates to assess this
+     week." sat 42px above the first check line instead of 100). Any
+     Verdict paragraph that is not a check line, followed by the first
+     check line; :last-of-type = the Verdict heading, as above. */
+  .report-body h3:last-of-type ~ p:not(:has(> em)) + p:has(> em) {
     margin-top: 88px; /* last Verdict text -> first check line = 100px by eye */
   }
   /* The verification/audit paragraphs themselves (independent-EDGAR-check,
