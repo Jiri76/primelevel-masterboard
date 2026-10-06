@@ -834,7 +834,14 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    border: 0.5px solid var(--white);
+    /* 1px, not 0.5px (owner, 2026-10-06: "half of the circle has gone" on
+       his iPhone): Safari draws a real half-pixel line there, and a line
+       that thin fades away wherever the curve falls between the screen's
+       dots (his screenshot: the left side nearly invisible). Computers
+       already drew the 0.5px line one full pixel thick, so they look the
+       same; the 45% strength below keeps the circle as quiet as before.
+       Same 1px as the Save / Delete buttons. */
+    border: 1px solid var(--white);
     background: transparent;
     color: var(--white);
     font-size: 31px;
