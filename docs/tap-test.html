@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Tap test</title>
+<!-- A throwaway test page (owner, 2026-10-06): does the PAGE hear a tap on
+     the spot beside Safari's address pill, just above the keyboard? Shows
+     every tap the page receives. No data, no sign-in, nothing saved.
+     Delete it once the test is done. -->
+<style>
+  body { margin: 0; background: #1E2633; color: #F9F9FA; font-family: -apple-system, Arial, sans-serif; min-height: 140vh; }
+  #log { position: fixed; top: 0; left: 0; right: 0; z-index: 5; background: #2A3441; padding: 14px 16px; font-size: 16px; line-height: 1.45; min-height: 150px; }
+  #log b { color: #B29B68; }
+  main { padding: 210px 20px 40px; }
+  input { width: 100%; box-sizing: border-box; font-size: 16px; padding: 12px; border-radius: 10px; border: 1px solid #F9F9FA; background: #2A3441; color: #F9F9FA; }
+  p { color: #8A93A3; font-size: 16px; }
+</style>
+</head>
+<body>
+<div id="log"><b>Tap test</b><br>1. Tap the box below: the keyboard opens.<br>2. Tap the empty spot beside the small address pill, just above the keyboard.<br>Every tap this page hears appears here.</div>
+<main>
+  <input id="field" placeholder="Tap here first" />
+  <p>Then tap the empty spot beside the address pill above the keyboard, the same place as your red cross.</p>
+</main>
+<script>
+  const log = document.getElementById('log');
+  const lines = [];
+  function add(text) {
+    lines.unshift(new Date().toLocaleTimeString('en-GB') + '  ' + text);
+    lines.length = Math.min(lines.length, 7);
+    log.innerHTML = '<b>The page heard:</b><br>' + lines.join('<br>');
+  }
+  for (const type of ['touchstart', 'touchend', 'click']) {
+    document.addEventListener(type, (e) => {
+      const t = e.changedTouches ? e.changedTouches[0] : e;
+      add(`${type} at height ${Math.round(t.clientY)} (visible screen ends at ${Math.round(window.visualViewport ? window.visualViewport.height : window.innerHeight)})`);
+    }, true);
+  }
+  document.getElementById('field').addEventListener('blur', () => add('the box lost its cursor (keyboard closing)'));
+</script>
+</body>
+</html>
