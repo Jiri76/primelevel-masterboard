@@ -14,6 +14,9 @@
 //     20 / 20), on Sign out's line (top of its letters -> baseline), as long as
 //     "Sign out", gold, 3.2px lines, the same pop, leading to the Masterboard.
 //   * no sideways scrolling on a 375px phone or a 320px small phone.
+//   * the Home Screen icon (2026-10-06): every Masterboard page has the ONE
+//     hidden apple-touch-icon line and no browser-tab icon; the picture is
+//     180 x 180.
 //   * the LOCKED sign-in box (SIGNIN-BOX-STANDARD.md) on a computer, a 375px
 //     phone AND a 320px small phone (2026-10-03: its message line once wrapped
 //     only at 320, which a two-width check could not see).
@@ -288,6 +291,44 @@ for (const p of PAGES) {
   }
 }
 await browser.close();
+
+// ---- The Home Screen icon (owner, 2026-10-06: option A, the gold PL mark) ----
+// Every private page carries ONE hidden line telling an iPhone which picture
+// to use when the page is added to the Home Screen; NOTHING on any page shows
+// the PL mark ("I don't want to see PL on the pages at all"), so a browser-tab
+// icon (rel="icon") is a failure too. Renewals is not checked here: it is its
+// own installable app with its own icons since 2026-09-28 (the same PL mark).
+const ICON_LINK = '<link rel="apple-touch-icon" href="/primelevel-masterboard/apple-touch-icon.png" />';
+const ICON_PAGES = [['Masterboard', `${BASE}/`], ['Insider Edge', `${BASE}/insider-edge.html`], ['Investments', `${BASE}/investments.html`], ['Inbox Report', `${BASE}/inbox-report.html`]];
+const iconLinkOk = (html) => {
+  const at = html.indexOf(ICON_LINK), head = html.indexOf('</head>');
+  return html.split(ICON_LINK).length === 2 && (head === -1 || at < head) && !/rel=["']?(shortcut )?icon["'\s>]/i.test(html);
+};
+async function fetchOnce(url, as) {
+  for (let i = 0; i < 2; i++) {
+    try {
+      const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}guard=${Date.now()}`, { signal: AbortSignal.timeout(15000) });
+      if (res.ok) return as === 'bytes' ? Buffer.from(await res.arrayBuffer()) : await res.text();
+    } catch (e) { /* one retry */ }
+  }
+  return null;
+}
+console.log('\nHome Screen icon (the gold PL mark, only on the phone\'s Home Screen)');
+let iconFails = 0;
+const iconCheck = (ok, line) => { if (!ok) iconFails++; console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${line}`); };
+for (const [name, url] of ICON_PAGES) {
+  const html = await fetchOnce(url, 'text');
+  if (html === null) { iconCheck(false, `${name}: page could not be read`); continue; }
+  const judged = DRILL ? html.replace(ICON_LINK, '') : html;
+  iconCheck(iconLinkOk(judged), `${name}: one icon line in the page's head, no browser-tab icon`);
+  if (SELFTEST && (iconLinkOk(html.replace(ICON_LINK, '')) || iconLinkOk(html.replace('</head>', '<link rel="icon" href="x.png"></head>')))) missedInSelftest.push(`${name}: Home Screen icon`);
+}
+const png = await fetchOnce(`${BASE}/apple-touch-icon.png`, 'bytes');
+const isPng = png && png.length > 24 && png.readUInt32BE(0) === 0x89504e47;
+const size = isPng ? `${png.readUInt32BE(16)} x ${png.readUInt32BE(20)}` : 'not a picture';
+iconCheck(isPng && size === '180 x 180', `apple-touch-icon.png: ${png ? size : 'missing'} (expected 180 x 180, the size iPhones use)`);
+totalFails += iconFails;
+if (iconFails) pagesThatFailed += 1;
 
 if (SELFTEST) {
   if (!missedInSelftest.length) {

@@ -12,6 +12,8 @@ on:
       - 'index.html'
       - 'insider-edge.html'
       - 'inbox-report.html'
+      - 'investments.html'
+      - 'apple-touch-icon.png'
       - 'door.js'
       - 'OPENING-PAGE-STANDARD.md'
       - 'SIGNIN-BOX-STANDARD.md'
