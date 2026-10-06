@@ -59,7 +59,7 @@ bottom, which are the same number (102, phones 72).
 
 **ONE card size (owner, 2026-10-03: "I don't want one card smaller, one card bigger, just
 one type of card").** The slot for the line under the button ("Access denied.",
-"Sending failed. Try again.", "Link expired. Send again.") is ALWAYS kept, so the card is the same height with or
+"Sending failed. Try again.", "Link expired. Send again.", "Wait a minute. Send again.") is ALWAYS kept, so the card is the same height with or
 without it (433px on a computer, 397px on a 375px phone) and nothing moves when it appears. With
 the line: button edge → its letters **30** (= intro → "Email address": every separate line
 is its own group), its letters 12px tall, its baseline → card bottom **60** (phones 30):
@@ -129,6 +129,10 @@ so an exact split is physically impossible at 45px; this is the closest.
   address still typed in and one line under the button: "Sending failed. Try again."
   (owner, 2026-10-03: punchy, direct, one line). Rare; everything else stays
   "Done" (including an address that isn't allowed, so nobody learns which ones are).
+- **Too soon** (owner, 2026-10-06): Supabase sends ONE sign-in email per minute to the same
+  address and refuses earlier requests ("For security purposes, you can only request this
+  after 42 seconds."). Then the line says "Wait a minute. Send again." instead (same length
+  as "Sending failed. Try again.": one row at every width, guarded).
 
 ## After-send screen
 

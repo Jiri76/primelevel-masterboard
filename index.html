@@ -1567,7 +1567,12 @@
       const genuineFailure = error && (error.status === 429 || error.status >= 500 || !error.status);
       if (genuineFailure) {
         console.error('Could not send the sign-in link:', error);
-        signInMessage.textContent = 'Sending failed. Try again.';
+        // TOO SOON (owner, 2026-10-06): Supabase sends one sign-in email per
+        // minute to the same address ("For security purposes, you can only
+        // request this after 42 seconds."); say so plainly instead of a bare
+        // "Sending failed". Same length, so still one line at 320px.
+        const tooSoon = /after \d+ seconds?/i.test(error.message || '');
+        signInMessage.textContent = tooSoon ? 'Wait a minute. Send again.' : 'Sending failed. Try again.';
         PrimeLevelDoor.setView('door');
       }
     });

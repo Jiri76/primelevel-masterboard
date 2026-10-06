@@ -176,7 +176,7 @@ function measureBoxLine(text) {
   msg.textContent = '';
   return out;
 }
-const BOX_MESSAGES = ['Access denied.', 'Sending failed. Try again.', 'Link expired. Send again.'];
+const BOX_MESSAGES = ['Access denied.', 'Sending failed. Try again.', 'Link expired. Send again.', 'Wait a minute. Send again.'];
 const NAVY = 'rgb(30, 38, 51)';
 const BOX_FONTS = { '"Sign in"': `Montserrat 20px 700 ${NAVY}`, intro: `Montserrat 15px 400 ${NAVY}`, '"Email address"': `Montserrat 15px 700 ${NAVY}`, field: `Montserrat 16px 400 ${NAVY}`, button: `Montserrat 16px 700 ${NAVY}` };
 const BOX_COLOURS = { box: 'rgb(233, 233, 235)', field: 'rgb(249, 249, 250)', button: 'rgb(249, 249, 250)', 'field border': `1px ${NAVY}`, 'button border': `1px ${NAVY}`, corners: '10px 10px 10px' };
