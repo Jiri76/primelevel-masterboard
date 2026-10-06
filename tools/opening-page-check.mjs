@@ -13,6 +13,9 @@
 //   * the back arrow (2026-10-03): Sign out's mirror, top-LEFT, 40 / 40 (phones
 //     20 / 20), on Sign out's line (top of its letters -> baseline), as long as
 //     "Sign out", gold, 3.2px lines, the same pop, leading to the Masterboard.
+//   * the top strip (2026-10-06): a fixed strip of the page's navy behind Sign
+//     out and the arrow, as much navy below the Sign out letters as above
+//     them (40 / 40, phones 20 / 20), under Sign out.
 //   * no sideways scrolling on a 375px phone or a 320px small phone.
 //   * the Home Screen icon (2026-10-06): every Masterboard page has the ONE
 //     hidden apple-touch-icon line and no browser-tab icon; the picture is
@@ -66,6 +69,7 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signin input:focus-visible{box-shadow:none!important;outline:2px solid #B29B68!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
+  + '.pl-strip{height:70px!important;background:#ff0000!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
 const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
@@ -122,6 +126,10 @@ function measure({ below, corner }) {
     const s = cs(so); c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const m = c.measureText('Sign out');
     const base = t.top + m.fontBoundingBoxAscent + (t.height - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2;
     out.corner = { top: base - m.actualBoundingBoxAscent, right: doc.documentElement.clientWidth - (t.left + m.actualBoundingBoxRight), font: font(so) };
+    // The top strip behind Sign out (2026-10-06): navy above the letters and below them.
+    const st = doc.querySelector('.pl-strip'), sr = st && cs(st).display !== 'none' ? st.getBoundingClientRect() : null;
+    const bodyBg = cs(doc.body).backgroundColor;
+    out.strip = sr ? { above: base - m.actualBoundingBoxAscent - sr.top, below: sr.bottom - base, bg: cs(st).backgroundColor, page: bodyBg === 'rgba(0, 0, 0, 0)' ? cs(doc.documentElement).backgroundColor : bodyBg, position: cs(st).position, z: +cs(st).zIndex, soZ: +cs(so).zIndex } : null;
     // The back arrow: Sign out's mirror (its ink is exactly its drawing's box).
     const back = doc.getElementById('backLink'), svg = back && back.querySelector('svg');
     out.back = back && cs(back).display !== 'none' && svg ? (() => {
@@ -269,6 +277,11 @@ for (const p of PAGES) {
       const cr = rr.corner;
       if (!cr) { check('Sign out position', false, `Sign out (${where}): not shown`); continue; }
       check('Sign out position', Math.abs(cr.top - want40) <= TOL && Math.abs(cr.right - want40) <= TOL, `Sign out (${where}): ${cr.top.toFixed(1)}px from the top, ${cr.right.toFixed(1)}px from the right (expected ${want40} / ${want40})`);
+      // The top strip (owner, 2026-10-06): as much page navy below the Sign
+      // out letters as above them, fixed, under Sign out and the arrow.
+      const sp = rr.strip;
+      check('Top strip', !!sp && Math.abs(sp.above - want40) <= TOL && Math.abs(sp.below - want40) <= TOL && sp.bg === sp.page && sp.position === 'fixed' && sp.z < sp.soZ,
+        sp ? `top strip (${where}): ${sp.above.toFixed(1)}px of navy above the Sign out letters, ${sp.below.toFixed(1)}px below (expected ${want40} / ${want40}); ${sp.bg === sp.page ? 'the page navy' : `${sp.bg} vs the page ${sp.page}`}; ${sp.position}; under Sign out ${sp.z < sp.soZ}` : `top strip (${where}): not shown`);
       // The back arrow (owner, 2026-10-03): Sign out's mirror, top-LEFT.
       const bk = rr.back;
       if (!bk) { check('Back arrow position', false, `back arrow (${where}): not shown`); continue; }
@@ -286,7 +299,7 @@ for (const p of PAGES) {
   totalFails += failed.size;
   if (failed.size) pagesThatFailed += 1;
   if (SELFTEST) {
-    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
+    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style', 'Top strip'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }

@@ -31,6 +31,10 @@
    4. BACK ARROW (owner, 2026-10-03): Sign out's mirror, top-LEFT, on every
       page except the Masterboard home (which tells gate() frontDoor: true);
       always leads to the Masterboard, the hub. Owner only, like Sign out.
+   5. TOP STRIP (owner, 2026-10-06): a strip of the page's navy fixed to the
+      top, behind Sign out and the arrow, so the page slides under it while
+      scrolling; as much navy below the Sign out letters as above them
+      (96px, phones 56px). Invisible at rest. Drawn with Sign out.
 
    This file only decides what the SCREEN shows. The real lock is the
    database, which refuses anyone but the owner whatever a page shows. */
@@ -122,7 +126,26 @@
     '.back:active { transform: scale(0.97); }' +
     '@media (prefers-reduced-motion: reduce) { .back { transition: none; } .back:hover, .back:active { transform: none; } }' +
     '.back:focus-visible { outline: none; } .back:focus-visible svg { outline: 2px solid #B29B68; outline-offset: 2px; }' +
-    '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }';
+    '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }' +
+    // THE TOP STRIP (owner, 2026-10-06, on his iPhone: while scrolling, the
+    // title slid over Sign out and the arrow): a strip of the page's own navy
+    // fixed to the top, behind Sign out and the arrow; the page slides UNDER
+    // it. Its height follows his red crosses: as much navy below the Sign out
+    // letters as above them, by eye (computers 40 + 16 letters + 40 = 96,
+    // phones 20 + 16 + 20 = 56). Every width (one design; owner chose the
+    // recommendation). The page's own navy, so at rest it is invisible and
+    // every page looks exactly as before. Above everything on the page
+    // (z-index 9), below Sign out and the arrow (10); it takes the presses
+    // that land on it, so nothing hidden under it can be pressed. Things the
+    // browser scrolls into view stop below it (scroll-padding). Owner only.
+    // will-change: its own layer, so "Sign out" over it keeps the same grey
+    // edge smoothing as before (without it, Windows Chrome drew Sign out
+    // with colour fringes on Insider Edge and Inbox Report only: measured
+    // 73% fringe pixels vs 0%; with it every page is pixel-identical at rest).
+    '.pl-strip { position: fixed; top: 0; left: 0; right: 0; height: 96px; z-index: 9; background: #1E2633; will-change: transform; }' +
+    ':root:not([data-view="owner"]) .pl-strip { display: none; }' +
+    ':root[data-view="owner"] { scroll-padding-top: 96px; }' +
+    '@media (max-width: 720px) { .pl-strip { height: 56px; } :root[data-view="owner"] { scroll-padding-top: 56px; } }';
   document.head.appendChild(style);
 
   // An emailed link comes back to the front door as
@@ -160,6 +183,10 @@
   var signOutButton = null;
   function addSignOut(supabase) {
     if (signOutButton) return;
+    var strip = document.createElement('div'); // the top strip, behind Sign out and the arrow
+    strip.className = 'pl-strip';
+    strip.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(strip);
     signOutButton = document.createElement('button');
     signOutButton.type = 'button';
     signOutButton.className = 'signout';
