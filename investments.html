@@ -783,10 +783,14 @@
        still exists to protect the hover pop) lands the resting gap
        back on an exact 100px without reintroducing the clip. */
     margin-top: 98px;
-    /* 40px -> 38px, same reasoning and same day: the "+"-to-holdings
-       gap was measuring 42px (40 margin + this element's own 2px
-       padding-bottom). Trimmed for the identical reason. */
-    margin-bottom: 38px;
+    /* 98px (owner, 2026-10-06: "one hundred from the top to the circle,
+       from the circle to the bottom one hundred, all the way"): circle ->
+       first card = 100 by eye, the same as chart -> circle above it and as
+       Renewals. 98 + this element's own 2px padding-bottom = 100. This
+       replaces the 40px (38 + 2) asked for on 2026-09-03. The same margin
+       also makes the open "+" panel -> first card 100. The hidden state
+       below sets its own margin-bottom: 0 (chart -> first card 100). */
+    margin-bottom: 98px;
     padding-top: 2px;
     padding-bottom: 2px;
     /* 260px -> 600px, 2026-09-02 -- the popover now holds a full

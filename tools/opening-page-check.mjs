@@ -70,6 +70,7 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
   + '.pl-strip{height:70px!important;background:#ff0000!important}'
+  + '.add-wrapper{margin-bottom:60px!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
 const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
@@ -79,7 +80,7 @@ async function openPage(browser, p, viewport) {
   await useStandIn(page, p.standIn);
   // Never let the guard's browser write anywhere.
   await page.route(/supabase\.co/, (route) => (route.request().method() === 'GET' || route.request().method() === 'OPTIONS' ? route.continue() : route.abort()));
-  await page.goto(BASE + p.path, { waitUntil: 'networkidle' });
+  await page.goto(p.url || BASE + p.path, { waitUntil: 'networkidle' });
   await page.waitForFunction(shown, p.ready, { timeout: 30000 });
   if (p.prefer) await page.waitForSelector(p.prefer, { timeout: 20000 }).catch(() => console.log(`  (note: ${p.prefer} never appeared, measuring the message that is showing)`));
   if (p.send) {
@@ -302,6 +303,61 @@ for (const p of PAGES) {
     const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style', 'Top strip'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
+}
+// ---- The "+" circle (owner, 2026-10-06: "one hundred from the top to the
+// circle, from the circle to the bottom one hundred, all the way") ----
+// Investments and Renewals: 100 by eye above the "+" circle and 100 below it
+// (letters for text, edges for boxes); with the "+" panel open, its card ->
+// what follows = 100; with the circle hidden (after 30 s) the thing above ->
+// what follows = 100. Made-up holdings (this project is public) with made-up
+// prices; Renewals lives in its own project, so its LIVE page is measured.
+const PLUS = [
+  { name: 'Investments', path: '/investments.html', ready: '.holding-card', above: '#portfolioSummary', below: '.holding-card',
+    standIn: ownerFake({ investment_holdings: [
+      { id: 1, ticker: 'SAMPLE-A', name: 'Sample A', units: 10, created_at: '2026-09-01T00:00:00Z' },
+      { id: 2, ticker: 'SAMPLE-B', name: 'Sample B', units: 20, created_at: '2026-09-01T00:00:01Z' }] }) },
+  { name: 'Renewals, nothing saved (live)', url: 'https://jiri76.github.io/primelevel-renewals/', ready: '#itemList .empty-state', above: 'h1', below: '#itemList .empty-state', standIn: ownerFake({ renewal_items: [] }) },
+  { name: 'Renewals, one renewal (live)', url: 'https://jiri76.github.io/primelevel-renewals/', ready: '.item', above: 'h1', below: '.item',
+    standIn: ownerFake({ renewal_items: [{ id: 'a', item_name: 'Sample renewal', expiry_date: '2027-03-01', user_id: 'guard-owner', created_at: '2026-09-01T00:00:00Z' }] }) },
+];
+function measurePlus({ above, below, state }) {
+  const cs = getComputedStyle, c = document.createElement('canvas').getContext('2d');
+  const met = (el, txt) => { const s = cs(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; return c.measureText(txt); };
+  const lines = (el) => { const g = document.createRange(); g.selectNodeContents(el); const rs = [...g.getClientRects()].filter((r) => r.width > 0); const fa = met(el, 'x').fontBoundingBoxAscent, a = met(el, el.textContent.trim()).actualBoundingBoxAscent; return { top: rs[0].top + fa - a, base: rs[rs.length - 1].top + fa }; };
+  const isText = (el) => el.tagName === 'H1' || el.classList.contains('empty-state');
+  const topOf = (el) => (isText(el) ? lines(el).top : el.getBoundingClientRect().top);
+  const bottomOf = (el) => (isText(el) ? lines(el).base : el.getBoundingClientRect().bottom);
+  const wrap = document.querySelector('.add-wrapper');
+  if (state === 'hidden') { wrap.style.transition = 'none'; wrap.classList.add('idle-hidden'); void wrap.offsetHeight; }
+  const a = document.querySelector(above), b = document.querySelector(below);
+  if (state === 'hidden') return { 'circle hidden: above -> below': topOf(b) - bottomOf(a) };
+  if (state === 'open') { const card = document.querySelector('.add-popover-inner').getBoundingClientRect(); return { '"+" panel open: its card -> below': topOf(b) - card.bottom }; }
+  const t = document.getElementById('addTrigger').getBoundingClientRect();
+  return { 'above -> circle': t.top - bottomOf(a), 'circle -> below': topOf(b) - t.bottom };
+}
+const plusQuotes = (route) => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"SAMPLE-A":{"price":12.5,"change":0.4},"SAMPLE-B":{"price":3.25,"change":-0.2}}' });
+console.log('\n"+" circle: 100 above, 100 below (Investments, Renewals)');
+for (const p of PLUS) {
+  const plusFailed = new Set();
+  for (const [where, viewport] of [['computer', { width: 1920, height: 1080 }], ['phone', { width: 375, height: 812 }], ['small phone', { width: 320, height: 700 }]]) {
+    for (const state of ['showing', 'open', 'hidden']) {
+      const page = await browser.newPage({ viewport });
+      await page.route('**/functions/v1/get-quotes**', plusQuotes);
+      await page.close();
+      const pg = await openPage(browser, p, viewport);
+      if (state === 'open') { await pg.click('#addTrigger'); await pg.waitForTimeout(700); }
+      const gaps = await pg.evaluate(measurePlus, { above: p.above, below: p.below, state });
+      for (const [k, v] of Object.entries(gaps)) {
+        const ok = Math.abs(v - 100) <= TOL;
+        if (!ok) plusFailed.add('Plus spacing');
+        totalFails += ok ? 0 : 1;
+        console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${p.name} (${where}) ${k}: ${v.toFixed(1)}px (expected 100)`);
+      }
+      await pg.close();
+    }
+  }
+  if (plusFailed.size && !SELFTEST) pagesThatFailed += 1;
+  if (SELFTEST && !plusFailed.size) missedInSelftest.push(`${p.name}: "+" spacing`);
 }
 await browser.close();
 
