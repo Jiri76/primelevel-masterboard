@@ -1373,7 +1373,12 @@
       }
       return false;
     }
-    document.addEventListener('mousedown', (e) => pressHandlers.forEach((h) => h(e.target)), true);
+    document.addEventListener('mousedown', (e) => {
+      // See THE KEYBOARD FIRST below. The cards, the "+" and the buttons act on
+      // this press itself (mousedown), so it is stopped here, before them.
+      if (keyboardFirst(e.target)) { e.stopImmediatePropagation(); e.preventDefault(); swallowClick = true; return; }
+      pressHandlers.forEach((h) => h(e.target));
+    }, true);
     let plainFinger = null; // the plain spot a finger went down on, until it lifts or scrolls
     document.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch' && e.isPrimary) plainFinger = takesPresses(e.target) ? null : e.target;
@@ -1384,9 +1389,47 @@
       plainFinger = null;
       if (!target) return;
       e.preventDefault(); // no late mouse press (see above)
+      if (keyboardFirst(target)) return; // only the keyboard closed (see THE KEYBOARD FIRST below)
       if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); // what a tap on plain space does
       pressHandlers.forEach((h) => h(target));
     }, { capture: true, passive: false });
+    // THE KEYBOARD FIRST (owner, 2026-10-09: "if I click anywhere on the
+    // screen only the keyboard closes… then I press Save; if I don't, I
+    // click anywhere and the card closes"). While typing in a card with a
+    // finger (a field has the cursor, so the phone's keyboard is up), the
+    // FIRST tap outside that card only closes the keyboard: the card and
+    // the typing stay, so Save can be pressed. The next tap outside closes
+    // the card as before (nothing saved). The same everywhere outside: the
+    // empty page, another card, the "+" circle, and the spot beside
+    // Safari's address pill (Safari keeps that tap to itself and only
+    // closes the keyboard, proven with a test page on his iPhone: this rule
+    // makes the rest of the screen match it). A tap INSIDE the same card
+    // (Save, the other field) works as before; Save saves and closes. A
+    // mouse on a computer (no on-screen keyboard): unchanged, a press
+    // outside closes at once. Copied identically in Renewals.
+    const CARDS = '.add-popover-inner, .holding-card'; // what counts as "the same card"
+    let lastPointer = 'mouse', swallowClick = false;
+    document.addEventListener('pointerdown', (e) => { lastPointer = e.pointerType; swallowClick = false; }, true);
+    // A tap on something that takes presses (another card, the "+") must
+    // not ALSO do its own job when it only closed the keyboard.
+    document.addEventListener('click', (e) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, true);
+    function keyboardFirst(target) {
+      const field = document.activeElement;
+      if (lastPointer !== 'touch' || !field || !field.matches || !field.matches('input, textarea, select')) return false;
+      // A cursor left behind in a "+" panel that has already closed (Escape,
+      // Save: the panel folds away but its fields stay) is not typing in a
+      // card: drop it and let the tap do its own job (found in testing).
+      if (field.closest('.add-popover') && !field.closest('.add-popover.open')) { field.blur(); return false; }
+      const card = field.closest(CARDS);
+      if (card && card.contains(target)) return false; // inside the same card: as before
+      field.blur(); // the keyboard closes; the card stays open
+      return true;
+    }
 
     // A press (see onPress), not click -- same reasoning as every other
     // "click outside to dismiss" listener on this project: immune to any
