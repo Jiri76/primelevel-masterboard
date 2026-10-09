@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Tap test</title>
+<!-- A throwaway test page (owner, 2026-10-09), version 3: with the keyboard
+     up, is there ANY clue that tells "tap beside Safari's address pill"
+     apart from "tap the keyboard's checkmark"? Records every signal the page
+     can receive, grouped per action, with milliseconds. No data, no
+     sign-in, nothing saved. Delete it once the test is done. -->
+<style>
+  body { margin: 0; background: #1E2633; color: #F9F9FA; font-family: -apple-system, Arial, sans-serif; min-height: 140vh; }
+  #log { position: fixed; top: 0; left: 0; right: 0; z-index: 5; background: #2A3441; padding: 12px 14px; font-size: 14px; line-height: 1.4; min-height: 170px; }
+  #log b { color: #B29B68; }
+  main { padding: 250px 20px 40px; }
+  input { width: 100%; box-sizing: border-box; font-size: 16px; padding: 12px; border-radius: 10px; border: 1px solid #F9F9FA; background: #2A3441; color: #F9F9FA; margin-bottom: 14px; }
+  p { color: #8A93A3; font-size: 16px; }
+</style>
+</head>
+<body>
+<div id="log"><b>Tap test, version 3</b><br>A. Tap box 1, then tap the TICK on the keyboard bar.<br>B. Tap box 1, then tap the spot BESIDE the address pill.<br>C. Tap box 1, then tap the DOWN arrow on the keyboard bar.<br>Each action shows here as one line.</div>
+<main>
+  <input id="one" placeholder="Box 1: tap here first" />
+  <input id="two" placeholder="Box 2" />
+  <p>Do A, B and C one after another, then take a screenshot of the panel at the top.</p>
+</main>
+<script>
+  const log = document.getElementById('log');
+  const lines = [];
+  function add(text) {
+    lines.unshift(text);
+    lines.length = Math.min(lines.length, 6);
+    log.innerHTML = '<b>Version 3. The page heard:</b><br>' + lines.join('<br>');
+  }
+  // One action = everything within 1.2 s of its first signal, each with the
+  // milliseconds since that first signal.
+  let act = null, timer = null;
+  function note(name) {
+    const now = performance.now();
+    if (!act) act = { t0: now, names: [] };
+    if (act.names.some((n) => n.startsWith(name + '@')) && /move|resize/.test(name)) return;
+    act.names.push(`${name}@${Math.round(now - act.t0)}`);
+    clearTimeout(timer);
+    timer = setTimeout(() => { add(`${new Date().toLocaleTimeString('en-GB')} ${act.names.join(', ')}`); act = null; }, 1200);
+  }
+  for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel', 'pointerdown', 'pointercancel', 'mousedown', 'click']) {
+    document.addEventListener(type, () => note(type.replace('touch', 't-').replace('pointer', 'p-')), true);
+  }
+  for (const id of ['one', 'two']) {
+    const el = document.getElementById(id);
+    el.addEventListener('focus', () => note(`focus${id === 'one' ? '1' : '2'}`));
+    el.addEventListener('blur', (e) => note(`BLUR${id === 'one' ? '1' : '2'}->${e.relatedTarget ? (e.relatedTarget.id === 'one' ? 'box1' : e.relatedTarget.id === 'two' ? 'box2' : e.relatedTarget.tagName) : 'nothing'}`));
+  }
+  window.addEventListener('blur', () => note('WINDOW-blur'));
+  window.addEventListener('focus', () => note('WINDOW-focus'));
+  document.addEventListener('visibilitychange', () => note(`page-${document.visibilityState}`));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => note(`screen-${Math.round(window.visualViewport.height)}`));
+    window.visualViewport.addEventListener('scroll', () => note('screen-moved'));
+  }
+  window.addEventListener('scroll', () => note('page-scrolled'));
+</script>
+</body>
+</html>
