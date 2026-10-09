@@ -288,7 +288,9 @@ for (const p of PAGES) {
       if (!bk) { check('Back arrow position', false, `back arrow (${where}): not shown`); continue; }
       check('Back arrow position', Math.abs(bk.left - want40) <= TOL && Math.abs(bk.top - want40) <= TOL, `back arrow (${where}): ${bk.left.toFixed(1)}px from the left, ${bk.top.toFixed(1)}px from the top (expected ${want40} / ${want40}, Sign out's mirror)`);
       check('Back arrow position', Math.abs(bk.top - bk.letters.top) <= TOL && Math.abs(bk.top + bk.height - bk.letters.base) <= TOL, `back arrow (${where}) on Sign out's line: top ${bk.top.toFixed(1)} / bottom ${(bk.top + bk.height).toFixed(1)} vs its letters ${bk.letters.top.toFixed(1)} / baseline ${bk.letters.base.toFixed(1)}`);
-      check('Back arrow style', Math.abs(bk.width - bk.letters.width) <= TOL, `back arrow (${where}) as long as "Sign out": ${bk.width.toFixed(1)}px vs ${bk.letters.width.toFixed(1)}px`);
+      // Phones (owner, 2026-10-09: "too long on phones… 50%"): half as long as "Sign out".
+      const wantLen = where === 'computer' ? bk.letters.width : bk.letters.width / 2;
+      check('Back arrow style', Math.abs(bk.width - wantLen) <= TOL, `back arrow (${where}) ${where === 'computer' ? 'as long as' : 'half as long as'} "Sign out": ${bk.width.toFixed(1)}px vs ${wantLen.toFixed(1)}px`);
     }
     const bk = r.back;
     const okBack = bk && bk.color === GOLD && bk.stroke === '3.2px' && bk.href === 'https://jiri76.github.io/primelevel-masterboard/';
