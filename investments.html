@@ -1370,9 +1370,9 @@
     // field, a link). But an iPhone sends that press ONLY for such things:
     // a tap on plain text or empty background gets none, so those taps
     // never closed anything there. They are caught here instead, when the
-    // finger LIFTS without having scrolled (the browser cancels a finger
-    // that starts a scroll, so scrolling down to reach Save never closes
-    // anything), and that tap's own late mouse press is cancelled: closing
+    // finger LIFTS without having scrolled (moved under 20px and the page
+    // moved under 8px, see A FIRM OR QUICK TAP below, so scrolling down to
+    // reach Save never closes anything), and that tap's own late mouse press is cancelled: closing
     // moves the page under the finger, and a late press lands on whatever
     // moved there (found in testing: it opened the wrong item). "Takes
     // presses" follows the iPhone's own rule: a link, button or field, or
@@ -1394,16 +1394,30 @@
       if (keyboardFirst(e.target)) { e.stopImmediatePropagation(); e.preventDefault(); swallowClick = true; return; }
       pressHandlers.forEach((h) => h(e.target));
     }, true);
-    let plainFinger = null; // the plain spot a finger went down on, until it lifts or scrolls
+    // A FIRM OR QUICK TAP (owner, 2026-10-09: "sometimes the first tap
+    // doesn't close it… maybe too gentle, maybe too rushed"): the phone
+    // calls a touch a scroll as soon as the finger slides ~10px (an iPhone
+    // also does it to a tap while the page is still settling after the
+    // keyboard closed) and cancels it, so that tap was ignored here. Now the
+    // page decides itself: a finger on plain space counts as a tap when it
+    // moved less than 20px and the page did not really scroll (under 8px),
+    // whatever the phone guessed. A real scroll still closes nothing.
+    // Copied identically in Renewals.
+    let plainFinger = null, fingerFrom = null; // the plain spot a finger went down on, and where
     document.addEventListener('pointerdown', (e) => {
-      if (e.pointerType === 'touch' && e.isPrimary) plainFinger = takesPresses(e.target) ? null : e.target;
+      if (e.pointerType !== 'touch' || !e.isPrimary) return;
+      plainFinger = takesPresses(e.target) ? null : e.target;
+      fingerFrom = { x: e.clientX, y: e.clientY, sx: window.scrollX, sy: window.scrollY };
     }, true);
-    document.addEventListener('pointercancel', () => { plainFinger = null; }, true);
     document.addEventListener('touchend', (e) => {
-      const target = plainFinger;
-      plainFinger = null;
-      if (!target) return;
-      e.preventDefault(); // no late mouse press (see above)
+      const target = plainFinger, from = fingerFrom;
+      plainFinger = null; fingerFrom = null;
+      if (!target || !from || e.touches.length) return; // not plain space, or another finger still down
+      const lift = e.changedTouches[0];
+      const moved = Math.hypot(lift.clientX - from.x, lift.clientY - from.y);
+      const scrolled = Math.max(Math.abs(window.scrollY - from.sy), Math.abs(window.scrollX - from.sx));
+      if (moved >= 20 || scrolled >= 8) return; // a real swipe or scroll: nothing closes
+      if (e.cancelable) e.preventDefault(); // no late mouse press (see above)
       if (keyboardFirst(target)) return; // only the keyboard closed (see THE KEYBOARD FIRST below)
       if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); // what a tap on plain space does
       pressHandlers.forEach((h) => h(target));
