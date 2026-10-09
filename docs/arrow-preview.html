@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Arrow preview</title>
+<!-- A throwaway preview (owner, 2026-10-09): the top of the Renewals page on
+     a phone with the back arrow at today's 88px or 50% shorter (44px), to
+     judge on his own iPhone before the change. The title, Sign out and
+     arrow styles are copied exactly from Renewals and door.js. No data, no
+     sign-in, nothing saved. Delete it once judged. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #1E2633; font-family: 'Montserrat', sans-serif; color: #F9F9FA; }
+  /* Renewals' title, exactly */
+  #appContainer { padding-top: 87px; }
+  #appContainer h1 { color: #B29B68; font-weight: 700; font-size: 50px; line-height: 65px; margin: 0; text-align: center; }
+  @media (max-width: 720px) { #appContainer { padding-top: 90px; } #appContainer h1 { font-size: 44px; line-height: normal; } }
+  @media (max-width: 359px) { #appContainer { padding-top: 91px; } #appContainer h1 { font-size: 38px; } }
+  /* door.js: the top strip, Sign out and the back arrow, exactly */
+  .pl-strip { position: fixed; top: 0; left: 0; right: 0; height: 96px; z-index: 9; background: #1E2633; }
+  .signout { position: fixed; top: 37px; right: 40px; z-index: 10; margin: 0; padding: 0; border: 0; background: none; font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 700; color: #B29B68; }
+  .back { position: fixed; top: 26px; left: 26px; z-index: 10; padding: 14px; line-height: 0; color: #B29B68; }
+  .back svg { display: block; height: 16px; overflow: visible; }
+  @media (max-width: 720px) { .pl-strip { height: 56px; } .signout { top: 17px; right: 20px; } .back { top: 6px; left: 6px; } }
+  /* the switch */
+  .switch { margin: 120px auto 0; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 0 20px; }
+  .switch p { color: #8A93A3; font-size: 18px; text-align: center; margin: 0; }
+  .switch button { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #1E2633; background: #F9F9FA; border: 1px solid #1E2633; border-radius: 10px; height: 45px; padding: 0 22px; }
+</style>
+</head>
+<body>
+<div class="pl-strip"></div>
+<a class="back" aria-label="Back"><svg id="arrow" viewBox="0 0 44 16" style="width:44px" aria-hidden="true"><path id="arrowPath" d="M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H44" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="miter" stroke-miterlimit="4" stroke-linecap="butt"/></svg></a>
+<button class="signout" type="button">Sign out</button>
+<div id="appContainer"><h1>Renewals</h1></div>
+<div class="switch">
+  <p id="which">Showing: <b>50% shorter (44px)</b></p>
+  <button id="toggle" type="button">Show today's arrow (88px)</button>
+</div>
+<script>
+  let L = 44;
+  const svg = document.getElementById('arrow'), path = document.getElementById('arrowPath');
+  document.getElementById('toggle').addEventListener('click', () => {
+    L = L === 44 ? 88 : 44;
+    svg.setAttribute('viewBox', `0 0 ${L} 16`);
+    svg.style.width = L + 'px';
+    path.setAttribute('d', `M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H${L}`);
+    document.getElementById('which').innerHTML = `Showing: <b>${L === 44 ? '50% shorter (44px)' : "today's arrow (88px)"}</b>`;
+    document.getElementById('toggle').textContent = L === 44 ? "Show today's arrow (88px)" : 'Show 50% shorter (44px)';
+  });
+</script>
+</body>
+</html>
