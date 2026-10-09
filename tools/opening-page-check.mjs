@@ -70,7 +70,7 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
   + '.pl-strip{height:70px!important;background:#ff0000!important}'
-  + '.add-wrapper{margin-bottom:60px!important}'
+  + '.add-wrapper{margin-bottom:60px!important}.add-wrapper .add-trigger{background:transparent!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
 
 const shown = (sel) => !!document.querySelector(sel) && getComputedStyle(document.querySelector(sel)).display !== 'none';
@@ -354,6 +354,16 @@ for (const p of PLUS) {
         if (!ok) plusFailed.add('Plus spacing');
         totalFails += ok ? 0 : 1;
         console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${p.name} (${where}) ${k}: ${v.toFixed(1)}px (expected 100)`);
+      }
+      // The circle stays white while its card is open, with nothing pointing
+      // at it (owner, 2026-10-09: "the button is attached to the box").
+      if (state === 'open') {
+        await pg.mouse.move(2, viewport.height - 2); await pg.waitForTimeout(300);
+        const lk = await pg.evaluate(() => { const s = getComputedStyle(document.getElementById('addTrigger')); return `${s.backgroundColor} ${s.opacity}`; });
+        const ok = lk === 'rgb(249, 249, 250) 1';
+        if (!ok) plusFailed.add('Plus spacing');
+        totalFails += ok ? 0 : 1;
+        console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${p.name} (${where}) "+" circle while its card is open: ${lk} (expected white, full strength)`);
       }
       await pg.close();
     }

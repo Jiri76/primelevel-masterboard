@@ -857,11 +857,26 @@
     user-select: none;
     transition: opacity 0.15s ease, transform 0.1s ease;
   }
-  .add-trigger:hover {
+  /* Highlighted (white) = ITS CARD IS OPEN (owner, 2026-10-09: "the button
+     is attached to the box… I want the highlighted circle all the time"),
+     on every device, wherever the last tap landed; and, where a real
+     pointer hovers (a mouse), while pointing at it. A finger has no hover:
+     on a phone the hover look used to stick to whatever was tapped last,
+     so the circle was white or not depending on where you tapped. Same in
+     Renewals. */
+  .add-wrapper:has(.add-popover.open) .add-trigger {
     opacity: 1;
     background: var(--white);
     color: var(--navy);
     transform: scale(1.03);
+  }
+  @media (hover: hover) {
+    .add-trigger:hover {
+      opacity: 1;
+      background: var(--white);
+      color: var(--navy);
+      transform: scale(1.03);
+    }
   }
   .add-trigger:active { transform: scale(0.94); }
   .add-wrapper.idle-hidden .add-trigger {
