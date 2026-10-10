@@ -1456,8 +1456,21 @@
       if (field.closest('.add-popover') && !field.closest('.add-popover.open')) { field.blur(); return false; }
       const card = field.closest(CARDS);
       if (card && card.contains(target)) return false; // inside the same card: as before
+      // Only a keyboard that is REALLY on screen gets the first tap (proven
+      // with a tap log on his iPhone, 2026-10-10: a tap just above the
+      // keyboard, in Safari's own zone, hid the keyboard without taking the
+      // cursor out of the field, so his next tap was spent "closing" a
+      // keyboard that was already gone and only the third closed the card).
+      if (!keyboardIsUp()) { field.blur(); return false; }
       field.blur(); // the keyboard closes; the card stays open
       return true;
+    }
+    // The on-screen keyboard is up when the visible screen is clearly
+    // shorter than the page's own window (a phone keyboard takes ~300px;
+    // the browser's bars move far less). No way to tell: assume it is up.
+    function keyboardIsUp() {
+      const vv = window.visualViewport;
+      return !vv || window.innerHeight - vv.height * vv.scale > 120;
     }
 
     // A press (see onPress), not click -- same reasoning as every other
