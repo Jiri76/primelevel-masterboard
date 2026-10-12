@@ -5,6 +5,9 @@
 // INSIDER-EDGE-SPACING-SPEC.md). Since 2026-10-05 it does the same on a PHONE
 // (iPhone, 375 wide): there every 100 inside the report card is 70 by eye
 // (owner: "one nice rhythm"), the page's own 100s stay 100, titles 44 / 26.
+// Since 2026-10-12 it also checks, on both, that every line of report text
+// stays inside the text column (a long web address once ran under the card's
+// edge on phones; the "no picks" sample now carries one).
 // Exits 1 (fails the workflow) if anything has drifted. Spacings are measured
 // BY EYE: from the bottom (baseline) of the letters above to the top of the
 // tallest letters below, or to the edge of the card / underline -- exactly how
@@ -139,7 +142,19 @@ const measureReport = () => {
     (cat[k] = cat[k] || new Set()).add(cs(p).fontSize);
   }
   Object.keys(cat).forEach((k) => (fonts[k] = [...cat[k]]));
-  return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length };
+
+  // every line of report text stays inside the text column (2026-10-12: a
+  // long web address in a real Notebook line ran under the card's edge on phones)
+  const bb = body.getBoundingClientRect(), bs = cs(body);
+  const colL = bb.left + parseFloat(bs.paddingLeft), colR = bb.right - parseFloat(bs.paddingRight);
+  const outside = [];
+  tns(body).forEach((tn) => {
+    const g = doc.createRange(); g.selectNodeContents(tn);
+    [...g.getClientRects()].forEach((rc) => {
+      if (rc.width > 0 && (rc.left < colL - 1 || rc.right > colR + 1)) outside.push(`"${tn.nodeValue.trim().slice(0, 40)}" runs ${Math.round(Math.max(colL - rc.left, rc.right - colR))}px past the text column`);
+    });
+  });
+  return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length, outside };
 };
 const m = await page.evaluate(measureReport);
 
@@ -187,6 +202,9 @@ Object.entries(want).forEach(([k, px]) => {
 const pitchOk = m.pitches.every((p) => p === 24);
 console.log(`${pitchOk ? 'PASS' : 'FAIL'}  line pitch inside paragraphs: ${m.pitches.join(', ') || '(none)'} (expected 24)`);
 if (!pitchOk) fails.push(`line pitch: ${m.pitches.join(', ')}, expected 24`);
+const fitOk = !m.outside.length;
+console.log(`${fitOk ? 'PASS' : 'FAIL'}  every line inside the text column${fitOk ? '' : ': ' + m.outside.join('; ')}`);
+if (!fitOk) fails.push(`text outside the column: ${m.outside.join('; ')}`);
 
 // PHONE (owner, 2026-10-05: "one nice rhythm"): every 100 inside the report
 // card is 70 by eye; the page's own gaps stay 100. "Insider Edge" -> card top
@@ -216,6 +234,9 @@ Object.entries(want).forEach(([k, px]) => {
 const pitchOkP = mp.pitches.every((p) => p === 24);
 console.log(`${pitchOkP ? 'PASS' : 'FAIL'}  phone: line pitch inside paragraphs: ${mp.pitches.join(', ') || '(none)'} (expected 24)`);
 if (!pitchOkP) fails.push(`phone: line pitch: ${mp.pitches.join(', ')}, expected 24`);
+const fitOkP = !mp.outside.length;
+console.log(`${fitOkP ? 'PASS' : 'FAIL'}  phone: every line inside the text column${fitOkP ? '' : ': ' + mp.outside.join('; ')}`);
+if (!fitOkP) fails.push(`phone: text outside the column: ${mp.outside.join('; ')}`);
 
 if (fails.length) {
   console.error(`\n${fails.length} spacing/font check(s) FAILED:\n - ${fails.join('\n - ')}`);

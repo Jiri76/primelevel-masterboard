@@ -253,6 +253,13 @@
        corner-artifact fix above. No top padding needed: the header band
        already provides its own 100px top inset internally. */
     padding: 0 70px 93px; /* last check line -> card bottom = 100px by eye */
+    /* A "word" wider than the text column (a web address: no spaces to wrap
+       at) breaks onto the next line instead of running under the card's
+       edge. Found 2026-10-12: the real report's Notebook line had SEC
+       addresses up to 443px wide, cut off on phones (287px column at 375).
+       Lines that already fit are untouched. Same rule as the Inbox Report's
+       quoted text. */
+    overflow-wrap: anywhere;
   }
   .report-body p {
     margin: 0 0 30px; /* was 20px -- didn't match the 30px used everywhere else (list items, heading-to-content). Only visibly matters once a section has 2+ paragraphs in a row, e.g. Verdict once more than one ticker survives in a future week. */

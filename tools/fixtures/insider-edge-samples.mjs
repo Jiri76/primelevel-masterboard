@@ -6,7 +6,11 @@
 // (prompt v5, plus the three check lines the database adds when a report is
 // saved, then the Notebook line), with fictional companies and people:
 //   withPicks  a normal week: entries in every kind of section, two Verdicts
-//   noPicks    a week where nothing passed ("None." lines, plain Verdict)
+//   noPicks    a week where nothing passed ("None." lines, plain Verdict),
+//              with a new lesson in its Notebook line that contains a long
+//              web address, as real Notebook lines do since 12 Oct 2026 (it
+//              is wider than a phone's text column: the layout guard checks
+//              it breaks onto the next line instead of being cut off)
 // Change these only when the real report's shape changes.
 
 const checks = (tickers) => `
@@ -76,7 +80,7 @@ export const noPicks = {
 </ul>
 <h3>Verdict</h3>
 <p>No candidates to assess this week.</p>${checks(0)}
-<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Screened: 24 companies; 0 passed every test; 2 could not be fully checked. New lessons this run: none. Waiting for your approval: none.</em></p>
+<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Screened: 24 companies; 0 passed every test; 2 could not be fully checked. New lessons this run: [1] (self) 2026-10-05 run: When a sample filing has to be read in full, fetch https://www.sec.gov/Archives/edgar/data/0000000000/0000000000-26-000000-index.html and open the main document from that list. Method note only. Waiting for your approval: none.</em></p>
 <!--insider-edge-verified-->
 `,
 };
