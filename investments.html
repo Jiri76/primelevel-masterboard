@@ -2040,7 +2040,16 @@
       const tickers = [...new Set(holdings.map((h) => h.ticker))];
       let quotes;
       try {
-        const res = await fetch(`${QUOTES_FUNCTION_URL}?symbols=${tickers.join(',')}`);
+        // OWNER ONLY (owner, 2026-10-13: "lock it in"): the price lookup
+        // answers only the signed-in owner, so the request carries this
+        // browser's sign-in: the page's public key plus the session's access
+        // token (getSession hands back a fresh one when it has expired). No
+        // session: the lookup refuses, and the last known prices stay on
+        // screen, as for any other failure below.
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers = { apikey: SUPABASE_PUBLISHABLE_KEY };
+        if (session && session.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+        const res = await fetch(`${QUOTES_FUNCTION_URL}?symbols=${tickers.join(',')}`, { headers });
         if (!res.ok) {
           // Leave livePrices as they were -- a failed refresh never blanks
           // out the last known prices. Re-ask soon if something has never
