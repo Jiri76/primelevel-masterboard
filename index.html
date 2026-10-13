@@ -1577,6 +1577,42 @@
         PrimeLevelDoor.setView('door');
       }
     });
+
+    // A TAP OUTSIDE CLOSES THE KEYBOARD (owner, 2026-10-13: "make it
+    // identical" to the cards on Investments and Renewals). An iPhone closes
+    // its keyboard only with its own tick or a tap in Safari's bar: a tap on
+    // plain text or empty space sends the page no press at all, so the cursor
+    // stayed in the address field and the keyboard stayed up (his red dots).
+    // Now a finger tap on plain space takes the cursor out of the field, by
+    // the cards' own rule: a tap = the finger moved under 20px and the page
+    // under 8px (scrolling never closes it), and that tap's late mouse press
+    // is cancelled (closing the keyboard moves the page under the finger).
+    // Things that take presses keep their own job: the field, its label and
+    // the button ("takes presses" = the cards' takesPresses). Acts only while
+    // the address field has the cursor; a mouse is unchanged.
+    function takesPresses(el) {
+      for (let n = el; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
+        if (n.matches('a[href], button, input, select, textarea, label') || getComputedStyle(n).cursor === 'pointer') return true;
+      }
+      return false;
+    }
+    let signInFinger = null; // where a finger went down on plain space while typing the address
+    document.addEventListener('pointerdown', (e) => {
+      signInFinger = null;
+      if (e.pointerType !== 'touch' || !e.isPrimary || document.activeElement !== signInEmail || takesPresses(e.target)) return;
+      signInFinger = { x: e.clientX, y: e.clientY, sx: window.scrollX, sy: window.scrollY };
+    }, true);
+    document.addEventListener('touchend', (e) => {
+      const from = signInFinger;
+      signInFinger = null;
+      if (!from || e.touches.length || document.activeElement !== signInEmail) return;
+      const lift = e.changedTouches[0];
+      const moved = Math.hypot(lift.clientX - from.x, lift.clientY - from.y);
+      const scrolled = Math.max(Math.abs(window.scrollY - from.sy), Math.abs(window.scrollX - from.sx));
+      if (moved >= 20 || scrolled >= 8) return; // a real swipe or scroll: the keyboard stays
+      if (e.cancelable) e.preventDefault(); // no late mouse press
+      signInEmail.blur(); // the keyboard closes; the address stays typed in
+    }, { capture: true, passive: false });
   </script>
 </body>
 </html>
