@@ -273,6 +273,10 @@
       padding-top: 1px; /* title letters -> button EDGE: 99 -> 100 by eye (padding, not margin: a margin would collapse into the title's) */
     }
     .report-tiles:empty { margin: 0; padding: 0; }
+    /* The closed screen (a report closed by a click outside, 2026-10-14):
+       the message sits under the date buttons exactly as on Insider Edge
+       (no -4px there: buttons -> message letters 44 by eye on both pages). */
+    .report-tiles:not(:empty) + #content .closed-state { margin-top: 0; }
     h1 { margin-bottom: 85px; } /* title letters -> top EDGE of the date buttons = 100 by eye (was 40 = 48 by eye) */
   }
   @media (max-width: 720px) {
@@ -432,6 +436,10 @@
     }
     window.addEventListener('resize', alignTiles);
 
+    // The reports on screen, and the one that is open (null = closed).
+    let shownReports = [];
+    let openId = null;
+
     function renderTiles(reports, selectedId) {
       tilesEl.replaceChildren();
       for (const report of reports) {
@@ -440,12 +448,28 @@
         if (report.status === 'failed') tile.classList.add('failed');
         if (report.id === selectedId) tile.classList.add('selected');
         tile.addEventListener('click', () => {
+          openId = report.id;
           renderTiles(reports, report.id);
           renderReport(report);
         });
         tilesEl.append(tile);
       }
     }
+
+    // CLICK OUTSIDE CLOSES (owner, 2026-10-14: "the same mechanism as Insider
+    // Edge"), copied from insider-edge.html: a left click anywhere outside
+    // the white report card (and not on a date button, whose job is to OPEN
+    // a report) closes the open report; a click inside it does nothing. The
+    // closed screen is Insider Edge's: the date buttons (none highlighted)
+    // and "Click a date to open a report." in the opening-page message style.
+    document.addEventListener('click', (e) => {
+      if (openId === null) return;
+      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+      openId = null;
+      renderTiles(shownReports, null);
+      contentEl.replaceChildren(el('div', 'empty-state closed-state', 'Click a date to open a report.'));
+      alignTiles();
+    });
 
     // Only ever runs for the signed-in owner (door.js checked the database's
     // own allow-list first; anyone else was sent to the Masterboard front
@@ -468,6 +492,8 @@
       } else if (!data.length) {
         contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
       } else {
+        shownReports = data;
+        openId = data[0].id;
         renderTiles(data, data[0].id);
         renderReport(data[0]);
       }
