@@ -456,19 +456,26 @@
       }
     }
 
-    // CLICK OUTSIDE CLOSES (owner, 2026-10-14: "the same mechanism as Insider
-    // Edge"), copied from insider-edge.html: a left click anywhere outside
-    // the white report card (and not on a date button, whose job is to OPEN
-    // a report) closes the open report; a click inside it does nothing. The
-    // closed screen is Insider Edge's: the date buttons (none highlighted)
+    // THE CLOSED SCREEN (Insider Edge's): the date buttons, none highlighted,
     // and "Click a date to open a report." in the opening-page message style.
-    document.addEventListener('click', (e) => {
-      if (openId === null) return;
-      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+    // Shown on arrival (owner, 2026-10-14: "exactly the same as Insider Edge
+    // on behaviour": nothing opens until a date is clicked) and after a
+    // report is closed.
+    function showClosed() {
       openId = null;
       renderTiles(shownReports, null);
       contentEl.replaceChildren(el('div', 'empty-state closed-state', 'Click a date to open a report.'));
       alignTiles();
+    }
+
+    // CLICK OUTSIDE CLOSES (owner, 2026-10-14: "the same mechanism as Insider
+    // Edge"), copied from insider-edge.html: a left click anywhere outside
+    // the white report card (and not on a date button, whose job is to OPEN
+    // a report) closes the open report; a click inside it does nothing.
+    document.addEventListener('click', (e) => {
+      if (openId === null) return;
+      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+      showClosed();
     });
 
     // Only ever runs for the signed-in owner (door.js checked the database's
@@ -493,9 +500,7 @@
         contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
       } else {
         shownReports = data;
-        openId = data[0].id;
-        renderTiles(data, data[0].id);
-        renderReport(data[0]);
+        showClosed(); // nothing opens on arrival, as on Insider Edge
       }
     }
 
