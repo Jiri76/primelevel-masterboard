@@ -897,13 +897,52 @@
     // a report) closes the currently-open report. Checks selectedId
     // first so this is a genuine no-op when nothing's open (avoids an
     // unnecessary re-render on every single click on the page).
-    document.addEventListener('click', (e) => {
-      if (selectedId === null) return;
-      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+    function closeOpenReport() {
       selectedId = null;
       renderContent();
       renderTiles(); // clears the now-stale .selected highlight -- previously only renderContent() ran here
+    }
+    document.addEventListener('click', (e) => {
+      if (selectedId === null) return;
+      if (e.target.closest('.report-content') || e.target.closest('.report-tile')) return;
+      closeOpenReport();
     });
+
+    // A FINGER TAP OUTSIDE CLOSES IT TOO (owner, 2026-10-14: "tap outside
+    // closes on phones, on both report pages, using the same proven tap rule
+    // as the cards"). An iPhone sends no click for a tap on plain text or
+    // empty space, so the click rule above never fired on his phone. COPIED
+    // from the cards (investments.html, "A PRESS" + "A FIRM OR QUICK TAP"):
+    // a finger on plain space that lifts having moved under 20px, with the
+    // page scrolled under 8px, is a tap (scrolling never closes anything),
+    // and that tap's late mouse press is cancelled (closing moves the page
+    // under the finger). Things that take presses (the date buttons, links,
+    // Sign out, the arrow) keep their own job; a tap inside the report does
+    // nothing. Identical on inbox-report.html.
+    function takesPresses(el) {
+      for (let n = el; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
+        if (n.matches('a[href], button, input, select, textarea, label') || getComputedStyle(n).cursor === 'pointer') return true;
+      }
+      return false;
+    }
+    let plainFinger = null, fingerFrom = null; // the plain spot a finger went down on, and where
+    document.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' || !e.isPrimary) return;
+      plainFinger = takesPresses(e.target) || e.target.closest('.report-content') ? null : e.target;
+      fingerFrom = { x: e.clientX, y: e.clientY, sx: window.scrollX, sy: window.scrollY };
+    }, true);
+    document.addEventListener('touchend', (e) => {
+      const target = plainFinger, from = fingerFrom;
+      plainFinger = null; fingerFrom = null;
+      if (!target || !from || e.touches.length) return; // not plain space outside the report, or another finger still down
+      if (selectedId === null) return; // nothing open
+      const lift = e.changedTouches[0];
+      const moved = Math.hypot(lift.clientX - from.x, lift.clientY - from.y);
+      const scrolled = Math.max(Math.abs(window.scrollY - from.sy), Math.abs(window.scrollX - from.sx));
+      if (moved >= 20 || scrolled >= 8) return; // a real swipe or scroll: nothing closes
+      if (e.cancelable) e.preventDefault(); // no late mouse press (see above)
+      closeOpenReport();
+    }, { capture: true, passive: false });
 
     async function loadReports() {
       const { data, error } = await supabase
