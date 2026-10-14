@@ -114,25 +114,21 @@
     // The back arrow (owner, 2026-10-03): Sign out's mirror in the top-LEFT
     // corner, identical in everything but the words. Its ink is exactly its
     // drawing's box (see BACK_ARROW_SVG), so: drawing at 40 / 40 by eye
-    // (phones 20 / 20), as long as the letters "Sign out" (88px; phones 44px,
-    // half, since 2026-10-09, see PHONES below), as tall as
+    // (phones 20 / 20), HALF as long as the letters "Sign out" (44px of 88:
+    // phones since 2026-10-09, every screen since 2026-10-14, owner: "the
+    // same look as they have on the phone"), as tall as
     // their letters (16px: top of the tallest letters -> baseline), lines as
     // thick as the bold letters (3.2px), the same gold, the same pop. The 14px
-    // padding is an invisible tap area (116 x 44); 26 + 14 = 40, 6 + 14 = 20.
+    // padding is an invisible tap area (72 x 44); 26 + 14 = 40, 6 + 14 = 20.
     '.back { position: fixed; top: 26px; left: 26px; z-index: 10; padding: 14px; line-height: 0;' +
     ' color: #B29B68; transition: transform 0.15s ease; }' +
-    '.back svg { display: block; width: 88px; height: 16px; overflow: visible; }' +
-    '.back svg .arrow-short { display: none; }' +
+    '.back svg { display: block; width: 44px; height: 16px; overflow: visible; }' +
     ':root:not([data-view="owner"]) .back { display: none; }' +
     '@media (hover: hover) { .back:hover { transform: scale(1.05); } }' +
     '.back:active { transform: scale(0.97); }' +
     '@media (prefers-reduced-motion: reduce) { .back { transition: none; } .back:hover, .back:active { transform: none; } }' +
     '.back:focus-visible { outline: none; } .back:focus-visible svg { outline: 2px solid #B29B68; outline-offset: 2px; }' +
     '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }' +
-    // PHONES (owner, 2026-10-09: "the arrow is too long on phones… go with
-    // 50%… the computer stays untouched"): 44px long instead of 88 (half of
-    // "Sign out"); the same head, height, lines, place and pop. Tap area 72 x 44.
-    '@media (max-width: 720px) { .back svg { width: 44px; } .back svg .arrow-long { display: none; } .back svg .arrow-short { display: inline; } }' +
     // THE TOP STRIP (owner, 2026-10-06, on his iPhone: while scrolling, the
     // title slid over Sign out and the arrow): a strip of the page's own navy
     // fixed to the top, behind Sign out and the arrow; the page slides UNDER
@@ -211,20 +207,14 @@
   // the keyboard reaches it; the Masterboard is fetched ahead of time the
   // moment the arrow appears, so the click lands without waiting.
   // The drawing: a "<" head and a shaft, stroke 3.2. With butt ends and a
-  // mitred tip the ink sits EXACTLY on the 88 x 16 box: the tip's mitre
+  // mitred tip the ink sits EXACTLY on the 44 x 16 box: the tip's mitre
   // reaches 1.6 / sin 45 = 2.263 left of its point, each arm's end 1.6 x
-  // cos 45 = 1.131 above / below its point, the shaft ends square at 88.
-  // Phones (owner, 2026-10-09: "too long on phones… go with 50%… the
-  // computer stays untouched"): a second, complete drawing whose shaft ends
-  // at 44; the CSS above shows one or the other. The computer's drawing is
-  // the original one, unchanged (pixel-identical). "xMinYMid slice" keeps the
-  // phone drawing at full size, pinned left, in its 44-wide box, so its head,
-  // height and lines are identical too.
+  // cos 45 = 1.131 above / below its point, the shaft ends square at 44.
+  // One drawing on every screen (owner, 2026-10-14: computers now match the
+  // phones' 50% arrow of 2026-10-09; the 88-long drawing is gone).
   var BACK_ARROW_SVG =
-    '<svg viewBox="0 0 88 16" preserveAspectRatio="xMinYMid slice" aria-hidden="true" focusable="false">' +
-    '<path class="arrow-long" d="M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H88" fill="none" stroke="currentColor"' +
-    ' stroke-width="3.2" stroke-linejoin="miter" stroke-miterlimit="4" stroke-linecap="butt"/>' +
-    '<path class="arrow-short" d="M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H44" fill="none" stroke="currentColor"' +
+    '<svg viewBox="0 0 44 16" aria-hidden="true" focusable="false">' +
+    '<path d="M9.132 1.131 L2.263 8 L9.132 14.869 M2.263 8 H44" fill="none" stroke="currentColor"' +
     ' stroke-width="3.2" stroke-linejoin="miter" stroke-miterlimit="4" stroke-linecap="butt"/></svg>';
   var backLink = null;
   function addBack() {

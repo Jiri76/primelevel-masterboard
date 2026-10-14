@@ -181,15 +181,15 @@ the Masterboard."
 | | Value (measured by pixels on every page at 1920 / 1440 / 1024 / 768 / 375 / 320) |
 |---|---|
 | Shape | a gold "←": a "<" head (45°) and a straight shaft, square ends |
-| Length | **88px** = the letters "Sign out" (88.1) |
+| Length | **44px** = HALF the letters "Sign out" (88.1), on every screen (owner: phones 2026-10-09 "go with 50%", computers 2026-10-14 "the same look as they have on the phone") |
 | Height | **16px** = Sign out's letters (top of the tallest letters → baseline), so both sit on the same line |
 | Line thickness | **3.2px** = the bold letters' strokes (both measure 3.5px on screen with edge smoothing) |
 | Colour | company gold `#B29B68` |
 | Spacing BY EYE | top of the screen → top of the arrow **40px** = left edge → tip **40px** (phones ≤720px **20 / 20**): Sign out's mirror |
 | Pop | 1.05 on hover, 0.97 on press, 0.15s (none when the device asks for less motion); gold focus ring |
 | Leads to | ALWAYS the Masterboard (`FRONT_DOOR_URL`), never "back one page": the same place even from an email link, a bookmark or a new tab. The Masterboard is fetched ahead (`<link rel="prefetch">`) the moment the arrow appears, so the click is instant |
-| Tap area | an invisible 14px margin around the drawing (116 × 44), so it is easy to hit on a phone |
-| CSS that produces it | `position: fixed; top: 26px; left: 26px; padding: 14px` (26 + 14 = 40) · phones `top: 6px; left: 6px` (6 + 14 = 20); the drawing is 88 × 16 and its ink sits exactly on that box (the mitred tip and the arms' ends are placed for a 3.2px line: see `BACK_ARROW_SVG` in `door.js`) |
+| Tap area | an invisible 14px margin around the drawing (72 × 44), so it is easy to hit on a phone |
+| CSS that produces it | `position: fixed; top: 26px; left: 26px; padding: 14px` (26 + 14 = 40) · phones `top: 6px; left: 6px` (6 + 14 = 20); the drawing is 44 × 16 and its ink sits exactly on that box (the mitred tip and the arms' ends are placed for a 3.2px line: see `BACK_ARROW_SVG` in `door.js`) |
 
 Shown ONLY to the signed-in owner, like Sign out, drawn by `door.js` on Investments,
 Insider Edge, Inbox Report and Renewals. The Masterboard home tells the gate it is the
