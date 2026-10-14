@@ -813,6 +813,29 @@
       // both ways makes this idempotent and safe to call repeatedly.
       insiderEdgeTile.classList.toggle('unread', !readIds.has(latestId));
     }
+    // ---- Inbox Report "new report" glow (owner, 2026-10-14: "copy the exact
+    // same behaviour Insider Edge has and mirror it to the Inbox Report"):
+    // checkInsiderEdgeUnread() above, COPIED for the Inbox Report's own table
+    // and its own read-key (written by inbox-report.html). ----
+    async function checkInboxReportUnread() {
+      if (!isOwnerView()) return; // private: the owner only
+      const { data, error } = await supabase
+        .from('email_reports')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (error || !data || !data.length) return; // no reports yet, or a real fetch error -- either way, nothing to glow about
+      const latestId = data[0].id;
+      let readIds;
+      try {
+        readIds = new Set(JSON.parse(localStorage.getItem('inbox-report-read-reports-v1') || '[]'));
+      } catch {
+        readIds = new Set(); // harmless -- glow just won't persist correctly if storage is unavailable
+      }
+      const inboxReportTile = tilesEl.querySelector('a[href="inbox-report.html"]');
+      if (!inboxReportTile) return;
+      inboxReportTile.classList.toggle('unread', !readIds.has(latestId));
+    }
     // (First run: PrimeLevelDoor.whenOwner(...) at the end of this script.)
     // Real gap found and fixed: this only ran once, at initial page load
     // -- unlike loadSettings() below (see its own pageshow/visibilitychange
@@ -823,7 +846,7 @@
     // before those reports were read. Same established fix, same reason,
     // applied here too for consistency.
     window.addEventListener('pageshow', (event) => {
-      if (event.persisted) checkInsiderEdgeUnread();
+      if (event.persisted) { checkInsiderEdgeUnread(); checkInboxReportUnread(); }
     });
 
     // ---- Picture placeholder -- now genuinely persisted to Supabase
@@ -1498,6 +1521,7 @@
       rememberEmail(''); // signed in: nothing left to remember
       loadSettings();
       checkInsiderEdgeUnread();
+      checkInboxReportUnread();
       alignTilesToPicture();
     });
     PrimeLevelDoor.gate(supabase, {
