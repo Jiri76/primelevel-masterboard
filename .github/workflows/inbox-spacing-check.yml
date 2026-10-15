@@ -37,11 +37,11 @@ jobs:
         run: |
           python3 -m http.server 8091 >/dev/null 2>&1 &
           sleep 2
-      - name: Measure spacing, font sizes and colours (sample: a full day)
+      - name: 'Measure spacing, font sizes and colours (sample: a full day)'
         run: node tools/inbox-spacing-check.mjs
         env:
           SAMPLE: full
-      - name: Measure spacing, font sizes and colours (sample: a day with no emails)
+      - name: 'Measure spacing, font sizes and colours (sample: a day with no emails)'
         run: node tools/inbox-spacing-check.mjs
         env:
           SAMPLE: quiet
