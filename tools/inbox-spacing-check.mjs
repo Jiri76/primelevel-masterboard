@@ -1,0 +1,228 @@
+// Inbox Report layout guard (REPORT-CARD-STANDARD.md).
+//
+// The Inbox Report's card is Insider Edge's LOCKED report card (owner,
+// 2026-10-15: "the same colours, the same padding, the same size of the
+// letters, fonts, everything"): this opens the real page, opens a report and
+// measures it BY EYE, exactly like tools/spacing-check.mjs does for Insider
+// Edge -- from the baseline of the letters above to the top of the tallest
+// letters below, or to the edge of a box (an email card, a badge, the band)
+// or of a heading's line, exactly as the reader sees it.
+//   COMPUTER (1920): 100 around the band and above / below every heading,
+//                    30 between items, 15 from a heading's letters to its line
+//   PHONE (iPhone, 375): the same with 70 instead of 100 inside the card
+//   both: text 15px, headings 25px, badges 13px, band title 35 / 26px, date
+//         15px, page title 50 / 44px; 24px lines; the band's date written
+//         "14 Oct 2026"; the Insider Edge colours, and every email card in
+//         the sign-in box's white #E9E9EB; no line of text outside the column.
+// The report is a MADE-UP sample with the real report's exact shape
+// (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
+// this project is public): SAMPLE=full (default) or SAMPLE=quiet (no emails).
+// It is measured twice, with the draft reply folded and opened.
+// Nothing is read from or written to the real database. Exits 1 on any drift.
+import { chromium, devices } from 'playwright';
+import { ownerFake, useStandIn } from './guard-supabase.mjs';
+import { fullReport, quietReport } from './fixtures/inbox-report-samples.mjs';
+
+const URL = process.env.SPACING_URL || 'http://localhost:8091/inbox-report.html';
+const SAMPLE = process.env.SAMPLE === 'quiet' ? quietReport : fullReport;
+console.log(`Sample report: ${process.env.SAMPLE === 'quiet' ? 'a day with no emails' : 'a full day'} (made up, not a real report)`);
+const TOL_BIG = 1;   // px, for every 100 (70 on phones) gap
+const TOL_30 = 1.5;  // px, for every 30 and 15 gap (line boxes round to whole px)
+
+const measure = () => {
+  const cs = getComputedStyle, doc = document;
+  const c = doc.createElement('canvas').getContext('2d');
+  const met = (el, txt) => { const s = cs(el); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; const t = c.measureText(txt); return { a: t.actualBoundingBoxAscent, fa: t.fontBoundingBoxAscent }; };
+  const tns = (el) => { const w = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeValue.trim() ? 1 : 2) }); const a = []; let n; while ((n = w.nextNode())) a.push(n); return a; };
+  // text lines of an element: [{ base: baseline y, top: top of the tallest letters y }]
+  const lines = (el) => {
+    const out = [];
+    tns(el).forEach((tn) => {
+      const mm = met(tn.parentElement, tn.nodeValue.trim());
+      const g = doc.createRange(); g.selectNodeContents(tn);
+      [...g.getClientRects()].forEach((rc) => {
+        if (rc.width < 1) return;
+        const b = rc.top + scrollY + met(tn.parentElement, 'x').fa;
+        let cl = out.find((x) => Math.abs(x.base - b) < 3);
+        if (!cl) { cl = { base: b, top: b - mm.a }; out.push(cl); } else cl.top = Math.min(cl.top, b - mm.a);
+      });
+    });
+    return out.sort((x, y) => x.base - y.base);
+  };
+  const R = (e) => { const b = e.getBoundingClientRect(); return { t: b.top + scrollY, b: b.bottom + scrollY }; };
+  // By eye: the first line's letters, or a badge box on it, to the last
+  // line's baseline, or a badge box on it.
+  const eye = (el) => {
+    const L = lines(el); let t = L.length ? L[0].top : Infinity, b = L.length ? L[L.length - 1].base : -Infinity;
+    el.querySelectorAll('.badge').forEach((bd) => { const r = R(bd); t = Math.min(t, r.t); b = Math.max(b, r.b); });
+    return { t, b };
+  };
+  const visible = (e) => cs(e).display !== 'none';
+  // A top-level block of the report: where it starts and ends by eye.
+  const block = (k) => {
+    if (k.tagName === 'TABLE') {
+      const th = k.querySelector('thead');
+      const rows = [...k.querySelectorAll('tbody tr')];
+      return { t: th && visible(th) ? eye(th).t : eye(rows[0]).t, b: R(k).b, name: 'the table' };
+    }
+    if (k.tagName === 'UL' && k.querySelector(':scope > li.entry')) return { t: R(k.querySelector(':scope > li.entry')).t, b: R([...k.querySelectorAll(':scope > li.entry')].pop()).b, name: 'email cards' };
+    const e = eye(k); return { ...e, name: `"${k.textContent.trim().slice(0, 24)}"` };
+  };
+
+  const h1 = doc.querySelector('h1'), band = doc.querySelector('.report-header-band');
+  const title = doc.querySelector('.report-content-title'), date = doc.querySelector('.report-content-date');
+  const card = doc.querySelector('.report-content'), body = doc.querySelector('.report-body');
+  const big = [], g30 = [], g15 = [];
+  const T = lines(title), D = lines(date), B = R(band), C = R(card);
+  big.push(['card top -> title letters', T[0].top - B.t]);
+  g15.push(['title -> date line', D[0].top - T[T.length - 1].base]);
+  big.push(['date line -> band bottom', B.b - D[D.length - 1].base]);
+  const kids = [...body.children];
+  let prev = null;
+  kids.forEach((k, i) => {
+    if (k.tagName === 'H3') {
+      const L = lines(k), r = R(k), n = k.textContent.trim().slice(0, 18);
+      if (i === 0) big.push([`band bottom -> "${n}" letters`, L[0].top - B.b]);
+      else big.push([`${prev.name} -> "${n}" letters`, L[0].top - prev.b]);
+      g15.push([`"${n}" letters -> its line`, r.b - parseFloat(cs(k).borderBottomWidth) - L[L.length - 1].base]);
+      const next = kids[i + 1];
+      if (next) big.push([`"${n}" line -> ${block(next).name}`, block(next).t - r.b]);
+      prev = null; return;
+    }
+    const bl = block(k);
+    if (i === 0) big.push([`band bottom -> ${bl.name}`, bl.t - B.b]);
+    else if (prev) g30.push([`${prev.name} -> ${bl.name}`, bl.t - prev.b]);
+    prev = bl;
+  });
+  const lastBlock = block(kids[kids.length - 1]);
+  big.push([`${lastBlock.name} -> card bottom`, C.b - lastBlock.b]);
+
+  // Email cards: card -> next card, and inside each card every part 30 apart
+  // (edge -> first part, part -> part, last part -> edge; the grey box and an
+  // opened draft reply are parts too).
+  // A folded draft reply shows only its "Read the draft reply" line.
+  const part = (el) => (el.tagName === 'BLOCKQUOTE' ? R(el) : el.tagName === 'DETAILS' && !el.open ? eye(el.querySelector('summary')) : eye(el));
+  body.querySelectorAll(':scope > ul > li.entry').forEach((li, ci) => {
+    const r = R(li), parts = [...li.children], tag = `card ${ci + 1}`;
+    const nextLi = li.nextElementSibling;
+    if (nextLi) g30.push([`${tag} -> next card`, R(nextLi).t - r.b]);
+    g30.push([`${tag}: edge -> badges`, part(parts[0]).t - r.t]);
+    parts.slice(1).forEach((p, j) => g30.push([`${tag}: part ${j + 1} -> part ${j + 2}`, part(p).t - part(parts[j]).b]));
+    g30.push([`${tag}: last line -> edge`, r.b - part(parts[parts.length - 1]).b]);
+    li.querySelectorAll('details[open]').forEach((d) => {
+      const s = eye(d.querySelector('summary')), q = R(d.querySelector('blockquote'));
+      g30.push([`${tag}: "Read the draft reply" -> the draft's box`, q.t - s.b]);
+      const after = lines(d).filter((x) => x.top > q.b);
+      if (after.length) g30.push([`${tag}: the draft's box -> its flags`, after[0].top - q.b]);
+    });
+  });
+  // A plain list (the Notebook): item -> item.
+  body.querySelectorAll(':scope > ul:not(:has(> li.entry))').forEach((ul) => {
+    const lis = [...ul.children];
+    lis.slice(1).forEach((li, j) => g30.push([`list item ${j + 1} -> ${j + 2}`, eye(li).t - eye(lis[j]).b]));
+  });
+
+  // Line pitch inside paragraphs that wrap (no badges on them). A quoted
+  // email keeps its own empty lines, which are two lines (48) apart.
+  const pitches = new Set();
+  body.querySelectorAll('p.gist, p.why, p.from, blockquote, .report-body > ul:not(:has(> li.entry)) > li').forEach((p) => {
+    const L = lines(p); L.slice(1).forEach((x, k) => pitches.add(Math.round(x.base - L[k].base)));
+  });
+
+  // Font sizes by kind.
+  const cat = {};
+  tns(body).forEach((n) => {
+    const p = n.parentElement;
+    const k = p.closest('h3') ? 'heading' : p.closest('.badge') ? 'badge' : 'text';
+    (cat[k] = cat[k] || new Set()).add(cs(p).fontSize);
+  });
+  const fonts = Object.fromEntries(Object.entries(cat).map(([k, v]) => [k, [...v]]));
+  const pageFonts = { 'page title "Inbox Report"': cs(h1).fontSize, 'title inside the dark band': cs(title).fontSize, 'date line under the title': cs(date).fontSize };
+
+  // Colours (Insider Edge's, and the email cards in the sign-in box's white).
+  const hex = (v) => { const m = v.match(/\d+(\.\d+)?/g).map(Number); return '#' + m.slice(0, 3).map((x) => Math.round(x).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+  const firstCard = body.querySelector('li.entry');
+  const colours = {
+    'report paper': hex(cs(card).backgroundColor), 'dark band': hex(cs(band).backgroundColor), 'band title': hex(cs(title).color), 'date line': hex(cs(date).color),
+    'report text': hex(cs(body).color), 'heading': hex(cs(body.querySelector('h3')).color), 'heading line': hex(cs(body.querySelector('h3')).borderBottomColor),
+    ...(firstCard ? { 'email card': hex(cs(firstCard).backgroundColor) } : {}),
+  };
+
+  // Every line of report text stays inside the text column.
+  const bb = body.getBoundingClientRect(), bs = cs(body);
+  const colL = bb.left + parseFloat(bs.paddingLeft), colR = bb.right - parseFloat(bs.paddingRight);
+  const outside = [];
+  tns(body).forEach((tn) => {
+    const g = doc.createRange(); g.selectNodeContents(tn);
+    [...g.getClientRects()].forEach((rc) => {
+      if (rc.width > 0 && (rc.left < colL - 1 || rc.right > colR + 1)) outside.push(`"${tn.nodeValue.trim().slice(0, 40)}" runs ${Math.round(Math.max(colL - rc.left, rc.right - colR))}px past the text column`);
+    });
+  });
+  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
+};
+
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+async function open(phone) {
+  const ctx = await browser.newContext(phone ? { ...devices['iPhone 13'], viewport: { width: 375, height: 900 } } : { viewport: { width: 1920, height: 1080 } });
+  const page = await ctx.newPage();
+  await useStandIn(page, ownerFake({ email_reports: [SAMPLE] }));
+  await page.route(/supabase\.co/, (route) => route.abort()); // the stand-in answers everything; nothing reaches the real database
+  await page.goto(URL, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.report-tile', { timeout: 30000 });
+  await page.click('.report-tile');
+  await page.waitForSelector('.report-body', { timeout: 30000 });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(1500);
+  return page;
+}
+
+const fails = [];
+const row = (label, v, want, tol) => {
+  const ok = Math.abs(v - want) <= tol;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${want}px  ${v.toFixed(1).padStart(6)}  ${label}`);
+  if (!ok) fails.push(`${label}: ${v.toFixed(1)}px, expected ${want}px`);
+};
+const same = (label, got, want) => {
+  const ok = got === want;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
+  if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
+};
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB' };
+
+for (const phone of [false, true]) {
+  const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
+  console.log(phone ? '\nPHONE (iPhone, 375 wide): 70 inside the card' : 'COMPUTER (1920 wide): 100 inside the card');
+  const page = await open(phone);
+  for (const opened of [false, true]) {
+    if (opened) {
+      const n = await page.evaluate(() => { const d = [...document.querySelectorAll('.report-body details')]; d.forEach((x) => { x.open = true; }); return d.length; });
+      if (!n) continue;
+      await page.waitForTimeout(300);
+      console.log(`${P}-- with the draft reply opened --`);
+    }
+    const m = await page.evaluate(measure);
+    if (!opened) {
+      m.big.forEach(([k, v]) => row(P + k, v, BIG, TOL_BIG));
+      m.g15.forEach(([k, v]) => row(P + k, v, 15, TOL_30));
+      m.g30.forEach(([k, v]) => row(P + k, v, 30, TOL_30));
+      Object.entries(phone ? { 'page title "Inbox Report"': '44px', 'title inside the dark band': '26px', 'date line under the title': '15px' } : { 'page title "Inbox Report"': '50px', 'title inside the dark band': '35px', 'date line under the title': '15px' })
+        .forEach(([k, px]) => same(`${P}font ${k}`, m.pageFonts[k], px));
+      Object.entries({ heading: '25px', text: '15px', badge: '13px' }).forEach(([k, px]) => { if (m.fonts[k]) same(`${P}font ${k}`, m.fonts[k].join(', '), px); });
+      same(`${P}line pitch inside paragraphs (24, or 48 across an empty line in a quote)`, m.pitches.every((x) => x === 24 || x === 48) ? 'yes' : m.pitches.join(', '), 'yes');
+      Object.entries(m.colours).forEach(([k, v]) => same(`${P}colour ${k}`, v, WANT_COLOURS[k]));
+      same(`${P}date line written like Insider Edge's ("14 Oct 2026")`, /^\d{1,2} [A-Z][a-z]{2} \d{4}$/.test(m.dateText) ? 'yes' : `no: "${m.dateText}"`, 'yes');
+      same(`${P}every line inside the text column`, m.outside.length ? m.outside.join('; ') : 'yes', 'yes');
+      same(`${P}sideways scroll`, String(m.sideways), '0');
+    } else {
+      m.g30.filter(([k]) => /draft|card \d: (part|last)/.test(k) && k.includes('card 1')).forEach(([k, v]) => row(`${P}${k} (draft open)`, v, 30, TOL_30));
+    }
+  }
+  await page.context().close();
+}
+await browser.close();
+
+if (fails.length) {
+  console.error(`\n${fails.length} spacing/font/colour check(s) FAILED:\n - ${fails.join('\n - ')}`);
+  process.exit(1);
+}
+console.log('\nAll Inbox Report spacing, font-size and colour checks passed.');

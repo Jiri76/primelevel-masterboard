@@ -104,6 +104,18 @@
     transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.3s ease;
   }
 
+  /* THE REPORT CARD = Insider Edge's LOCKED report card (owner, 2026-10-15:
+     "the same colours, the same padding, the same size of the letters, fonts,
+     everything"), written down once in REPORT-CARD-STANDARD.md and guarded on
+     both pages (tools/inbox-spacing-check.mjs here). By eye: 100 around the
+     band and above and below every heading, 30 between items, 24 between
+     lines, 15 from a heading's letters to its line; inside the card on phones
+     every 100 is 70. Same fonts and colours as Insider Edge. The Inbox
+     Report's own badges keep their own colours; each email card is the
+     sign-in box's white #E9E9EB (owner). A few numbers differ from Insider
+     Edge's by 1-2px so the gaps LOOK the same: "Inbox" has no letter as tall
+     as the dot of the i in "Insider" (26px against 28px at 35px), the same
+     reason the page titles use 87 here and 90 there. */
   .report-content {
     width: 100%;
     background: var(--white);
@@ -112,11 +124,12 @@
   }
   .report-header-band {
     background: var(--input-bg);
-    padding: 60px 40px;
+    padding: 92px 70px 96px; /* card top -> title letters = 100 by eye; date line -> band bottom = 100 (Insider Edge: 94 / 96) */
+    margin: 0 0 90px; /* band bottom -> "At a glance" letters = 100 by eye (Insider Edge: 91) */
     text-align: center;
   }
   .report-content-title {
-    margin: 0 0 3px;
+    margin: 0 0 3px; /* title -> date line: the same as Insider Edge */
     font-weight: 700;
     font-size: 35px;
     color: var(--gold);
@@ -129,21 +142,40 @@
   }
   .report-body {
     font-size: 15px;
-    line-height: 24px;
-    padding: 60px 70px 70px;
+    line-height: 1.6; /* 24px lines, as on Insider Edge; a 25px heading gets Insider Edge's 40px line, so its letters sit 15 above its line */
+    padding: 0 70px 93px; /* last line of text -> card bottom = 100 by eye (Insider Edge's 93); a last email card adds 7 below */
+    /* A word wider than the text column (a web address) breaks onto the next
+       line instead of running under the card's edge: Insider Edge's rule. */
+    overflow-wrap: anywhere;
   }
   .report-body h3 {
     font-size: 25px;
     font-weight: 700;
-    margin: 60px 0 30px;
+    margin: 83.5px 0 95px; /* letters above -> heading letters = 100 by eye (Insider Edge's 83.5); line -> letters below = 100 */
     padding-bottom: 4px;
     border-bottom: 2px solid var(--navy);
   }
   .report-body h3:first-child {
     margin-top: 0;
   }
+  /* What sits under a heading starts with a BOX (an email card, or the
+     summary line's badges) rather than letters: 5px more, so the line ->
+     the box's edge is 100 by eye too. */
+  .report-body h3 + ul:has(> li.entry),
+  .report-body h3 + p:has(.badge) { padding-top: 5px; }
+  /* A report that starts with a line of text instead of a heading (a failed
+     run's message): band bottom -> its letters = 100 by eye (70 on phones). */
+  .report-body > p:first-child { padding-top: 5px; }
+  .report-body table.scan + h3 { margin-top: 90.5px; } /* the table's last line -> heading letters = 100 by eye */
+  .report-body ul:has(> li.entry) + h3 { margin-top: 90px; } /* the last card's edge -> heading letters = 100 by eye */
   .report-body p {
-    margin: 0 0 30px;
+    margin: 0 0 18px; /* paragraph -> paragraph = 30 by eye (Insider Edge's check lines: 18) */
+  }
+  .report-body > *:last-child {
+    margin-bottom: 0;
+  }
+  .report-body > ul:last-child:has(> li.entry) {
+    margin-bottom: 7px; /* the last email card's edge -> card bottom = 100 by eye (93 + 7) */
   }
   .report-body ul {
     margin: 0;
@@ -151,8 +183,11 @@
     list-style: none;
   }
   .report-body li {
-    margin: 0 0 18px;
+    margin: 0 0 18px; /* a plain list (the Notebook): item -> item = 30 by eye */
     padding: 0;
+  }
+  .report-body li:last-child {
+    margin-bottom: 0;
   }
   .report-body ul ul {
     margin: 6px 0 0 20px;
@@ -183,15 +218,15 @@
   .badge.draft { background: #eef1f5; color: var(--navy); border-color: var(--border); }
   .report-body table.scan {
     width: 100%;
-    margin: 0 0 30px;
+    margin: 0;
     border-collapse: collapse;
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 15px; /* Insider Edge's one text size (was 14) */
+    line-height: 24px;
   }
   .report-body table.scan th {
-    padding: 8px 10px;
+    padding: 0 10px 8px; /* no top padding: the paragraph above -> heading letters = 30 by eye */
     text-align: left;
-    font-size: 13px;
+    font-size: 15px; /* was 13 */
     border-bottom: 2px solid var(--navy);
   }
   .report-body table.scan td {
@@ -199,25 +234,40 @@
     vertical-align: top;
     border-bottom: 1px solid #dfe3ea;
   }
+  /* "No reply needed" stays on one line in the Draft column (at 15px it
+     wrapped); the long "From — what it is" column wraps instead. Phones
+     stack the table, so this is for wider screens only. */
+  @media (min-width: 721px) {
+    .report-body table.scan th:nth-child(4),
+    .report-body table.scan td:nth-child(4) { white-space: nowrap; }
+  }
+  /* One email = one card. 30 by eye everywhere: card -> next card, the card's
+     edge -> its first and last line, and between its parts (Insider Edge's
+     gap between items). Background: the sign-in box's white (owner,
+     2026-10-15: "the same shade of white we use in the sign-in box", not a
+     new colour; SIGNIN-BOX-STANDARD.md). */
   .report-body li.entry {
-    margin: 0 0 24px;
-    padding: 16px 18px 6px;
+    margin: 0 0 30px;
+    padding: 29px 18px 22px;
     border: 1px solid #dfe3ea;
     border-left: 6px solid #c9ced8;
     border-radius: 10px;
-    background: #fff;
+    background: #E9E9EB;
   }
+  .report-body li.entry:last-child { margin-bottom: 0; }
   .report-body li.entry.high { border-left-color: var(--red); }
   .report-body li.entry.medium { border-left-color: var(--gold); }
   .report-body li.entry.low { border-left-color: #dfe3ea; }
   .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
-  .report-body li.entry p { margin: 0 0 10px; }
-  .report-body li.entry p.from { font-size: 14px; color: #4b5565; }
+  .report-body li.entry p { margin: 0 0 18px; }
+  .report-body li.entry p.head { margin-bottom: 21px; } /* the badges' own 4px below + 21 = 30 by eye to the from line */
+  .report-body li.entry p.from { font-size: 15px; color: #4b5565; }
   .report-body li.entry p.gist { font-size: 15px; }
-  .report-body li.entry p.why { font-size: 14px; }
+  .report-body li.entry p.why { font-size: 15px; }
   .report-body details {
-    margin: 0 0 12px;
+    margin: 0 0 18px;
   }
+  .report-body li.entry > *:last-child { margin-bottom: 0; }
   .report-body summary {
     cursor: pointer;
     font-weight: 700;
@@ -229,7 +279,7 @@
 
   /* Quoted text: the original email and the drafted reply. */
   .report-body blockquote {
-    margin: 8px 0 12px;
+    margin: 23px 0 25px; /* the line above -> box edge = 30 by eye; box edge -> the line below = 30 */
     padding: 12px 18px;
     border-left: 3px solid var(--gold);
     background: rgba(30, 38, 51, 0.06);
@@ -295,9 +345,16 @@
       padding: 0 8px;
       font-size: 15px;
     }
-    .report-header-band { padding: 40px 24px; }
+    /* PHONES: ONE 70 RHYTHM INSIDE THE REPORT CARD, as on Insider Edge
+       (owner, 2026-10-05): every 100 by eye above is 70 here; 30 / 24 / 15
+       stay. Insider Edge's phone numbers: band 66 / 66 + 61, body 63,
+       headings 53.5 / 61. */
+    .report-header-band { padding: 65px 24px 66px; margin-bottom: 60px; }
     .report-content-title { font-size: 26px; }
-    .report-body { padding: 40px 24px 50px; }
+    .report-body { padding: 0 24px 63px; }
+    .report-body h3 { margin: 53.5px 0 65px; }
+    .report-body table.scan + h3 { margin-top: 61px; }
+    .report-body ul:has(> li.entry) + h3 { margin-top: 60px; }
     /* Phones: each summary row becomes a compact stacked line (badges, then the
        sentence, then the draft status) instead of a cramped 4-column table. */
     .report-body table.scan,
@@ -308,6 +365,7 @@
       padding: 10px 0;
       border-bottom: 1px solid #dfe3ea;
     }
+    .report-body table.scan tr:first-child { padding-top: 5px; } /* the paragraph above -> the first row's badges = 30 by eye */
     .report-body table.scan td {
       display: inline-block;
       padding: 0 6px 4px 0;
@@ -411,17 +469,15 @@
       const d = toDate(value);
       return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     }
-    function formatDateTime(value) {
-      const d = toDate(value);
-      return `${formatDate(value)}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    }
 
     // ---- Signed-in view -------------------------------------------------
     function renderReport(report) {
       const card = el('div', 'report-content');
       const band = el('div', 'report-header-band');
       band.append(el('div', 'report-content-title', report.title));
-      band.append(el('div', 'report-content-date', `Generated ${formatDateTime(report.created_at)}`));
+      // The day the report was made, written like Insider Edge's band
+      // ("13 Oct 2026"; owner, 2026-10-15: the banner "written the same way").
+      band.append(el('div', 'report-content-date', formatDate(report.created_at)));
       const body = el('div', 'report-body');
       if (report.status === 'failed') {
         body.append(el('p', 'report-error', 'This run failed, so there is no report for this day.'));

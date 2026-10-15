@@ -1,0 +1,47 @@
+name: Inbox Report layout guard
+
+# Fails loudly if the Inbox Report's card ever drifts from the report card
+# standard it shares with Insider Edge (REPORT-CARD-STANDARD.md): gaps by eye,
+# font sizes, colours, the band's date line, every line inside the text
+# column, on a computer AND a phone. Runs on every change to the page or to
+# this check, every Monday, and on demand. It measures MADE-UP sample reports
+# (tools/fixtures/inbox-report-samples.mjs): the real reports are owner-only,
+# and this project's logs are public.
+on:
+  push:
+    paths:
+      - 'inbox-report.html'
+      - 'door.js'
+      - 'tools/inbox-spacing-check.mjs'
+      - 'tools/guard-supabase.mjs'
+      - 'tools/fixtures/inbox-report-samples.mjs'
+      - '.github/workflows/inbox-spacing-check.yml'
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  spacing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm init -y >/dev/null
+          npm install playwright@1
+          npx playwright install --with-deps chromium
+      - name: Serve the page
+        run: |
+          python3 -m http.server 8091 >/dev/null 2>&1 &
+          sleep 2
+      - name: Measure spacing, font sizes and colours (sample: a full day)
+        run: node tools/inbox-spacing-check.mjs
+        env:
+          SAMPLE: full
+      - name: Measure spacing, font sizes and colours (sample: a day with no emails)
+        run: node tools/inbox-spacing-check.mjs
+        env:
+          SAMPLE: quiet

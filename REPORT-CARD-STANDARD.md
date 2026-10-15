@@ -1,0 +1,93 @@
+# Report card standard (LOCKED)
+
+The one template every PrimeLevel report page uses: **Insider Edge** (`insider-edge.html`)
+and the **Inbox Report** (`inbox-report.html`), and any report page added later.
+
+Owner, 2026-10-15: "the Inbox Report written exactly in the same way as Insider Edge…
+the same colours, the same padding, the same size of the letters, fonts, everything…
+I just want to create something like a template." Insider Edge's card was locked on
+2026-09-21 (details: `INSIDER-EDGE-SPACING-SPEC.md`); the phone rhythm on 2026-10-05.
+
+## How it is measured: BY EYE
+
+Every gap is what the reader sees: from the bottom (baseline) of the letters above to
+the top of the tallest letters below, or to the edge of a box (the band, an email card,
+a badge) or of a heading's line. The numbers in the CSS are only the settings that
+produce these gaps, so they may differ by a pixel or two between pages: different
+words have different tallest letters (at 35px the dot of the i in "Insider" is 28px
+tall, the b in "Inbox" 26px). The same reason the page titles use 90 on Insider Edge
+and 87 on the Inbox Report: both land exactly 100 by eye.
+
+## Gaps
+
+| Gap (by eye) | Computer | Phone (≤720px) |
+|---|---|---|
+| Card top → title letters (in the dark band) | 100 | 70 |
+| Title → date line | 15 (title baseline → date letters) | 15 |
+| Date line → band bottom | 100 | 70 |
+| Band bottom → first heading | 100 | 70 |
+| Heading letters → its line | 15 | 15 |
+| Heading line → what comes next | 100 | 70 |
+| Last line of a section → next heading | 100 | 70 |
+| Last line → card bottom | 100 | 70 |
+| Between items (paragraphs, entries, email cards, the parts of an email card) | 30 | 30 |
+| Between lines of a paragraph | 24 | 24 |
+
+The page around the card keeps its own 100s (`OPENING-PAGE-STANDARD.md`).
+
+## Fonts (Montserrat)
+
+| Text | Size | Weight |
+|---|---|---|
+| Page title | 50 (phones 44, small phones 38) | bold |
+| Title in the dark band | 35 (phones 26) | bold |
+| Date line | 15 | bold |
+| Section headings | 25 | bold |
+| All report text | 15 | regular (labels bold) |
+| Insider Edge tickers | 20 | bold |
+| Inbox Report badges | 13 | bold |
+
+## Colours
+
+| Part | Colour |
+|---|---|
+| Page | navy `#1E2633` |
+| Report paper | company white `#F9F9FA` |
+| Dark band | `#2A3441` |
+| Band title, date line | gold `#B29B68` (date line at 60%) |
+| Report text, headings, heading lines (2px) | navy `#1E2633` (Insider Edge's Verdict heading: gold) |
+
+## The banner (dark band)
+
+The agent's report title, then the day the report was made: **"14 Oct 2026"** (three-letter
+month, no time). The same on both pages.
+
+## Inbox Report's own parts (inside the same card)
+
+- **Email cards:** the sign-in box's white `#E9E9EB` (owner, 2026-10-15: "the same shade of
+  white we use in the sign-in box"), 1px `#DFE3EA` border, 6px left stripe in the urgency
+  colour, 10px corners; 30 by eye from the card's edge to its first and last line and
+  between its parts; 30 between cards.
+- **Badges:** keep their own colours for now (owner, 2026-10-15: "we are very likely to
+  change them"), 13px bold.
+- **The grey box** (the original email, and the draft reply inside "Read the draft reply"):
+  navy at 6%, a 3px gold line on the left, 12 / 18px inside.
+- **The table** (one row per email): 15px text; the Draft column on one line on wider
+  screens; stacked rows on phones.
+
+## Also on every report page
+
+- A word too long for its line (a web address) breaks onto the next line, never cut off.
+- A click (or a finger tap) outside the card closes it; inside does nothing.
+
+## Guards
+
+Each page is measured on every change, by eye, on a computer (1920) and an iPhone (375),
+with made-up sample reports (the real ones are owner-only and these projects are public):
+
+- Insider Edge: `tools/spacing-check.mjs`, workflow "Insider Edge layout guard".
+- Inbox Report: `tools/inbox-spacing-check.mjs`, workflow "Inbox Report layout guard"
+  (gaps, fonts, colours, the date line, every line inside the text column).
+
+Change nothing here without the owner's explicit request. If a guard fails, fix the page,
+never this standard.

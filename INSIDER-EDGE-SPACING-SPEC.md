@@ -7,6 +7,11 @@ guard (`tools/spacing-check.mjs`, workflow "Insider Edge layout guard") measures
 the live page against this file on every change and every Monday after the
 report lands, and fails loudly if anything drifts.
 
+Since 2026-10-15 this card is also the template for the Inbox Report (owner: "the
+same colours, the same padding, the same size of the letters… a template"): the
+shared rules are written once in `REPORT-CARD-STANDARD.md`; this file keeps the
+Insider-Edge-only details (tickers, Verdict, check lines).
+
 Visual map, drawn to scale: `docs/insider-edge-spacing-map.html`
 (also published as a Claude artifact: https://claude.ai/artifact/Lf5c7s47wpg3Y3fQQjHTiL).
 
