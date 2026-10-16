@@ -13,7 +13,9 @@
 //   both: text 15px, headings 25px, badges 13px, band title 35 / 26px, date
 //         15px, page title 50 / 44px; 24px lines; the band's date written
 //         "14 Oct 2026"; the Insider Edge colours, and every email card in
-//         the sign-in box's white #E9E9EB; no line of text outside the column.
+//         the sign-in box's white #E9E9EB, with the original email and the
+//         draft reply on company white #F9F9FA inside it; no line of text
+//         outside the column.
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
 // this project is public): SAMPLE=full (default) or SAMPLE=quiet (no emails).
@@ -98,7 +100,7 @@ const measure = () => {
   big.push([`${lastBlock.name} -> card bottom`, C.b - lastBlock.b]);
 
   // Email cards: card -> next card, and inside each card every part 30 apart
-  // (edge -> first part, part -> part, last part -> edge; the grey box and an
+  // (edge -> first part, part -> part, last part -> edge; the white box and an
   // opened draft reply are parts too).
   // A folded draft reply shows only its "Read the draft reply" line.
   const part = (el) => (el.tagName === 'BLOCKQUOTE' ? R(el) : el.tagName === 'DETAILS' && !el.open ? eye(el.querySelector('summary')) : eye(el));
@@ -146,6 +148,9 @@ const measure = () => {
     'report paper': hex(cs(card).backgroundColor), 'dark band': hex(cs(band).backgroundColor), 'band title': hex(cs(title).color), 'date line': hex(cs(date).color),
     'report text': hex(cs(body).color), 'heading': hex(cs(body.querySelector('h3')).color), 'heading line': hex(cs(body.querySelector('h3')).borderBottomColor),
     ...(firstCard ? { 'email card': hex(cs(firstCard).backgroundColor) } : {}),
+    // The original email and the draft reply, on company white inside the
+    // grey card (owner, 2026-10-16): EVERY such box, fully white (not see-through).
+    ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes': [...body.querySelectorAll('li.entry blockquote')].every((q) => cs(q).backgroundColor === 'rgb(249, 249, 250)') ? '#F9F9FA' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => cs(q).backgroundColor))].join(' / ') } : {}),
   };
 
   // Every line of report text stays inside the text column.
@@ -187,7 +192,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';

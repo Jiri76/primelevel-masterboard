@@ -4,7 +4,7 @@
 // daily inbox agent writes (prompt v5, Stage D): the "At a glance" line with
 // badges, the one-row-per-email table, Overdue / Emails / Probably spam cards
 // (badges, from line, "What it is", "How urgent? / Should you worry?", status
-// lines, the original email in a grey box, a folded draft reply, "Open the
+// lines, the original email in a white box, a folded draft reply, "Open the
 // email"), and the Notebook list. Every name, address and figure is invented.
 const LINK = (thread, from, t) => `https://mail.google.com/mail/u/0/?authuser=info%40primelevel.co.uk#search/in%3Aanywhere+from%3A${from}+after%3A${t - 1}+before%3A${t + 1}/${thread}`;
 

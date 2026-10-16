@@ -70,8 +70,9 @@ month, no time). The same on both pages.
   between its parts; 30 between cards.
 - **Badges:** keep their own colours for now (owner, 2026-10-15: "we are very likely to
   change them"), 13px bold.
-- **The grey box** (the original email, and the draft reply inside "Read the draft reply"):
-  navy at 6%, a 3px gold line on the left, 12 / 18px inside.
+- **The white box** (the original email, and the draft reply inside "Read the draft reply"):
+  company white `#F9F9FA`, so it stands out from the grey card (owner, 2026-10-16; it was
+  navy at 6%), a 3px gold line on the left, 12 / 18px inside.
 - **The table** (one row per email): 15px text; the Draft column on one line on wider
   screens; stacked rows on phones.
 
