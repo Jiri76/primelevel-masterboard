@@ -45,3 +45,7 @@ jobs:
         run: node tools/inbox-spacing-check.mjs
         env:
           SAMPLE: quiet
+      - name: 'Measure spacing, font sizes and colours (sample: one overdue email, short badges only)'
+        run: node tools/inbox-spacing-check.mjs
+        env:
+          SAMPLE: overdue

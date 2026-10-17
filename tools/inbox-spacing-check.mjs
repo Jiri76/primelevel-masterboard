@@ -18,16 +18,20 @@
 //         outside the column.
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
-// this project is public): SAMPLE=full (default) or SAMPLE=quiet (no emails).
+// this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
+// SAMPLE=overdue (no new emails, one overdue card, only short badges in the
+// table, the shape that broke "Urgency" on 17 Oct 2026). Also: no word is
+// split in the middle.
 // It is measured twice, with the draft reply folded and opened.
 // Nothing is read from or written to the real database. Exits 1 on any drift.
 import { chromium, devices } from 'playwright';
 import { ownerFake, useStandIn } from './guard-supabase.mjs';
-import { fullReport, quietReport } from './fixtures/inbox-report-samples.mjs';
+import { fullReport, quietReport, overdueReport } from './fixtures/inbox-report-samples.mjs';
 
 const URL = process.env.SPACING_URL || 'http://localhost:8091/inbox-report.html';
-const SAMPLE = process.env.SAMPLE === 'quiet' ? quietReport : fullReport;
-console.log(`Sample report: ${process.env.SAMPLE === 'quiet' ? 'a day with no emails' : 'a full day'} (made up, not a real report)`);
+const SAMPLES = { full: [fullReport, 'a full day'], quiet: [quietReport, 'a day with no emails'], overdue: [overdueReport, 'no new emails, one overdue email (short badges only)'] };
+const [SAMPLE, SAMPLE_NAME] = SAMPLES[process.env.SAMPLE] || SAMPLES.full;
+console.log(`Sample report: ${SAMPLE_NAME} (made up, not a real report)`);
 const TOL_BIG = 1;   // px, for every 100 (70 on phones) gap
 const TOL_30 = 1.5;  // px, for every 30 and 15 gap (line boxes round to whole px)
 
@@ -163,7 +167,33 @@ const measure = () => {
       if (rc.width > 0 && (rc.left < colL - 1 || rc.right > colR + 1)) outside.push(`"${tn.nodeValue.trim().slice(0, 40)}" runs ${Math.round(Math.max(colL - rc.left, rc.right - colR))}px past the text column`);
     });
   });
-  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
+  // No word split in the middle (17 Oct 2026: with only a short "High" badge in
+  // the table's first column, its heading broke into "Urgenc / y"). In the
+  // table any split counts (the column should have grown); elsewhere only a
+  // word short enough to fit on one line of its box. A break next to a
+  // hyphen, dash, quote mark or bracket is a normal line break, not a split.
+  const split = [];
+  tns(body).forEach((t) => {
+    const re = /[^\s\-–—]+/g; let m;
+    while ((m = re.exec(t.nodeValue))) {
+      const g = doc.createRange(); g.setStart(t, m.index); g.setEnd(t, m.index + m[0].length);
+      if (new Set([...g.getClientRects()].filter((rc) => rc.width > 0).map((rc) => Math.round(rc.top))).size < 2) continue;
+      let at = -1;
+      for (let k = 1; k < m[0].length; k++) {
+        const a = doc.createRange(); a.setStart(t, m.index + k - 1); a.setEnd(t, m.index + k);
+        const z = doc.createRange(); z.setStart(t, m.index + k); z.setEnd(t, m.index + k + 1);
+        const ra = a.getClientRects()[0], rz = z.getClientRects()[0];
+        if (ra && rz && Math.round(rz.top) > Math.round(ra.top) + 2) { at = k; break; }
+      }
+      if (at < 0 || !/[\p{L}\p{N}]/u.test(m[0][at - 1]) || !/[\p{L}\p{N}]/u.test(m[0][at])) continue;
+      const s = cs(t.parentElement); c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      const box = t.parentElement.closest('p, li, blockquote, td, th, summary, h3, div'), bst = cs(box);
+      const boxW = box.clientWidth - parseFloat(bst.paddingLeft) - parseFloat(bst.paddingRight);
+      const inTable = !!t.parentElement.closest('table');
+      if (inTable || c.measureText(m[0]).width <= boxW - 1) split.push(`"${m[0].slice(0, at)} / ${m[0].slice(at)}"${inTable ? ' (table)' : ''}`);
+    }
+  });
+  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
 };
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
@@ -217,6 +247,7 @@ for (const phone of [false, true]) {
       Object.entries(m.colours).forEach(([k, v]) => same(`${P}colour ${k}`, v, WANT_COLOURS[k]));
       same(`${P}date line written like Insider Edge's ("14 Oct 2026")`, /^\d{1,2} [A-Z][a-z]{2} \d{4}$/.test(m.dateText) ? 'yes' : `no: "${m.dateText}"`, 'yes');
       same(`${P}every line inside the text column`, m.outside.length ? m.outside.join('; ') : 'yes', 'yes');
+      same(`${P}no word split in the middle`, m.split.length ? m.split.join('; ') : 'yes', 'yes');
       same(`${P}sideways scroll`, String(m.sideways), '0');
     } else {
       m.g30.filter(([k]) => /draft|card \d: (part|last)/.test(k) && k.includes('card 1')).forEach(([k, v]) => row(`${P}${k} (draft open)`, v, 30, TOL_30));

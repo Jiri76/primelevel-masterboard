@@ -222,6 +222,11 @@
     border-collapse: collapse;
     font-size: 15px; /* Insider Edge's one text size (was 14) */
     line-height: 24px;
+    /* break-word, not the report's "anywhere": a long word still wraps, but a
+       column can no longer be squeezed narrower than its own words (17 Oct
+       2026: with only a short "High" badge in the first column, the heading
+       broke into "Urgenc / y"). */
+    overflow-wrap: break-word;
   }
   .report-body table.scan th {
     padding: 0 10px 8px; /* no top padding: the paragraph above -> heading letters = 30 by eye */

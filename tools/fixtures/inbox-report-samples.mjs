@@ -60,6 +60,23 @@ export const fullReport = {
   title: 'Inbox Report — 14 Oct 2026', error_text: null,
   html_content: summary + table + emails + spam + notebook,
 };
+// The shape of the 17 Oct 2026 report: no new emails, one overdue email brought
+// back, so the table holds only one short "High" badge (that report's table
+// heading broke into "Urgenc / y").
+export const overdueReport = {
+  id: 9102, created_at: '2026-10-15T07:10:00Z', run_date: '2026-10-15', status: 'success',
+  title: 'Inbox Report — 15 Oct 2026', error_text: null,
+  html_content: '<h3>At a glance</h3><p><strong>0 new emails</strong> · <span class="badge high">High 0</span> <span class="badge medium">Medium 0</span> <span class="badge low">Low 0</span> <span class="badge spam">Probably spam 0</span> · Drafts ready: 0 · Invoices filed: 0 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 0 waiting for your approval · plus 1 overdue</p><p>No new emails.</p>'
+    + '<table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Office Supplies Ltd</strong> — OVERDUE: unpaid invoice INV-0001 (£480.00), payment asked by 22 Oct 2026; still no reply from you on this thread, and the supplier is not on your known-suppliers list</td><td>Needs you</td></tr></tbody></table>'
+    + '<h3>Overdue</h3><ul>'
+    + card({ cls: 'high', urgency: 'High', worry: 'Yes', worryCls: 'worry-yes', cat: 'Client', draft: 'No reply needed',
+      from: '<strong>Alex Sample</strong> (alex@sample-client.example) · 14 Oct 2026, 09:14 · Complaint – still no reply after two emails',
+      gist: 'Still unanswered (2nd report): a client wants an explanation and a call back by Monday 19 Oct 2026.',
+      why: '<strong>How urgent?</strong> High — a call back is asked for by 19 Oct 2026, 4 days from today. <strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
+      quote: "Hello,<br><br>I'm writing to make a formal complaint. … (open the email to read the rest)",
+      link: LINK('1a00000000000001', 'alex%40sample-client.example', 1792000000) })
+    + '</ul>',
+};
 export const quietReport = {
   id: 9100, created_at: '2026-10-13T07:10:00Z', run_date: '2026-10-13', status: 'success',
   title: 'Inbox Report — 13 Oct 2026', error_text: null,
