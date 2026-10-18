@@ -17,7 +17,8 @@
 //         draft reply on company white #F9F9FA inside it; no line of text
 //         outside the column; the summary table's badges read "High" / "Yes"
 //         on the computer (under the titles row) and "Urgency: High" /
-//         "Worry: Yes" on the phone (titles row hidden), two to a line.
+//         "Worry: Yes" on the phone (titles row hidden), side by side, or
+//         Worry under Urgency when the pair is too long for the line.
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
 // this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
@@ -196,12 +197,18 @@ const measure = () => {
     }
   });
   // The summary table's badges as the reader sees them (a title the page puts
-  // in front counts), and whether each row's two badges share one line.
+  // in front counts), and how each row's two badges sit: side by side on one
+  // line, or (a pair too long for a narrow phone's line) Worry stacked
+  // directly under Urgency, the same left edge.
   const badgeText = (bd) => { const bf = cs(bd, '::before').content; return ((bf && bf !== 'none' && bf !== 'normal' ? bf.replace(/^"|"$/g, '') : '') + bd.textContent).trim(); };
   const tableRows = [...body.querySelectorAll('table.scan tbody tr')];
   const tableBadges = tableRows.map((r) => [...r.querySelectorAll('.badge')].map(badgeText));
-  const badgesOneLine = tableRows.map((r) => { const tops = [...r.querySelectorAll('.badge')].map((bd) => Math.round(bd.getBoundingClientRect().top)); return Math.max(...tops) - Math.min(...tops) < 3; });
-  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, tableBadges, badgesOneLine, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
+  const badgesSit = tableRows.map((r) => {
+    const [u, w] = [...r.querySelectorAll('.badge')].map((bd) => bd.getBoundingClientRect());
+    if (Math.abs(w.top - u.top) < 3) return 'one line';
+    return w.top >= u.bottom && Math.abs(w.left - u.left) < 1 ? 'stacked' : `out of place (${Math.round(w.left - u.left)}px, ${Math.round(w.top - u.top)}px)`;
+  });
+  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, tableBadges, badgesSit, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
 };
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
@@ -263,7 +270,9 @@ for (const phone of [false, true]) {
       const wor = phone ? /^Worry: (Yes|Watch|No)$/ : /^(Yes|Watch|No)$/;
       const badRows = m.tableBadges.filter(([u, w]) => !urg.test(u) || !wor.test(w));
       same(`${P}table badges read ${phone ? '"Urgency: …" + "Worry: …"' : '"High…" + "Yes…" under their titles'}`, badRows.length ? badRows.map((x) => x.join(' + ')).join('; ') : 'yes', 'yes');
-      same(`${P}each table row's two badges on one line`, m.badgesOneLine.every(Boolean) ? 'yes' : `no: row ${m.badgesOneLine.map((x, i) => (x ? 0 : i + 1)).filter(Boolean).join(', ')}`, 'yes');
+      const okSit = phone ? ['one line', 'stacked'] : ['one line'];
+      const badSit = m.badgesSit.map((s, i) => (okSit.includes(s) ? '' : `row ${i + 1} ${s}`)).filter(Boolean);
+      same(`${P}each table row's two badges ${phone ? 'on one line, or Worry stacked under Urgency' : 'on one line'}`, badSit.length ? badSit.join('; ') : 'yes', 'yes');
       same(`${P}sideways scroll`, String(m.sideways), '0');
     } else {
       m.g30.filter(([k]) => /draft|card \d: (part|last)/.test(k) && k.includes('card 1')).forEach(([k, v]) => row(`${P}${k} (draft open)`, v, 30, TOL_30));

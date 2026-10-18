@@ -81,8 +81,9 @@ month, no time). The same on both pages.
   the heading is what names the list there). On phones the two badges carry their
   column's title, as the Draft line does ("Draft: Ready"): **"Urgency: High"** and
   **"Worry: Yes"** (owner, 2026-10-18: "if something appears on the computer, it should
-  also appear on the phone"); "Probably spam" names itself. From 375 wide they share one
-  line; on narrower phones a pair too long for the line stacks, Worry under Urgency.
+  also appear on the phone"); "Probably spam" names itself. They share one line when it
+  is wide enough; a pair too long for a narrow phone's line (e.g. "Urgency: Medium" +
+  "Worry: Watch" at 375 or less) stacks, Worry under Urgency (owner's choice).
   Computers are unchanged (the titles row names them).
 
 ## Also on every report page
