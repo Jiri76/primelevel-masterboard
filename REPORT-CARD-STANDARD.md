@@ -73,8 +73,12 @@ month, no time). The same on both pages.
 - **The white box** (the original email, and the draft reply inside "Read the draft reply"):
   company white `#F9F9FA`, so it stands out from the grey card (owner, 2026-10-16; it was
   navy at 6%), a 3px gold line on the left, 12 / 18px inside.
-- **The table** (one row per email): 15px text; the Draft column on one line on wider
-  screens; stacked rows on phones.
+- **The table** (one row per email): under its own section heading **"Email list"**
+  (owner, 2026-10-17; the agent writes it from prompt v8, 18 Oct 2026). It is an ordinary
+  heading, so the gaps above apply unchanged: 100 above it, 15 to its line, 100 below
+  (70 / 15 / 70 on phones). No table, no "Email list" heading. 15px text; the Draft column
+  on one line on wider screens; stacked rows on phones (their column titles hidden, so
+  the heading is what names the list there).
 
 ## Also on every report page
 

@@ -1,8 +1,10 @@
 // MADE-UP Inbox Report samples for tools/inbox-spacing-check.mjs. The real
 // reports hold real email content and are owner-only; this project is public,
 // so the guard measures these instead. They copy the EXACT HTML shapes the
-// daily inbox agent writes (prompt v5, Stage D): the "At a glance" line with
-// badges, the one-row-per-email table, Overdue / Emails / Probably spam cards
+// daily inbox agent writes (prompt v8, Stage D): the "At a glance" line with
+// badges, the one-row-per-email table under its "Email list" heading (since
+// 18 Oct 2026; a day with no table has no such heading), Overdue / Emails /
+// Probably spam cards
 // (badges, from line, "What it is", "How urgent? / Should you worry?", status
 // lines, the original email in a white box, a folded draft reply, "Open the
 // email"), and the Notebook list. Every name, address and figure is invented.
@@ -11,7 +13,7 @@ const LINK = (thread, from, t) => `https://mail.google.com/mail/u/0/?authuser=in
 const card = ({ cls, urgency, worry, worryCls, cat, draft, from, gist, why, status = [], quote, reply, flags = [], link }) => `<li class="entry ${cls}"><p class="head"><span class="badge ${cls}">${urgency}</span> <span class="badge ${worryCls}">Worry: ${worry}</span> <span class="badge cat">${cat}</span> <span class="badge draft">${draft}</span></p><p class="from">${from}</p><p class="gist"><strong>What it is:</strong> ${gist}</p><p class="why">${why}</p>${status.map((s) => `<p>${s}</p>`).join('')}<blockquote>${quote}</blockquote>${reply ? `<details><summary>Read the draft reply</summary><blockquote>${reply}</blockquote>${flags.join('<br>')}</details>` : '<p>No reply needed — automatic notification from a no-reply address.</p>'}<p><a href="${link}">Open the email</a></p></li>`;
 
 const summary = '<h3>At a glance</h3><p><strong>4 new emails</strong> · <span class="badge high">High 1</span> <span class="badge medium">Medium 1</span> <span class="badge low">Low 1</span> <span class="badge spam">Probably spam 1</span> · Drafts ready: 1 · Invoices filed: 1 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 1 waiting for your approval</p>';
-const table = '<table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody>'
+const table = '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody>'
   + '<tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Client Ltd</strong> — Complaint about a missed call back, wants a reply by Monday</td><td>Ready</td></tr>'
   + '<tr><td><span class="badge medium">Medium</span></td><td><span class="badge worry-watch">Watch</span></td><td><strong>New Supplier Co</strong> — First invoice from a new supplier</td><td>No reply needed</td></tr>'
   + '<tr><td><span class="badge low">Low</span></td><td><span class="badge worry-no">No</span></td><td><strong>Google Payments</strong> — Monthly Workspace invoice, filed</td><td>No reply needed</td></tr>'
@@ -67,7 +69,7 @@ export const overdueReport = {
   id: 9102, created_at: '2026-10-15T07:10:00Z', run_date: '2026-10-15', status: 'success',
   title: 'Inbox Report — 15 Oct 2026', error_text: null,
   html_content: '<h3>At a glance</h3><p><strong>0 new emails</strong> · <span class="badge high">High 0</span> <span class="badge medium">Medium 0</span> <span class="badge low">Low 0</span> <span class="badge spam">Probably spam 0</span> · Drafts ready: 0 · Invoices filed: 0 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 0 waiting for your approval · plus 1 overdue</p><p>No new emails.</p>'
-    + '<table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Office Supplies Ltd</strong> — OVERDUE: unpaid invoice INV-0001 (£480.00), payment asked by 22 Oct 2026; still no reply from you on this thread, and the supplier is not on your known-suppliers list</td><td>Needs you</td></tr></tbody></table>'
+    + '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Office Supplies Ltd</strong> — OVERDUE: unpaid invoice INV-0001 (£480.00), payment asked by 22 Oct 2026; still no reply from you on this thread, and the supplier is not on your known-suppliers list</td><td>Needs you</td></tr></tbody></table>'
     + '<h3>Overdue</h3><ul>'
     + card({ cls: 'high', urgency: 'High', worry: 'Yes', worryCls: 'worry-yes', cat: 'Client', draft: 'No reply needed',
       from: '<strong>Alex Sample</strong> (alex@sample-client.example) · 14 Oct 2026, 09:14 · Complaint – still no reply after two emails',
