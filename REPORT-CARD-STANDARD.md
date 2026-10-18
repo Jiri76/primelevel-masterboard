@@ -78,7 +78,12 @@ month, no time). The same on both pages.
   heading, so the gaps above apply unchanged: 100 above it, 15 to its line, 100 below
   (70 / 15 / 70 on phones). No table, no "Email list" heading. 15px text; the Draft column
   on one line on wider screens; stacked rows on phones (their column titles hidden, so
-  the heading is what names the list there).
+  the heading is what names the list there). On phones the two badges carry their
+  column's title, as the Draft line does ("Draft: Ready"): **"Urgency: High"** and
+  **"Worry: Yes"** (owner, 2026-10-18: "if something appears on the computer, it should
+  also appear on the phone"); "Probably spam" names itself. From 375 wide they share one
+  line; on narrower phones a pair too long for the line stacks, Worry under Urgency.
+  Computers are unchanged (the titles row names them).
 
 ## Also on every report page
 

@@ -384,6 +384,13 @@
       content: 'Draft: ';
       color: #4b5565;
     }
+    /* The titles row is hidden here, so the two badges carry their column's
+       title too, as "Draft: " does (owner, 2026-10-18): "Urgency: High",
+       "Worry: Yes". "Probably spam" names itself. From 375 wide (every
+       iPhone) the two share one line; on narrower phones a pair too long
+       for the line stacks, Worry under Urgency (owner's choice). */
+    .report-body table.scan td:nth-child(1) .badge:is(.high, .medium, .low)::before { content: 'Urgency: '; }
+    .report-body table.scan td:nth-child(2) .badge::before { content: 'Worry: '; }
   }
   @media (max-width: 359px) {
     .container { padding-top: 91px; } /* 38px title: page top -> letters 100 by eye */

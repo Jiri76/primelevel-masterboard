@@ -15,7 +15,9 @@
 //         "14 Oct 2026"; the Insider Edge colours, and every email card in
 //         the sign-in box's white #E9E9EB, with the original email and the
 //         draft reply on company white #F9F9FA inside it; no line of text
-//         outside the column.
+//         outside the column; the summary table's badges read "High" / "Yes"
+//         on the computer (under the titles row) and "Urgency: High" /
+//         "Worry: Yes" on the phone (titles row hidden), two to a line.
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
 // this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
@@ -193,7 +195,13 @@ const measure = () => {
       if (inTable || c.measureText(m[0]).width <= boxW - 1) split.push(`"${m[0].slice(0, at)} / ${m[0].slice(at)}"${inTable ? ' (table)' : ''}`);
     }
   });
-  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
+  // The summary table's badges as the reader sees them (a title the page puts
+  // in front counts), and whether each row's two badges share one line.
+  const badgeText = (bd) => { const bf = cs(bd, '::before').content; return ((bf && bf !== 'none' && bf !== 'normal' ? bf.replace(/^"|"$/g, '') : '') + bd.textContent).trim(); };
+  const tableRows = [...body.querySelectorAll('table.scan tbody tr')];
+  const tableBadges = tableRows.map((r) => [...r.querySelectorAll('.badge')].map(badgeText));
+  const badgesOneLine = tableRows.map((r) => { const tops = [...r.querySelectorAll('.badge')].map((bd) => Math.round(bd.getBoundingClientRect().top)); return Math.max(...tops) - Math.min(...tops) < 3; });
+  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, tableBadges, badgesOneLine, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
 };
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
@@ -248,6 +256,14 @@ for (const phone of [false, true]) {
       same(`${P}date line written like Insider Edge's ("14 Oct 2026")`, /^\d{1,2} [A-Z][a-z]{2} \d{4}$/.test(m.dateText) ? 'yes' : `no: "${m.dateText}"`, 'yes');
       same(`${P}every line inside the text column`, m.outside.length ? m.outside.join('; ') : 'yes', 'yes');
       same(`${P}no word split in the middle`, m.split.length ? m.split.join('; ') : 'yes', 'yes');
+      // Summary table badges: on phones (titles row hidden) they carry their
+      // column's title, "Urgency: High" / "Worry: Yes" (owner, 2026-10-18);
+      // computers show the bare words under the titles row.
+      const urg = phone ? /^(Urgency: (High|Medium|Low)|Probably spam)$/ : /^(High|Medium|Low|Probably spam)$/;
+      const wor = phone ? /^Worry: (Yes|Watch|No)$/ : /^(Yes|Watch|No)$/;
+      const badRows = m.tableBadges.filter(([u, w]) => !urg.test(u) || !wor.test(w));
+      same(`${P}table badges read ${phone ? '"Urgency: …" + "Worry: …"' : '"High…" + "Yes…" under their titles'}`, badRows.length ? badRows.map((x) => x.join(' + ')).join('; ') : 'yes', 'yes');
+      same(`${P}each table row's two badges on one line`, m.badgesOneLine.every(Boolean) ? 'yes' : `no: row ${m.badgesOneLine.map((x, i) => (x ? 0 : i + 1)).filter(Boolean).join(', ')}`, 'yes');
       same(`${P}sideways scroll`, String(m.sideways), '0');
     } else {
       m.g30.filter(([k]) => /draft|card \d: (part|last)/.test(k) && k.includes('card 1')).forEach(([k, v]) => row(`${P}${k} (draft open)`, v, 30, TOL_30));
