@@ -14,7 +14,8 @@
 //         15px, page title 50 / 44px; 24px lines; the band's date written
 //         "14 Oct 2026"; the Insider Edge colours, and every email card in
 //         the sign-in box's white #E9E9EB, with the original email and the
-//         draft reply on company white #F9F9FA inside it; no line of text
+//         draft reply on company white #F9F9FA inside it, with no line around
+//         them (the white alone marks them, owner 2026-10-20); no line of text
 //         outside the column; the summary table's badges read "High" / "Yes"
 //         on the computer (under the titles row) and "Urgency: High" /
 //         "Worry: Yes" on the phone (titles row hidden), side by side, or
@@ -159,6 +160,8 @@ const measure = () => {
     // The original email and the draft reply, on company white inside the
     // grey card (owner, 2026-10-16): EVERY such box, fully white (not see-through).
     ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes': [...body.querySelectorAll('li.entry blockquote')].every((q) => cs(q).backgroundColor === 'rgb(249, 249, 250)') ? '#F9F9FA' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => cs(q).backgroundColor))].join(' / ') } : {}),
+    // ...and the white alone marks them: no line on any side (owner, 2026-10-20).
+    ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes: line on the left': [...body.querySelectorAll('li.entry blockquote')].every((q) => ['Top', 'Right', 'Bottom', 'Left'].every((s) => parseFloat(cs(q)[`border${s}Width`]) === 0)) ? 'none' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => `${cs(q).borderLeftWidth} ${hex(cs(q).borderLeftColor)}`))].join(' / ') } : {}),
   };
 
   // Every line of report text stays inside the text column.
@@ -239,7 +242,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';

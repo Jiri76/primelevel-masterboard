@@ -286,11 +286,13 @@
     outline-offset: 2px;
   }
 
-  /* Quoted text: the original email and the drafted reply. */
+  /* Quoted text: the original email and the drafted reply. The white box
+     alone marks it: no gold line on its left (owner, 2026-10-20: "the white
+     box tells the story on its own"; on a Medium card the gold line looked
+     like the card's gold urgency stripe). Text 18 from both sides. */
   .report-body blockquote {
     margin: 23px 0 25px; /* the line above -> box edge = 30 by eye; box edge -> the line below = 30 */
     padding: 12px 18px;
-    border-left: 3px solid var(--gold);
     background: var(--white); /* company white, so the email and the draft stand out from the grey card (owner, 2026-10-16; was navy at 6%) */
     white-space: pre-line;
     overflow-wrap: anywhere;
