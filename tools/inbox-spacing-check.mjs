@@ -18,7 +18,8 @@
 //         outside the column; the summary table's badges read "High" / "Yes"
 //         on the computer (under the titles row) and "Urgency: High" /
 //         "Worry: Yes" on the phone (titles row hidden), side by side, or
-//         Worry under Urgency when the pair is too long for the line.
+//         Worry under Urgency when the pair is too long for the line; every
+//         email card's first badges read "Urgency: High" + "Worry: Yes".
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
 // this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
@@ -203,12 +204,13 @@ const measure = () => {
   const badgeText = (bd) => { const bf = cs(bd, '::before').content; return ((bf && bf !== 'none' && bf !== 'normal' ? bf.replace(/^"|"$/g, '') : '') + bd.textContent).trim(); };
   const tableRows = [...body.querySelectorAll('table.scan tbody tr')];
   const tableBadges = tableRows.map((r) => [...r.querySelectorAll('.badge')].map(badgeText));
+  const cardBadges = [...body.querySelectorAll('li.entry p.head')].map((h) => [...h.querySelectorAll('.badge')].slice(0, 2).map(badgeText));
   const badgesSit = tableRows.map((r) => {
     const [u, w] = [...r.querySelectorAll('.badge')].map((bd) => bd.getBoundingClientRect());
     if (Math.abs(w.top - u.top) < 3) return 'one line';
     return w.top >= u.bottom && Math.abs(w.left - u.left) < 1 ? 'stacked' : `out of place (${Math.round(w.left - u.left)}px, ${Math.round(w.top - u.top)}px)`;
   });
-  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, tableBadges, badgesSit, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
+  return { big, g30, g15, pitches: [...pitches], fonts, pageFonts, colours, outside, split, tableBadges, badgesSit, cardBadges, dateText: date.textContent, sideways: doc.documentElement.scrollWidth - doc.documentElement.clientWidth };
 };
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
@@ -270,6 +272,9 @@ for (const phone of [false, true]) {
       const wor = phone ? /^Worry: (Yes|Watch|No)$/ : /^(Yes|Watch|No)$/;
       const badRows = m.tableBadges.filter(([u, w]) => !urg.test(u) || !wor.test(w));
       same(`${P}table badges read ${phone ? '"Urgency: …" + "Worry: …"' : '"High…" + "Yes…" under their titles'}`, badRows.length ? badRows.map((x) => x.join(' + ')).join('; ') : 'yes', 'yes');
+      // Email cards, on every screen: "Urgency: High" (owner, 2026-10-19), then "Worry: Yes".
+      const badCards = m.cardBadges.filter(([u, w]) => !/^(Urgency: (High|Medium|Low)|Probably spam)$/.test(u) || !/^Worry: (Yes|Watch|No)$/.test(w));
+      same(`${P}email card badges read "Urgency: …" + "Worry: …"`, badCards.length ? badCards.map((x) => x.join(' + ')).join('; ') : 'yes', 'yes');
       const okSit = phone ? ['one line', 'stacked'] : ['one line'];
       const badSit = m.badgesSit.map((s, i) => (okSit.includes(s) ? '' : `row ${i + 1} ${s}`)).filter(Boolean);
       same(`${P}each table row's two badges ${phone ? 'on one line, or Worry stacked under Urgency' : 'on one line'}`, badSit.length ? badSit.join('; ') : 'yes', 'yes');

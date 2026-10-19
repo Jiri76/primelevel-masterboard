@@ -216,6 +216,10 @@
   .badge.worry-no { background: #fff; color: #23694a; border-color: var(--green); }
   .badge.cat { background: var(--input-bg); color: var(--white); }
   .badge.draft { background: #eef1f5; color: var(--navy); border-color: var(--border); }
+  /* An email card's urgency badge says what it is, like its "Worry: Yes"
+     next to it (owner, 2026-10-19): "Urgency: High". Every screen; the agent
+     writes only the word. "Probably spam" names itself. */
+  .report-body li.entry p.head .badge:is(.high, .medium, .low)::before { content: 'Urgency: '; }
   .report-body table.scan {
     width: 100%;
     margin: 0;

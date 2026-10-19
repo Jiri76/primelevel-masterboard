@@ -69,7 +69,13 @@ month, no time). The same on both pages.
   colour, 10px corners; 30 by eye from the card's edge to its first and last line and
   between its parts; 30 between cards.
 - **Badges:** keep their own colours for now (owner, 2026-10-15: "we are very likely to
-  change them"), 13px bold.
+  change them"), 13px bold. An email card's urgency badge says what it is, like the
+  "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
+  be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
+  names itself.
+- **"At a glance"** (prompt v9, 2026-10-19): one paragraph of short labelled lines, one
+  fact per line, no badges ("New emails: 5", "Urgency: 3 High · 1 Medium · 1 Low", …):
+  24 between lines, 100 above and below (70 on phones), like any paragraph.
 - **The white box** (the original email, and the draft reply inside "Read the draft reply"):
   company white `#F9F9FA`, so it stands out from the grey card (owner, 2026-10-16; it was
   navy at 6%), a 3px gold line on the left, 12 / 18px inside.

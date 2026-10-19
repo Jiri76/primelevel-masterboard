@@ -1,18 +1,20 @@
 // MADE-UP Inbox Report samples for tools/inbox-spacing-check.mjs. The real
 // reports hold real email content and are owner-only; this project is public,
 // so the guard measures these instead. They copy the EXACT HTML shapes the
-// daily inbox agent writes (prompt v8, Stage D): the "At a glance" line with
-// badges, the one-row-per-email table under its "Email list" heading (since
-// 18 Oct 2026; a day with no table has no such heading), Overdue / Emails /
-// Probably spam cards
-// (badges, from line, "What it is", "How urgent? / Should you worry?", status
+// daily inbox agent writes (prompt v9, Stage D): the "At a glance" summary as
+// labelled lines, the one-row-per-email table under its "Email list" heading
+// (a day with no table has no such heading), Overdue / Emails / Probably spam
+// cards (badges, from line, "What it is", "How urgent? / Should you worry?", status
 // lines, the original email in a white box, a folded draft reply, "Open the
 // email"), and the Notebook list. Every name, address and figure is invented.
 const LINK = (thread, from, t) => `https://mail.google.com/mail/u/0/?authuser=info%40primelevel.co.uk#search/in%3Aanywhere+from%3A${from}+after%3A${t - 1}+before%3A${t + 1}/${thread}`;
 
 const card = ({ cls, urgency, worry, worryCls, cat, draft, from, gist, why, status = [], quote, reply, flags = [], link }) => `<li class="entry ${cls}"><p class="head"><span class="badge ${cls}">${urgency}</span> <span class="badge ${worryCls}">Worry: ${worry}</span> <span class="badge cat">${cat}</span> <span class="badge draft">${draft}</span></p><p class="from">${from}</p><p class="gist"><strong>What it is:</strong> ${gist}</p><p class="why">${why}</p>${status.map((s) => `<p>${s}</p>`).join('')}<blockquote>${quote}</blockquote>${reply ? `<details><summary>Read the draft reply</summary><blockquote>${reply}</blockquote>${flags.join('<br>')}</details>` : '<p>No reply needed — automatic notification from a no-reply address.</p>'}<p><a href="${link}">Open the email</a></p></li>`;
 
-const summary = '<h3>At a glance</h3><p><strong>4 new emails</strong> · <span class="badge high">High 1</span> <span class="badge medium">Medium 1</span> <span class="badge low">Low 1</span> <span class="badge spam">Probably spam 1</span> · Drafts ready: 1 · Invoices filed: 1 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 1 waiting for your approval</p>';
+// The "At a glance" summary as prompt v9 writes it (19 Oct 2026): short
+// labelled lines, one fact per line, no badges; extra facts on their own line.
+const glance = ({ n, h, m, l, spam, drafts, filed, left, inUse, waiting, extra = '' }) => `<h3>At a glance</h3><p><strong>New emails:</strong> ${n}<br><strong>Urgency:</strong> ${h} High · ${m} Medium · ${l} Low<br><strong>Probably spam:</strong> ${spam}<br><strong>Drafts ready for you:</strong> ${drafts}<br><strong>Invoices:</strong> ${filed} filed · ${left} left for you to check<br><strong>Notebook:</strong> ${inUse} lessons in use · ${waiting} waiting for your approval${extra}</p>`;
+const summary = glance({ n: 4, h: 1, m: 1, l: 1, spam: 1, drafts: 1, filed: 1, left: 0, inUse: 6, waiting: 1 });
 const table = '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody>'
   + '<tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Client Ltd</strong> — Complaint about a missed call back, wants a reply by Monday</td><td>Ready</td></tr>'
   + '<tr><td><span class="badge medium">Medium</span></td><td><span class="badge worry-watch">Watch</span></td><td><strong>New Supplier Co</strong> — First invoice from a new supplier</td><td>No reply needed</td></tr>'
@@ -68,7 +70,7 @@ export const fullReport = {
 export const overdueReport = {
   id: 9102, created_at: '2026-10-15T07:10:00Z', run_date: '2026-10-15', status: 'success',
   title: 'Inbox Report — 15 Oct 2026', error_text: null,
-  html_content: '<h3>At a glance</h3><p><strong>0 new emails</strong> · <span class="badge high">High 0</span> <span class="badge medium">Medium 0</span> <span class="badge low">Low 0</span> <span class="badge spam">Probably spam 0</span> · Drafts ready: 0 · Invoices filed: 0 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 0 waiting for your approval · plus 1 overdue</p><p>No new emails.</p>'
+  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0, extra: '<br><strong>Overdue:</strong> 1' }) + '<p>No new emails.</p>'
     + '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Office Supplies Ltd</strong> — OVERDUE: unpaid invoice INV-0001 (£480.00), payment asked by 22 Oct 2026; still no reply from you on this thread, and the supplier is not on your known-suppliers list</td><td>Needs you</td></tr></tbody></table>'
     + '<h3>Overdue</h3><ul>'
     + card({ cls: 'high', urgency: 'High', worry: 'Yes', worryCls: 'worry-yes', cat: 'Client', draft: 'No reply needed',
@@ -82,5 +84,5 @@ export const overdueReport = {
 export const quietReport = {
   id: 9100, created_at: '2026-10-13T07:10:00Z', run_date: '2026-10-13', status: 'success',
   title: 'Inbox Report — 13 Oct 2026', error_text: null,
-  html_content: '<h3>At a glance</h3><p><strong>0 new emails</strong> · <span class="badge high">High 0</span> <span class="badge medium">Medium 0</span> <span class="badge low">Low 0</span> <span class="badge spam">Probably spam 0</span> · Drafts ready: 0 · Invoices filed: 0 · Possible invoices left for you: 0 · Notebook: 6 lessons in use, 0 waiting for your approval</p><p>No new emails.</p>',
+  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0 }) + '<p>No new emails.</p>',
 };
