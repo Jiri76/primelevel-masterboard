@@ -1,7 +1,7 @@
 // MADE-UP Inbox Report samples for tools/inbox-spacing-check.mjs. The real
 // reports hold real email content and are owner-only; this project is public,
 // so the guard measures these instead. They copy the EXACT HTML shapes the
-// daily inbox agent writes (prompt v9, Stage D): the "At a glance" summary as
+// daily inbox agent writes (prompt v10, Stage D): the "At a glance" summary as
 // labelled lines, the one-row-per-email table under its "Email list" heading
 // (a day with no table has no such heading), Overdue / Emails / Probably spam
 // cards (badges, from line, "What it is", "How urgent? / Should you worry?", status
@@ -24,25 +24,25 @@ const table = '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th
 
 const emails = '<h3>Emails</h3><ul>'
   + card({ cls: 'high', urgency: 'High', worry: 'Yes', worryCls: 'worry-yes', cat: 'Client', draft: 'Draft ready',
-    from: '<strong>Alex Sample</strong> (alex@sample-client.example) · 14 Oct 2026, 09:14 · Complaint – still no reply after two emails',
+    from: '<strong>Alex Sample</strong> (alex@sample-client.example) · received 14 Oct 2026,09:14 · Complaint – still no reply after two emails',
     gist: 'A client says nobody called back as promised on 6 Oct and two emails went unanswered. They want an explanation and a call back by Monday 19 Oct 2026, and say they may take their business elsewhere.',
-    why: '<strong>How urgent?</strong> High — the client wants a call back by 19 Oct 2026. <strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
+    why: '<strong>How urgent?</strong> High — the client wants a call back by 19 Oct 2026.<br><strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
     status: ['<span style="color:#E45858">Handle personally, review carefully</span>'],
     quote: "Hello,<br><br>I'm writing to make a formal complaint. On 6 Oct I was promised a call back about my account the same day. Nobody called. … (open the email to read the rest)",
     reply: 'Hi Alex,<br><br>Thank you for letting me know, and I am sorry nobody called you back. I will call you before Monday 19 Oct.<br><br>Best regards, Jiri Havelka, Founder, PrimeLevel.',
     flags: ['Needs your input'],
     link: LINK('1a00000000000001', 'alex%40sample-client.example', 1792000000) })
   + card({ cls: 'medium', urgency: 'Medium', worry: 'Watch', worryCls: 'worry-watch', cat: 'Supplier', draft: 'No reply needed',
-    from: '<strong>New Supplier Co</strong> (accounts@new-supplier.example) · 14 Oct 2026, 10:02 · Invoice INV-0001',
+    from: '<strong>New Supplier Co</strong> (accounts@new-supplier.example) · received 14 Oct 2026,10:02 · Invoice INV-0001',
     gist: 'A first invoice from a supplier that is not on the known-supplier list: £120.00, due on 30 Oct 2026. It was left in your inbox.',
-    why: '<strong>How urgent?</strong> Medium — due on 30 Oct 2026. <strong>Should you worry?</strong> Keep an eye on it — a first-time sender asking for money.',
+    why: '<strong>How urgent?</strong> Medium — due on 30 Oct 2026.<br><strong>Should you worry?</strong> Keep an eye on it — a first-time sender asking for money.',
     status: ["New supplier invoice: check it's genuine before paying"],
     quote: 'Please find attached invoice INV-0001. Payment details: https://payments.new-supplier.example/invoices/INV-0001/pay-online-securely-with-card-or-bank-transfer-before-the-due-date',
     link: LINK('1a00000000000002', 'accounts%40new-supplier.example', 1792003700) })
   + card({ cls: 'low', urgency: 'Low', worry: 'No', worryCls: 'worry-no', cat: 'Supplier', draft: 'No reply needed',
-    from: '<strong>Google Payments</strong> (payments-noreply@google.com) · 14 Oct 2026, 07:30 · Google Workspace: Your invoice is available',
+    from: '<strong>Google Payments</strong> (payments-noreply@google.com) · received 14 Oct 2026,07:30 · Google Workspace: Your invoice is available',
     gist: 'The monthly Google Workspace invoice. Attachment included: invoice.pdf (application/pdf).',
-    why: '<strong>How urgent?</strong> Low — already paid, no deadline. <strong>Should you worry?</strong> No — routine.',
+    why: '<strong>How urgent?</strong> Low — already paid, no deadline.<br><strong>Should you worry?</strong> No — routine.',
     status: ['Filed to Expenses/Google (moved out of the inbox)'],
     quote: 'Your Google Workspace monthly invoice is available. Please find the PDF document attached at the bottom of this email.',
     link: LINK('1a00000000000003', 'payments-noreply%40google.com', 1791995400) })
@@ -50,9 +50,9 @@ const emails = '<h3>Emails</h3><ul>'
 
 const spam = '<h3>Probably spam</h3><ul>'
   + card({ cls: 'spam', urgency: 'Probably spam', worry: 'No', worryCls: 'worry-no', cat: 'Unknown', draft: 'No reply needed',
-    from: '<strong>Offers Weekly</strong> (news@offers.example) · 14 Oct 2026, 06:00 · This week only: 50% off',
+    from: '<strong>Offers Weekly</strong> (news@offers.example) · received 14 Oct 2026,06:00 · This week only: 50% off',
     gist: 'A marketing newsletter.',
-    why: '<strong>How urgent?</strong> Low — no deadline. <strong>Should you worry?</strong> No — routine.',
+    why: '<strong>How urgent?</strong> Low — no deadline.<br><strong>Should you worry?</strong> No — routine.',
     quote: 'This week only: half price on everything in our autumn range. … (open the email to read the rest)',
     link: LINK('1a00000000000004', 'news%40offers.example', 1791986400) })
   + '</ul>';
@@ -70,13 +70,13 @@ export const fullReport = {
 export const overdueReport = {
   id: 9102, created_at: '2026-10-15T07:10:00Z', run_date: '2026-10-15', status: 'success',
   title: 'Inbox Report — 15 Oct 2026', error_text: null,
-  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0, extra: '<br><strong>Overdue:</strong> 1' }) + '<p>No new emails.</p>'
+  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0, extra: '<br><strong>Overdue:</strong> 1' }) + '<p>No new emails since the last report (14 Oct 2026, 08:10).</p>'
     + '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge high">High</span></td><td><span class="badge worry-yes">Yes</span></td><td><strong>Sample Office Supplies Ltd</strong> — OVERDUE: unpaid invoice INV-0001 (£480.00), payment asked by 22 Oct 2026; still no reply from you on this thread, and the supplier is not on your known-suppliers list</td><td>Needs you</td></tr></tbody></table>'
     + '<h3>Overdue</h3><ul>'
     + card({ cls: 'high', urgency: 'High', worry: 'Yes', worryCls: 'worry-yes', cat: 'Client', draft: 'No reply needed',
-      from: '<strong>Alex Sample</strong> (alex@sample-client.example) · 14 Oct 2026, 09:14 · Complaint – still no reply after two emails',
+      from: '<strong>Alex Sample</strong> (alex@sample-client.example) · received 14 Oct 2026,09:14 · Complaint – still no reply after two emails',
       gist: 'Still unanswered (2nd report): a client wants an explanation and a call back by Monday 19 Oct 2026.',
-      why: '<strong>How urgent?</strong> High — a call back is asked for by 19 Oct 2026, 4 days from today. <strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
+      why: '<strong>How urgent?</strong> High — a call back is asked for by 19 Oct 2026, 4 days from today.<br><strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
       quote: "Hello,<br><br>I'm writing to make a formal complaint. … (open the email to read the rest)",
       link: LINK('1a00000000000001', 'alex%40sample-client.example', 1792000000) })
     + '</ul>',
@@ -84,5 +84,5 @@ export const overdueReport = {
 export const quietReport = {
   id: 9100, created_at: '2026-10-13T07:10:00Z', run_date: '2026-10-13', status: 'success',
   title: 'Inbox Report — 13 Oct 2026', error_text: null,
-  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0 }) + '<p>No new emails.</p>',
+  html_content: glance({ n: 0, h: 0, m: 0, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 6, waiting: 0 }) + '<p>No new emails since the last report (14 Oct 2026, 08:10).</p>',
 };
