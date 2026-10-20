@@ -95,8 +95,10 @@ month, no time). The same on both pages.
   branding only, and on the grey card it reads 2.2:1 against navy's 12.6:1). They pop
   like Sign out and the back arrow: 1.05 under a mouse AND on the Tab key, with no ring
   of any colour (owner, 2026-10-20: "no rings at all"), 0.97 on a press, 0.15s, anchored
-  on the left so the words stay in line with the text above. Phones have no mouse, so
-  no pop there. A link never splits across two lines (it moves whole to the next).
+  on the left so the words stay in line with the text above. ONLY on their words (and
+  the ▶): each line's box is exactly its words, so the mouse beside them, or a click
+  there, does nothing (owner, 2026-10-20: "Read the draft reply" first popped with the
+  mouse 5-6 cm away, its box ran the whole row). Phones have no mouse, so no pop there. A link never splits across two lines (it moves whole to the next).
 - **"At a glance"** (prompt v9, 2026-10-19): one paragraph of short labelled lines, one
   fact per line, no badges ("New emails: 5", "Urgency: 3 High · 1 Medium · 1 Low", …):
   24 between lines, 100 above and below (70 on phones), like any paragraph.

@@ -349,13 +349,21 @@ for (const phone of [false, true]) {
         el.scrollIntoView({ block: 'center' });
         const rg = document.createRange(); rg.selectNodeContents(el); const r = rg.getBoundingClientRect(), l = el.closest('li.entry').getBoundingClientRect();
         const x = r.left + r.width / 2, y = r.top + r.height / 2, hit = document.elementFromPoint(x, y);
-        return { x, y, hit: !!hit && (hit === el || el.contains(hit)) && y > 0 && y < innerHeight, px: l.left + 12, py: y };
+        return { x, y, hit: !!hit && (hit === el || el.contains(hit)) && y > 0 && y < innerHeight, px: l.left + 12, py: y, beside: r.right + 12 };
       }, sel);
       if (!at) continue; // this sample has no such line
       await page.mouse.move(at.x, at.y);
       await page.waitForTimeout(400);
       const hover = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).transform, sel);
       same(`${P}"${name}" pops under the mouse`, at.hit ? hover : 'the pointer missed it', POP);
+      // ONLY on its words (owner, 2026-10-20: "Read the draft reply" popped with
+      // the mouse 5-6 cm away on the same line): 12px past the last letter, no pop.
+      await page.mouse.move(at.px, at.py);
+      await page.waitForTimeout(300);
+      await page.mouse.move(at.beside, at.y);
+      await page.waitForTimeout(400);
+      const beside = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).transform, sel);
+      same(`${P}"${name}" does not pop with the mouse just past its last letter`, beside, 'none');
       await page.mouse.move(at.px, at.py);
       let reached = false;
       for (let i = 0; i < 80 && !reached; i++) {
