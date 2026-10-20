@@ -68,8 +68,12 @@ month, no time). The same on both pages.
   white we use in the sign-in box"), 1px `#DFE3EA` border, 6px left stripe in the urgency
   colour, 10px corners; 30 by eye from the card's edge to its first and last line and
   between its parts; 30 between cards.
-- **Badges:** keep their own colours for now (owner, 2026-10-15: "we are very likely to
-  change them"), 13px bold. An email card's urgency badge says what it is, like the
+- **Badges:** 13px bold. ONE red on the report, `#C62828` (owner, 2026-10-20): the High
+  badge (company-white text), the High card's stripe, "Worry: Yes" (text and outline) and the
+  agent's red warnings ("Handle personally, review carefully", "Possible fake invoice…"; the
+  agent writes `#E45858`, the page shows `#C62828`). ONE white, company white `#F9F9FA`, in
+  every badge (the High badge's text, the Worry and Draft badges' fill). Other badge colours
+  unchanged for now (Medium gold, Low and spam greys, Watch orange, No green, Who navy). An email card's urgency badge says what it is, like the
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.

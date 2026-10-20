@@ -15,7 +15,9 @@
 //         "14 Oct 2026"; the Insider Edge colours, and every email card in
 //         the sign-in box's white #E9E9EB, with the original email and the
 //         draft reply on company white #F9F9FA inside it, with no line around
-//         them (the white alone marks them, owner 2026-10-20); no line of text
+//         them (the white alone marks them, owner 2026-10-20); ONE red on
+//         light backgrounds #C62828 (High badge, High stripe, "Worry: Yes",
+//         red warnings) and ONE white #F9F9FA in every badge; no line of text
 //         outside the column; the summary table's badges read "High" / "Yes"
 //         on the computer (under the titles row) and "Urgency: High" /
 //         "Worry: Yes" on the phone (titles row hidden), side by side, or
@@ -160,6 +162,14 @@ const measure = () => {
     // The original email and the draft reply, on company white inside the
     // grey card (owner, 2026-10-16): EVERY such box, fully white (not see-through).
     ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes': [...body.querySelectorAll('li.entry blockquote')].every((q) => cs(q).backgroundColor === 'rgb(249, 249, 250)') ? '#F9F9FA' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => cs(q).backgroundColor))].join(' / ') } : {}),
+    // ONE red on light backgrounds, #C62828 (owner, 2026-10-20): the High
+    // badge, the High card's stripe, "Worry: Yes" (text and outline) and the
+    // agent's red warnings; and ONE white, #F9F9FA, for every white in a badge.
+    ...(body.querySelector('.badge.high') ? { 'High badge': hex(cs(body.querySelector('.badge.high')).backgroundColor), 'High badge text': hex(cs(body.querySelector('.badge.high')).color) } : {}),
+    ...(body.querySelector('li.entry.high') ? { 'High card stripe': hex(cs(body.querySelector('li.entry.high')).borderLeftColor) } : {}),
+    ...(body.querySelector('.badge.worry-yes') ? { 'Worry: Yes badge': [...new Set([...body.querySelectorAll('.badge.worry-yes')].flatMap((bd) => [hex(cs(bd).color), hex(cs(bd).borderTopColor)]))].join(' / ') } : {}),
+    ...(body.querySelector('[style]') ? { 'red warnings': [...new Set([...body.querySelectorAll('[style]')].map((el) => hex(cs(el).color)))].join(' / ') } : {}),
+    ...(body.querySelector('.badge.worry-yes, .badge.worry-watch, .badge.worry-no, .badge.draft') ? { 'badge whites': [...new Set([...body.querySelectorAll('.badge.worry-yes, .badge.worry-watch, .badge.worry-no, .badge.draft')].map((bd) => hex(cs(bd).backgroundColor)))].join(' / ') } : {}),
     // ...and the white alone marks them: no line on any side (owner, 2026-10-20).
     ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes: line on the left': [...body.querySelectorAll('li.entry blockquote')].every((q) => ['Top', 'Right', 'Bottom', 'Left'].every((s) => parseFloat(cs(q)[`border${s}Width`]) === 0)) ? 'none' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => `${cs(q).borderLeftWidth} ${hex(cs(q).borderLeftColor)}`))].join(' / ') } : {}),
   };
@@ -242,7 +252,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';

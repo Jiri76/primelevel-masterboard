@@ -30,7 +30,11 @@
     --input-bg: #2A3441;
     --placeholder: #8A93A3;
     --border: #3A4453;
-    --red: #E45858;
+    --red: #E45858; /* red TEXT on the dark navy (a failed report's date) */
+    /* THE red on light backgrounds (owner, 2026-10-20): the High badge, the
+       High card's stripe, "Worry: Yes" and the red warnings. #E45858 was too
+       light for company-white text (3.4:1); this reads 5.3:1. */
+    --red-on-light: #C62828;
     --orange: #D9A441;
     --green: #4CAF7D;
   }
@@ -207,15 +211,19 @@
     line-height: 20px;
     white-space: nowrap;
   }
-  .badge.high { background: var(--red); color: #fff; }
+  /* ONE white (owner, 2026-10-20): every white in a badge is company white. */
+  .badge.high { background: var(--red-on-light); color: var(--white); }
   .badge.medium { background: var(--gold); color: var(--navy); }
   .badge.low { background: #dfe3ea; color: var(--navy); }
   .badge.spam { background: #c9ced8; color: #4b5565; }
-  .badge.worry-yes { background: #fff; color: #b3261e; border-color: #b3261e; }
-  .badge.worry-watch { background: #fff; color: #8a5a00; border-color: var(--orange); }
-  .badge.worry-no { background: #fff; color: #23694a; border-color: var(--green); }
+  .badge.worry-yes { background: var(--white); color: var(--red-on-light); border-color: var(--red-on-light); }
+  .badge.worry-watch { background: var(--white); color: #8a5a00; border-color: var(--orange); }
+  .badge.worry-no { background: var(--white); color: #23694a; border-color: var(--green); }
   .badge.cat { background: var(--input-bg); color: var(--white); }
-  .badge.draft { background: #eef1f5; color: var(--navy); border-color: var(--border); }
+  .badge.draft { background: var(--white); color: var(--navy); border-color: var(--border); }
+  /* The agent's red warnings ("Handle personally, review carefully",
+     "Possible fake invoice…") arrive as color:#E45858: shown in THE red. */
+  .report-body [style*="E45858" i] { color: var(--red-on-light) !important; }
   /* An email card's urgency badge says what it is, like its "Worry: Yes"
      next to it (owner, 2026-10-19): "Urgency: High". Every screen; the agent
      writes only the word. "Probably spam" names itself. */
@@ -264,7 +272,7 @@
     background: #E9E9EB;
   }
   .report-body li.entry:last-child { margin-bottom: 0; }
-  .report-body li.entry.high { border-left-color: var(--red); }
+  .report-body li.entry.high { border-left-color: var(--red-on-light); }
   .report-body li.entry.medium { border-left-color: var(--gold); }
   .report-body li.entry.low { border-left-color: #dfe3ea; }
   .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
