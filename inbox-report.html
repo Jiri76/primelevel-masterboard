@@ -306,10 +306,6 @@
     cursor: pointer;
     font-weight: 700;
   }
-  .report-body summary:focus-visible {
-    outline: 2px solid var(--gold);
-    outline-offset: 2px;
-  }
 
   /* Quoted text: the original email and the drafted reply. The white box
      alone marks it: no gold line on its left (owner, 2026-10-20: "the white
@@ -323,14 +319,29 @@
     overflow-wrap: anywhere;
   }
   .report-body a {
+    display: inline-block; /* an inline link can't grow; this one can (a word or two, never wraps) */
     color: var(--navy);
     font-weight: 700;
     text-decoration: underline;
   }
-  .report-body a:focus-visible {
-    outline: 2px solid var(--gold);
-    outline-offset: 2px;
+  /* The card's clickable lines ("Read the draft reply", every email link) pop
+     like Sign out and the back arrow (door.js, copied: 1.05 only where a real
+     pointer hovers, 0.97 on a press, 0.15s, no animation if the device asks
+     for less motion), anchored on the left so the words stay in line with the
+     text above. The Tab key gets the same pop instead of a ring (owner,
+     2026-10-20: "no rings at all"); last, so it holds even with less motion
+     (then without the animation): a keyboard user always sees where they are. */
+  .report-body summary,
+  .report-body a { transition: transform 0.15s ease; transform-origin: left center; }
+  @media (hover: hover) { .report-body summary:hover, .report-body a:hover { transform: scale(1.05); } }
+  .report-body summary:active,
+  .report-body a:active { transform: scale(0.97); }
+  @media (prefers-reduced-motion: reduce) {
+    .report-body summary, .report-body a { transition: none; }
+    .report-body summary:hover, .report-body a:hover, .report-body summary:active, .report-body a:active { transform: none; }
   }
+  .report-body summary:focus-visible,
+  .report-body a:focus-visible { outline: none; transform: scale(1.05); }
   .report-error {
     color: #b33a3a;
     font-weight: 700;

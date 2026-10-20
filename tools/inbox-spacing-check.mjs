@@ -334,6 +334,41 @@ for (const phone of [false, true]) {
       m.g30.filter(([k]) => /draft|card \d: (part|last)/.test(k) && k.includes('card 1')).forEach(([k, v]) => row(`${P}${k} (draft open)`, v, 30, TOL_30));
     }
   }
+  // The card's clickable lines pop like Sign out and the back arrow (owner,
+  // 2026-10-20): 1.05 under a mouse and on the Tab key, no ring of any colour.
+  // Phones have no mouse, so no pop there. Checked last, after every gap is
+  // measured (a popped line is 5% bigger).
+  if (!phone) {
+    const LINES = [['Read the draft reply', '.report-body li.entry summary'], ['Open the email', '.report-body li.entry p > a']];
+    const POP = 'matrix(1.05, 0, 0, 1.05, 0, 0)';
+    for (const [name, sel] of LINES) {
+      // The words' centre, proven to be on screen and on the line itself; and a
+      // parking spot on the card's left margin (inside the card, not clickable).
+      const at = await page.evaluate((s) => {
+        const el = document.querySelector(s); if (!el) return null;
+        el.scrollIntoView({ block: 'center' });
+        const rg = document.createRange(); rg.selectNodeContents(el); const r = rg.getBoundingClientRect(), l = el.closest('li.entry').getBoundingClientRect();
+        const x = r.left + r.width / 2, y = r.top + r.height / 2, hit = document.elementFromPoint(x, y);
+        return { x, y, hit: !!hit && (hit === el || el.contains(hit)) && y > 0 && y < innerHeight, px: l.left + 12, py: y };
+      }, sel);
+      if (!at) continue; // this sample has no such line
+      await page.mouse.move(at.x, at.y);
+      await page.waitForTimeout(400);
+      const hover = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).transform, sel);
+      same(`${P}"${name}" pops under the mouse`, at.hit ? hover : 'the pointer missed it', POP);
+      await page.mouse.move(at.px, at.py);
+      let reached = false;
+      for (let i = 0; i < 80 && !reached; i++) {
+        await page.keyboard.press('Tab');
+        reached = await page.evaluate((s) => document.activeElement === document.querySelector(s) && document.activeElement.matches(':focus-visible'), sel);
+      }
+      await page.waitForTimeout(400);
+      const tab = await page.evaluate((s) => { const c = getComputedStyle(document.querySelector(s)); return `${c.transform}, ${c.outlineStyle === 'none' || parseFloat(c.outlineWidth) === 0 ? 'no ring' : 'ring ' + c.outlineWidth + ' ' + c.outlineColor}`; }, sel);
+      same(`${P}"${name}" pops on the Tab key, no ring`, reached ? tab : 'not reached by the Tab key', `${POP}, no ring`);
+    }
+  } else {
+    same(`${P}no mouse on a phone, so no pop`, String(await page.evaluate(() => matchMedia('(hover: hover)').matches)), 'false');
+  }
   await page.context().close();
 }
 await browser.close();
