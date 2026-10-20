@@ -76,8 +76,11 @@ month, no time). The same on both pages.
   `#BC4C00` (owner, 2026-10-20: "abandon the gold in those badge colours"): the Medium
   badge (company-white text), the Medium card's stripe and "Worry: Watch" (text and
   outline). So red = High and "Worry: Yes", orange = Medium and "Worry: Watch". Gold is
-  branding only (titles, the band's title and date), never a badge or stripe. Other
-  badge colours unchanged for now (Low and spam greys, No green, Who navy). An email card's urgency badge says what it is, like the
+  branding only (titles, the band's title and date), never a badge or stripe. The Who
+  badge (Client, Supplier, Personal, Unknown) and the Draft badge ("Draft ready", "No
+  reply needed") use ONLY company navy `#1E2633` and company white (owner, 2026-10-20):
+  Who = navy fill, white words; Draft = white fill, navy words and outline. Other badge
+  colours unchanged for now (Low and spam greys, No green). An email card's urgency badge says what it is, like the
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.

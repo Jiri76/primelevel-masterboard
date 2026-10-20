@@ -223,8 +223,11 @@
   .badge.worry-yes { background: var(--white); color: var(--red-on-light); border-color: var(--red-on-light); }
   .badge.worry-watch { background: var(--white); color: var(--orange-on-light); border-color: var(--orange-on-light); }
   .badge.worry-no { background: var(--white); color: #23694a; border-color: var(--green); }
-  .badge.cat { background: var(--input-bg); color: var(--white); }
-  .badge.draft { background: var(--white); color: var(--navy); border-color: var(--border); }
+  /* The Who and Draft badges use ONLY company navy and company white (owner,
+     2026-10-20): Who = navy fill, white words; Draft = white fill, navy words
+     and outline. */
+  .badge.cat { background: var(--navy); color: var(--white); }
+  .badge.draft { background: var(--white); color: var(--navy); border-color: var(--navy); }
   /* The agent's red warnings ("Handle personally, review carefully",
      "Possible fake invoice…") arrive as color:#E45858: shown in THE red. */
   .report-body [style*="E45858" i] { color: var(--red-on-light) !important; }
