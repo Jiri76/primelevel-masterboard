@@ -72,8 +72,12 @@ month, no time). The same on both pages.
   badge (company-white text), the High card's stripe, "Worry: Yes" (text and outline) and the
   agent's red warnings ("Handle personally, review carefully", "Possible fake invoice…"; the
   agent writes `#E45858`, the page shows `#C62828`). ONE white, company white `#F9F9FA`, in
-  every badge (the High badge's text, the Worry and Draft badges' fill). Other badge colours
-  unchanged for now (Medium gold, Low and spam greys, Watch orange, No green, Who navy). An email card's urgency badge says what it is, like the
+  every badge (the High badge's text, the Worry and Draft badges' fill). ONE orange,
+  `#BC4C00` (owner, 2026-10-20: "abandon the gold in those badge colours"): the Medium
+  badge (company-white text), the Medium card's stripe and "Worry: Watch" (text and
+  outline). So red = High and "Worry: Yes", orange = Medium and "Worry: Watch". Gold is
+  branding only (titles, the band's title and date), never a badge or stripe. Other
+  badge colours unchanged for now (Low and spam greys, No green, Who navy). An email card's urgency badge says what it is, like the
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.

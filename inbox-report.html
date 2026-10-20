@@ -35,7 +35,11 @@
        High card's stripe, "Worry: Yes" and the red warnings. #E45858 was too
        light for company-white text (3.4:1); this reads 5.3:1. */
     --red-on-light: #C62828;
-    --orange: #D9A441;
+    /* THE orange on light backgrounds (owner, 2026-10-20: "abandon the gold
+       in those badge colours… gold only for branding"): the Medium badge,
+       the Medium card's stripe and "Worry: Watch". Company-white text on it
+       reads 4.8:1; the stripe against the grey card 4.2:1 (gold: 2.2). */
+    --orange-on-light: #BC4C00;
     --green: #4CAF7D;
   }
   * { box-sizing: border-box; }
@@ -213,11 +217,11 @@
   }
   /* ONE white (owner, 2026-10-20): every white in a badge is company white. */
   .badge.high { background: var(--red-on-light); color: var(--white); }
-  .badge.medium { background: var(--gold); color: var(--navy); }
+  .badge.medium { background: var(--orange-on-light); color: var(--white); }
   .badge.low { background: #dfe3ea; color: var(--navy); }
   .badge.spam { background: #c9ced8; color: #4b5565; }
   .badge.worry-yes { background: var(--white); color: var(--red-on-light); border-color: var(--red-on-light); }
-  .badge.worry-watch { background: var(--white); color: #8a5a00; border-color: var(--orange); }
+  .badge.worry-watch { background: var(--white); color: var(--orange-on-light); border-color: var(--orange-on-light); }
   .badge.worry-no { background: var(--white); color: #23694a; border-color: var(--green); }
   .badge.cat { background: var(--input-bg); color: var(--white); }
   .badge.draft { background: var(--white); color: var(--navy); border-color: var(--border); }
@@ -273,7 +277,7 @@
   }
   .report-body li.entry:last-child { margin-bottom: 0; }
   .report-body li.entry.high { border-left-color: var(--red-on-light); }
-  .report-body li.entry.medium { border-left-color: var(--gold); }
+  .report-body li.entry.medium { border-left-color: var(--orange-on-light); }
   .report-body li.entry.low { border-left-color: #dfe3ea; }
   .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
   .report-body li.entry p { margin: 0 0 18px; }

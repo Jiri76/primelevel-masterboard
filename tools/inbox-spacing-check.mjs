@@ -17,7 +17,9 @@
 //         draft reply on company white #F9F9FA inside it, with no line around
 //         them (the white alone marks them, owner 2026-10-20); ONE red on
 //         light backgrounds #C62828 (High badge, High stripe, "Worry: Yes",
-//         red warnings) and ONE white #F9F9FA in every badge; no line of text
+//         red warnings), ONE orange #BC4C00 (Medium badge, Medium stripe,
+//         "Worry: Watch"; no gold in badges) and ONE white #F9F9FA in every
+//         badge; no line of text
 //         outside the column; the summary table's badges read "High" / "Yes"
 //         on the computer (under the titles row) and "Urgency: High" /
 //         "Worry: Yes" on the phone (titles row hidden), side by side, or
@@ -168,6 +170,11 @@ const measure = () => {
     ...(body.querySelector('.badge.high') ? { 'High badge': hex(cs(body.querySelector('.badge.high')).backgroundColor), 'High badge text': hex(cs(body.querySelector('.badge.high')).color) } : {}),
     ...(body.querySelector('li.entry.high') ? { 'High card stripe': hex(cs(body.querySelector('li.entry.high')).borderLeftColor) } : {}),
     ...(body.querySelector('.badge.worry-yes') ? { 'Worry: Yes badge': [...new Set([...body.querySelectorAll('.badge.worry-yes')].flatMap((bd) => [hex(cs(bd).color), hex(cs(bd).borderTopColor)]))].join(' / ') } : {}),
+    // ONE orange on light backgrounds, #BC4C00 (owner, 2026-10-20: no gold in
+    // badges): the Medium badge, the Medium card's stripe and "Worry: Watch".
+    ...(body.querySelector('.badge.medium') ? { 'Medium badge': hex(cs(body.querySelector('.badge.medium')).backgroundColor), 'Medium badge text': hex(cs(body.querySelector('.badge.medium')).color) } : {}),
+    ...(body.querySelector('li.entry.medium') ? { 'Medium card stripe': hex(cs(body.querySelector('li.entry.medium')).borderLeftColor) } : {}),
+    ...(body.querySelector('.badge.worry-watch') ? { 'Worry: Watch badge': [...new Set([...body.querySelectorAll('.badge.worry-watch')].flatMap((bd) => [hex(cs(bd).color), hex(cs(bd).borderTopColor)]))].join(' / ') } : {}),
     ...(body.querySelector('[style]') ? { 'red warnings': [...new Set([...body.querySelectorAll('[style]')].map((el) => hex(cs(el).color)))].join(' / ') } : {}),
     ...(body.querySelector('.badge.worry-yes, .badge.worry-watch, .badge.worry-no, .badge.draft') ? { 'badge whites': [...new Set([...body.querySelectorAll('.badge.worry-yes, .badge.worry-watch, .badge.worry-no, .badge.draft')].map((bd) => hex(cs(bd).backgroundColor)))].join(' / ') } : {}),
     // ...and the white alone marks them: no line on any side (owner, 2026-10-20).
@@ -252,7 +259,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
