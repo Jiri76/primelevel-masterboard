@@ -65,9 +65,11 @@ month, no time). The same on both pages.
 ## Inbox Report's own parts (inside the same card)
 
 - **Email cards:** the sign-in box's white `#E9E9EB` (owner, 2026-10-15: "the same shade of
-  white we use in the sign-in box"), 1px `#DFE3EA` border, 6px left stripe in the urgency
-  colour, 10px corners; 30 by eye from the card's edge to its first and last line and
-  between its parts; 30 between cards.
+  white we use in the sign-in box"), no outline (owner, 2026-10-20: the grey fill, the
+  stripe and the 30 gap already mark each card; the pale-grey 1px outline it had until
+  then was removed, its 1px moved into the padding so nothing moved), 6px left stripe in
+  the urgency colour, 10px corners; 30 by eye from the card's edge to its first and last
+  line and between its parts; 30 between cards.
 - **Badges:** 13px bold. ONE red on the report, `#C62828` (owner, 2026-10-20): the High
   badge (company-white text), the High card's stripe, "Worry: Yes" (text and outline) and the
   agent's red warnings ("Handle personally, review carefully", "Possible fake invoice…"; the

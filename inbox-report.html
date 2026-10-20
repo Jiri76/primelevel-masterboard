@@ -278,11 +278,12 @@
      edge -> its first and last line, and between its parts (Insider Edge's
      gap between items). Background: the sign-in box's white (owner,
      2026-10-15: "the same shade of white we use in the sign-in box", not a
-     new colour; SIGNIN-BOX-STANDARD.md). */
+     new colour; SIGNIN-BOX-STANDARD.md). No outline (owner, 2026-10-20): the
+     grey fill, the urgency stripe and the 30 gap already mark each card; the
+     1px the pale-grey outline took is in the padding, so nothing moved. */
   .report-body li.entry {
     margin: 0 0 30px;
-    padding: 29px 18px 22px;
-    border: 1px solid #dfe3ea;
+    padding: 30px 19px 23px 18px;
     border-left: 6px solid var(--grey-on-light); /* a card without an urgency: the solid grey */
     border-radius: 10px;
     background: #E9E9EB;

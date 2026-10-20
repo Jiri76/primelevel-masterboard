@@ -162,8 +162,13 @@ const measure = () => {
   const firstCard = body.querySelector('li.entry');
   const colours = {
     'report paper': hex(cs(card).backgroundColor), 'dark band': hex(cs(band).backgroundColor), 'band title': hex(cs(title).color), 'date line': hex(cs(date).color),
-    'report text': hex(cs(body).color), 'heading': hex(cs(body.querySelector('h3')).color), 'heading line': hex(cs(body.querySelector('h3')).borderBottomColor),
+    'report text': hex(cs(body).color), 'heading': hex(cs(body.querySelector('h3')).color),
+    // EVERY heading's line: company navy, no other colour (owner, 2026-10-20).
+    'heading line': [...new Set([...body.querySelectorAll('h3')].map((h) => `${parseFloat(cs(h).borderBottomWidth)}px ${hex(cs(h).borderBottomColor)}`))].join(' / '),
     ...(firstCard ? { 'email card': hex(cs(firstCard).backgroundColor) } : {}),
+    // No outline around an email card, only its urgency stripe on the left
+    // (owner, 2026-10-20): EVERY card, top, right and bottom.
+    ...(firstCard ? { 'email card outline': [...body.querySelectorAll('li.entry')].every((li) => ['Top', 'Right', 'Bottom'].every((s) => parseFloat(cs(li)[`border${s}Width`]) === 0)) ? 'none' : [...new Set([...body.querySelectorAll('li.entry')].map((li) => `${cs(li).borderTopWidth} ${hex(cs(li).borderTopColor)}`))].join(' / ') } : {}),
     // The original email and the draft reply, on company white inside the
     // grey card (owner, 2026-10-16): EVERY such box, fully white (not see-through).
     ...(body.querySelector('li.entry blockquote') ? { 'email and draft boxes': [...body.querySelectorAll('li.entry blockquote')].every((q) => cs(q).backgroundColor === 'rgb(249, 249, 250)') ? '#F9F9FA' : [...new Set([...body.querySelectorAll('li.entry blockquote')].map((q) => cs(q).backgroundColor))].join(' / ') } : {}),
@@ -280,7 +285,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid', 'Email list row lines': '1px #1E2633' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '2px #1E2633', 'email card': '#E9E9EB', 'email card outline': 'none', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid', 'Email list row lines': '1px #1E2633' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
