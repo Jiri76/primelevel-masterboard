@@ -90,6 +90,9 @@ month, no time). The same on both pages.
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.
+- **"Read the draft reply" and "Open the email":** company navy `#1E2633`, bold: the words,
+  the ▶ and the link's underline (owner, 2026-10-20, chose navy over gold: gold is
+  branding only, and on the grey card it reads 2.2:1 against navy's 12.6:1).
 - **"At a glance"** (prompt v9, 2026-10-19): one paragraph of short labelled lines, one
   fact per line, no badges ("New emails: 5", "Urgency: 3 High · 1 Medium · 1 Low", …):
   24 between lines, 100 above and below (70 on phones), like any paragraph.
