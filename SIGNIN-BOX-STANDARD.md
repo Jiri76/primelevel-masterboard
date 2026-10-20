@@ -186,7 +186,7 @@ the Masterboard."
 | Line thickness | **3.2px** = the bold letters' strokes (both measure 3.5px on screen with edge smoothing) |
 | Colour | company gold `#B29B68` |
 | Spacing BY EYE | top of the screen → top of the arrow **40px** = left edge → tip **40px** (phones ≤720px **20 / 20**): Sign out's mirror |
-| Pop | 1.05 on hover, 0.97 on press, 0.15s (none when the device asks for less motion); gold focus ring |
+| Pop | 1.05 on hover, 0.97 on press, 0.15s (none when the device asks for less motion); the Tab key gives the same 1.05 pop, no ring (owner, 2026-10-20; it was a gold ring) |
 | Leads to | ALWAYS the Masterboard (`FRONT_DOOR_URL`), never "back one page": the same place even from an email link, a bookmark or a new tab. The Masterboard is fetched ahead (`<link rel="prefetch">`) the moment the arrow appears, so the click is instant |
 | Tap area | an invisible 14px margin around the drawing (72 × 44), so it is easy to hit on a phone |
 | CSS that produces it | `position: fixed; top: 26px; left: 26px; padding: 14px` (26 + 14 = 40) · phones `top: 6px; left: 6px` (6 + 14 = 20); the drawing is 44 × 16 and its ink sits exactly on that box (the mitred tip and the arms' ends are placed for a 3.2px line: see `BACK_ARROW_SVG` in `door.js`) |

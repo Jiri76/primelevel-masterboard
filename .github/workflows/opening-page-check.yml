@@ -20,6 +20,7 @@ on:
       - 'tools/opening-page-check.mjs'
       - 'tools/guard-supabase.mjs'
       - 'tools/fixtures/insider-edge-samples.mjs'
+      - 'tools/fixtures/inbox-report-samples.mjs'
       - '.github/workflows/opening-page-check.yml'
   schedule:
     - cron: '30 14 * * 1'

@@ -105,10 +105,12 @@
     transition: border-color 0.15s ease, transform 0.1s ease;
   }
   .report-tile:hover,
+  .report-tile:focus-visible, /* the Tab key: the mouse's look, no ring (owner, 2026-10-20) */
   .report-tile.selected {
     border-color: var(--white);
     transform: scale(1.025);
   }
+  .report-tile:focus-visible { outline: none; }
   .report-tile.failed {
     color: var(--red);
   }

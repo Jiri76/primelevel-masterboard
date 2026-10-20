@@ -13,6 +13,8 @@
 //   * the back arrow (2026-10-03): Sign out's mirror, top-LEFT, 40 / 40 (phones
 //     20 / 20), on Sign out's line (top of its letters -> baseline), as long as
 //     "Sign out", gold, 3.2px lines, the same pop, leading to the Masterboard.
+//   * the Tab key (2026-10-20): Sign out, the back arrow and the date buttons
+//     pop exactly as under the mouse, with no ring of any colour.
 //   * the top strip (2026-10-06): a fixed strip of the page's navy behind Sign
 //     out and the arrow, as much navy below the Sign out letters as above
 //     them (40 / 40, phones 20 / 20), under Sign out.
@@ -41,6 +43,7 @@ import { chromium } from 'playwright';
 import { signedOut, ownerFake, useStandIn } from './guard-supabase.mjs';
 // Made-up reports (the real ones are owner-only and this project is public).
 import { withPicks, noPicks } from './fixtures/insider-edge-samples.mjs';
+import { fullReport, quietReport } from './fixtures/inbox-report-samples.mjs';
 
 const BASE = process.env.BASE_URL || 'http://localhost:8091';
 const SELFTEST = process.env.SELFTEST === '1';
@@ -57,6 +60,8 @@ const PAGES = [
   { name: 'Insider Edge: no report open', path: '/insider-edge.html', standIn: ownerFake({ insider_edge_reports: [withPicks, noPicks] }), ready: '.empty-state', prefer: '.closed-state', below: '#content .empty-state', title: '50px', corner: true },
   { name: 'Insider Edge: no reports yet', path: '/insider-edge.html', standIn: ownerFake({ insider_edge_reports: [] }), ready: '.empty-state', below: '#content .empty-state', title: '50px', corner: true },
   { name: 'Insider Edge: could not load', path: '/insider-edge.html', standIn: ownerFake({ insider_edge_reports: 'error' }), ready: '.empty-state', below: '#content .empty-state', title: '50px', corner: true },
+  // Insider Edge's twin (2026-10-20): the date buttons + "Click a date to open a report."
+  { name: 'Inbox Report: no report open', path: '/inbox-report.html', standIn: ownerFake({ email_reports: [fullReport, quietReport] }), ready: '.empty-state', prefer: '.closed-state', below: '#content .empty-state', title: '50px', corner: true },
   { name: 'Inbox Report: no reports yet', path: '/inbox-report.html', standIn: ownerFake({ email_reports: [] }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
   { name: 'Inbox Report: could not load', path: '/inbox-report.html', standIn: ownerFake({ email_reports: 'error' }), ready: '.empty-state', below: '.empty-state', title: '50px', corner: true },
 ];
@@ -69,6 +74,8 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signin input:focus-visible{box-shadow:none!important;outline:2px solid #B29B68!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
+  + '.signout:focus-visible,.back:focus-visible{transform:none!important;outline:2px solid #B29B68!important}'
+  + '.report-tile:focus-visible{transform:none!important;outline:2px solid #B29B68!important}'
   + '.pl-strip{height:70px!important;background:#ff0000!important}'
   + '.add-wrapper{margin-bottom:60px!important}.add-wrapper .add-trigger{background:transparent!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
@@ -219,6 +226,29 @@ for (const p of PAGES) {
   const signOutHover = p.corner && r.corner ? await desk.hover('#signOutButton').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signOutButton')).transform)) : null;
   // The back arrow pops exactly like Sign out (owner, 2026-10-03: "everything identical").
   const backHover = p.corner && r.back ? await desk.hover('#backLink').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('backLink')).transform)) : null;
+  // The Tab key gives the same pop, no ring of any colour (owner, 2026-10-20:
+  // "remove that gold ring… consistent with the Inbox Report"): Sign out, the
+  // back arrow and the date buttons. The mouse is parked in the bottom-left
+  // corner first, so a hover can't pass for the pop.
+  const tabTo = async (sel) => {
+    if (!(await desk.evaluate((s) => !!document.querySelector(s), sel))) return null;
+    await desk.mouse.move(3, 1077);
+    let reached = false;
+    for (let i = 0; i < 40 && !reached; i++) {
+      await desk.keyboard.press('Tab');
+      reached = await desk.evaluate((s) => document.activeElement === document.querySelector(s) && document.activeElement.matches(':focus-visible'), sel);
+    }
+    await desk.waitForTimeout(400);
+    if (!reached) return 'not reached by the Tab key';
+    return desk.evaluate((s) => {
+      const el = document.querySelector(s), c = getComputedStyle(el), svg = el.querySelector('svg');
+      const ring = [el, svg].filter(Boolean).map((e) => getComputedStyle(e)).find((x) => x.outlineStyle !== 'none' && parseFloat(x.outlineWidth) > 0);
+      return `${c.transform}, ${ring ? 'ring ' + ring.outlineWidth + ' ' + ring.outlineColor : 'no ring'}`;
+    }, sel);
+  };
+  const signOutTab = p.corner && r.corner ? await tabTo('#signOutButton') : null;
+  const backTab = p.corner && r.back ? await tabTo('#backLink') : null;
+  const tileTab = await tabTo('.report-tile');
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
@@ -272,6 +302,9 @@ for (const p of PAGES) {
     const scale = m ? +m[1] : 1;
     check('Back arrow style', Math.abs(scale - 1.05) < 0.005, `back arrow pops on hover like Sign out: scale ${scale.toFixed(3)} (expected 1.05)`);
   }
+  if (signOutTab !== null) check('Sign out style', signOutTab === 'matrix(1.05, 0, 0, 1.05, 0, 0), no ring', `Sign out on the Tab key: ${signOutTab} (expected the 1.05 pop, no ring)`);
+  if (backTab !== null) check('Back arrow style', backTab === 'matrix(1.05, 0, 0, 1.05, 0, 0), no ring', `back arrow on the Tab key: ${backTab} (expected the 1.05 pop, no ring)`);
+  if (tileTab !== null) check('Date tile style', tileTab === 'matrix(1.025, 0, 0, 1.025, 0, 0), no ring', `date button on the Tab key: ${tileTab} (expected its mouse look: the 1.025 pop, no ring)`);
   if (p.corner) {
     const corners = [['computer', r, 40], ['phone', rPhone, 20], ['small phone', rSmall, 20]];
     for (const [where, rr, want40] of corners) {
@@ -303,7 +336,7 @@ for (const p of PAGES) {
   totalFails += failed.size;
   if (failed.size) pagesThatFailed += 1;
   if (SELFTEST) {
-    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style', 'Top strip'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : [])];
+    const mustCatch = ['spacing', 'centring', 'title style', 'phone width', ...(r.fonts.message ? ['message style'] : []), ...(p.corner ? ['Sign out position', 'Sign out style', 'Back arrow position', 'Back arrow style', 'Top strip'] : []), ...(boxDesk ? ['box spacing', 'box sizes', 'box fonts', 'box colours'] : []), ...(tileTab !== null ? ['Date tile style'] : [])];
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }

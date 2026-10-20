@@ -109,7 +109,11 @@
     '@media (hover: hover) { .signout:hover { transform: scale(1.05); } }' +
     '.signout:active { transform: scale(0.97); }' +
     '@media (prefers-reduced-motion: reduce) { .signout { transition: none; } .signout:hover, .signout:active { transform: none; } }' +
-    '.signout:focus-visible { outline: 2px solid #B29B68; outline-offset: 2px; }' +
+    // The Tab key gives the same pop instead of a ring (owner, 2026-10-20:
+    // "remove that gold ring… consistent with the Inbox Report"). Last, so it
+    // holds with less motion too (then without the animation): a keyboard
+    // user always sees where they are.
+    '.signout:focus-visible { outline: none; transform: scale(1.05); }' +
     '@media (max-width: 720px) { .signout { top: 17px; right: 20px; } }' +
     // The back arrow (owner, 2026-10-03): Sign out's mirror in the top-LEFT
     // corner, identical in everything but the words. Its ink is exactly its
@@ -127,7 +131,7 @@
     '@media (hover: hover) { .back:hover { transform: scale(1.05); } }' +
     '.back:active { transform: scale(0.97); }' +
     '@media (prefers-reduced-motion: reduce) { .back { transition: none; } .back:hover, .back:active { transform: none; } }' +
-    '.back:focus-visible { outline: none; } .back:focus-visible svg { outline: 2px solid #B29B68; outline-offset: 2px; }' +
+    '.back:focus-visible { outline: none; transform: scale(1.05); }' + // the Tab key: Sign out's pop, no ring (2026-10-20)
     '@media (max-width: 720px) { .back { top: 6px; left: 6px; } }' +
     // THE TOP STRIP (owner, 2026-10-06, on his iPhone: while scrolling, the
     // title slid over Sign out and the arrow): a strip of the page's own navy

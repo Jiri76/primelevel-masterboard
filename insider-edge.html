@@ -113,10 +113,12 @@
     transition: border-color 0.15s ease, transform 0.1s ease;
   }
   .report-tile:hover,
+  .report-tile:focus-visible, /* the Tab key: the mouse's look, no ring (owner, 2026-10-20) */
   .report-tile.selected {
     border-color: var(--white);
     transform: scale(1.025);
   }
+  .report-tile:focus-visible { outline: none; }
   /* Subtle gold glow for a report the user hasn't opened yet -- per
      explicit request, a gentle "something new is here" signal, not a
      loud one. Removed permanently (see markReportRead() in the module
