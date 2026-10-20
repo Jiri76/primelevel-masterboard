@@ -55,7 +55,7 @@ The page around the card keeps its own 100s (`OPENING-PAGE-STANDARD.md`).
 | Report paper | company white `#F9F9FA` |
 | Dark band | `#2A3441` |
 | Band title, date line | gold `#B29B68` (date line at 60%) |
-| Report text, headings, heading lines (2px) | navy `#1E2633` (Insider Edge's Verdict heading: gold) |
+| Report text, EVERY heading and its line (2px), Insider Edge's Verdict stars | navy `#1E2633` (owner, 2026-10-20: gold is branding only; Insider Edge's Verdict heading, line and stars were gold until then) |
 
 ## The banner (dark band)
 

@@ -7,7 +7,9 @@
 // (owner: "one nice rhythm"), the page's own 100s stay 100, titles 44 / 26.
 // Since 2026-10-12 it also checks, on both, that every line of report text
 // stays inside the text column (a long web address once ran under the card's
-// edge on phones; the "no picks" sample now carries one).
+// edge on phones; the "no picks" sample now carries one). Since 2026-10-20 it
+// also checks the colours: every heading, its line and the Verdict's stars in
+// company navy (gold is branding only).
 // Exits 1 (fails the workflow) if anything has drifted. Spacings are measured
 // BY EYE: from the bottom (baseline) of the letters above to the top of the
 // tallest letters below, or to the edge of the card / underline -- exactly how
@@ -154,7 +156,17 @@ const measureReport = () => {
       if (rc.width > 0 && (rc.left < colL - 1 || rc.right > colR + 1)) outside.push(`"${tn.nodeValue.trim().slice(0, 40)}" runs ${Math.round(Math.max(colL - rc.left, rc.right - colR))}px past the text column`);
     });
   });
-  return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length, outside };
+  // Colours (owner, 2026-10-20: gold is branding only): EVERY heading,
+  // Verdict included, its 2px line and the Verdict's stars, company navy.
+  const hex = (v) => '#' + v.match(/\d+/g).slice(0, 3).map((x) => (+x).toString(16).padStart(2, '0')).join('').toUpperCase();
+  const set = (a) => [...new Set(a)].join(' / ');
+  const stars = [...body.querySelectorAll('.verdict-stars')];
+  const colours = {
+    'every heading': set(hs.map((h) => hex(cs(h).color))),
+    'every heading line': set(hs.map((h) => `${parseFloat(cs(h).borderBottomWidth)}px ${hex(cs(h).borderBottomColor)}`)),
+    ...(stars.length ? { 'Verdict stars': set(stars.map((s) => hex(cs(s).color))) } : {}),
+  };
+  return { g100, g30, g15, pageFonts, fonts, pitches: [...pitches], nHeadings: hs.length, nEntries: entries.length, nCheck: chk.length, outside, colours };
 };
 const m = await page.evaluate(measureReport);
 
@@ -205,6 +217,13 @@ if (!pitchOk) fails.push(`line pitch: ${m.pitches.join(', ')}, expected 24`);
 const fitOk = !m.outside.length;
 console.log(`${fitOk ? 'PASS' : 'FAIL'}  every line inside the text column${fitOk ? '' : ': ' + m.outside.join('; ')}`);
 if (!fitOk) fails.push(`text outside the column: ${m.outside.join('; ')}`);
+const WANT_COLOURS = { 'every heading': '#1E2633', 'every heading line': '2px #1E2633', 'Verdict stars': '#1E2633' };
+const colourCheck = (P, c) => Object.entries(c).forEach(([k, v]) => {
+  const ok = v === WANT_COLOURS[k];
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${P}colour ${k}: ${v} (expected ${WANT_COLOURS[k]})`);
+  if (!ok) fails.push(`${P}colour ${k}: ${v}, expected ${WANT_COLOURS[k]}`);
+});
+colourCheck('', m.colours);
 
 // PHONE (owner, 2026-10-05: "one nice rhythm"): every 100 inside the report
 // card is 70 by eye; the page's own gaps stay 100. "Insider Edge" -> card top
@@ -237,9 +256,10 @@ if (!pitchOkP) fails.push(`phone: line pitch: ${mp.pitches.join(', ')}, expected
 const fitOkP = !mp.outside.length;
 console.log(`${fitOkP ? 'PASS' : 'FAIL'}  phone: every line inside the text column${fitOkP ? '' : ': ' + mp.outside.join('; ')}`);
 if (!fitOkP) fails.push(`phone: text outside the column: ${mp.outside.join('; ')}`);
+colourCheck('phone: ', mp.colours);
 
 if (fails.length) {
-  console.error(`\n${fails.length} spacing/font check(s) FAILED:\n - ${fails.join('\n - ')}`);
+  console.error(`\n${fails.length} spacing/font/colour check(s) FAILED:\n - ${fails.join('\n - ')}`);
   process.exit(1);
 }
-console.log('\nAll spacing and font-size checks passed.');
+console.log('\nAll spacing, font-size and colour checks passed.');

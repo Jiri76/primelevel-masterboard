@@ -265,7 +265,7 @@
     margin: 0 0 30px; /* was 20px -- didn't match the 30px used everywhere else (list items, heading-to-content). Only visibly matters once a section has 2+ paragraphs in a row, e.g. Verdict once more than one ticker survives in a future week. */
   }
   .report-body h3 {
-    color: var(--navy); /* every section heading EXCEPT Verdict, per explicit request -- see h3:last-of-type below */
+    color: var(--navy); /* every section heading, Verdict included (owner, 2026-10-20: gold is branding only) */
     font-size: 25px;
     font-weight: 700;
     /* top AND bottom: per explicit request, both the gap INTO a new
@@ -300,37 +300,17 @@
   .report-body h3 + p:not(:has(strong)) {
     padding-top: 4px;
   }
-  /* Verdict is always the last section by design (see the fixed
-     section order Cowork's prompt follows), so :last-of-type is a
-     reliable way to target just it without a class Cowork's real HTML
-     doesn't have -- same trick as :first-child above for the same
-     reason. Per explicit request: every other heading is navy now,
-     Verdict alone stays gold. */
-  .report-body h3:last-of-type {
-    color: var(--gold);
-  }
-  /* Line color settled, per explicit request: every heading's line
-     matches its own text color now -- navy line under navy text for
-     all 5 non-Verdict headings, gold line under Verdict's already-gold
-     text. Matching text+line reads as one quiet, consistent separator
-     per heading, rather than the earlier mixed navy/gold split which
-     put a differently-colored line under text that had no other gold
-     association. border-bottom (not text-decoration) so the line runs
-     the FULL width of the block, not just under the text. padding-
-     bottom adds real breathing room between the text and the line
-     itself. This padding DOES add to the existing 30px heading-to-
-     next-item gap below, on top of it, not instead of it. Targets
-     headings by their fixed position in the known, locked section
-     order (New Discoveries, Institutional Buying, Fundamentals, Watch
-     Line, Repeat Alerts, Verdict) -- same reasoning as h3:last-of-type
-     above, since Cowork's real HTML has no distinguishing class per
-     section. */
-  .report-body h3:not(:last-of-type) {
+  /* Every heading, Verdict included, and the 2px line under it: company
+     navy (owner, 2026-10-20: gold is branding only, and gold on the white
+     paper reads 2.6:1, below even big text's 3:1; until then Verdict alone
+     was gold, by his September request). Matching text + line reads as
+     one quiet separator per heading. border-bottom (not text-decoration)
+     so the line runs the FULL width of the block, not just under the
+     text. padding-bottom adds real breathing room between the text and
+     the line itself; it DOES add to the 30px heading-to-next-item gap
+     below, on top of it, not instead of it. */
+  .report-body h3 {
     border-bottom: 2px solid var(--navy);
-    padding-bottom: 4px;
-  }
-  .report-body h3:last-of-type {
-    border-bottom: 2px solid var(--gold);
     padding-bottom: 4px;
   }
   /* Verdict's own per-ticker line -- per explicit request, the ticker
@@ -338,14 +318,16 @@
      report (e.g. under Fundamentals), even though Verdict's entries
      are plain <p> paragraphs, not <li> items, so the existing
      `li > strong:first-child` rule doesn't reach them. The star
-     rating sits in its own span so it can be colored gold and sized
-     up independently, rather than inheriting the ticker's own size. */
+     rating sits in its own span so it can be sized up independently,
+     rather than inheriting the ticker's own size. Company navy like the
+     words (owner, 2026-10-20; was gold): a hollow star is clearly told
+     apart from a full one. */
   .verdict-ticker {
     font-size: 20px;
     letter-spacing: 0.02em;
   }
   .verdict-stars {
-    color: var(--gold);
+    color: var(--navy);
     font-size: 20px; /* identical to .verdict-ticker, per explicit follow-up -- was 24px, then 25px, now matched exactly */
   }
   .report-body ul {
@@ -403,7 +385,9 @@
      entry (first seen on 5 Oct 2026: "No candidates to assess this
      week." sat 42px above the first check line instead of 100). Any
      Verdict paragraph that is not a check line, followed by the first
-     check line; :last-of-type = the Verdict heading, as above. */
+     check line. h3:last-of-type = the Verdict heading: Verdict is always
+     the last section by design (the fixed section order Cowork's prompt
+     follows), and Cowork's real HTML has no class to target it by. */
   .report-body h3:last-of-type ~ p:not(:has(> em)) + p:has(> em) {
     margin-top: 88px; /* last Verdict text -> first check line = 100px by eye */
   }
