@@ -40,7 +40,11 @@
        the Medium card's stripe and "Worry: Watch". Company-white text on it
        reads 4.8:1; the stripe against the grey card 4.2:1 (gold: 2.2). */
     --orange-on-light: #BC4C00;
-    --green: #4CAF7D;
+    /* THE green on light backgrounds (owner, 2026-10-20: "the traffic
+       system… one red, one orange, one green"): the Low badge, the Low card's
+       stripe and "Worry: No". Company-white text on it reads 4.8:1; the
+       stripe against the grey card 4.1:1 (the old pale grey: 1.1). */
+    --green-on-light: #188038;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -218,11 +222,11 @@
   /* ONE white (owner, 2026-10-20): every white in a badge is company white. */
   .badge.high { background: var(--red-on-light); color: var(--white); }
   .badge.medium { background: var(--orange-on-light); color: var(--white); }
-  .badge.low { background: #dfe3ea; color: var(--navy); }
+  .badge.low { background: var(--green-on-light); color: var(--white); }
   .badge.spam { background: #c9ced8; color: #4b5565; }
   .badge.worry-yes { background: var(--white); color: var(--red-on-light); border-color: var(--red-on-light); }
   .badge.worry-watch { background: var(--white); color: var(--orange-on-light); border-color: var(--orange-on-light); }
-  .badge.worry-no { background: var(--white); color: #23694a; border-color: var(--green); }
+  .badge.worry-no { background: var(--white); color: var(--green-on-light); border-color: var(--green-on-light); }
   /* The Who and Draft badges use ONLY company navy and company white (owner,
      2026-10-20): Who = navy fill, white words; Draft = white fill, navy words
      and outline. */
@@ -281,7 +285,7 @@
   .report-body li.entry:last-child { margin-bottom: 0; }
   .report-body li.entry.high { border-left-color: var(--red-on-light); }
   .report-body li.entry.medium { border-left-color: var(--orange-on-light); }
-  .report-body li.entry.low { border-left-color: #dfe3ea; }
+  .report-body li.entry.low { border-left-color: var(--green-on-light); }
   .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
   .report-body li.entry p { margin: 0 0 18px; }
   .report-body li.entry p.head { margin-bottom: 21px; } /* the badges' own 4px below + 21 = 30 by eye to the from line */
