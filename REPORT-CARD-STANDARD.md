@@ -90,8 +90,10 @@ month, no time). The same on both pages.
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.
-- **"Read the draft reply" and "Open the email":** company navy `#1E2633`, bold: the words,
-  the ▶ and the link's underline (owner, 2026-10-20, chose navy over gold: gold is
+- **"Read the draft reply" and "Open the email":** two jobs, two signs (owner, 2026-10-20,
+  kept as they are): the ▶ means "unfolds right here" (▼ when open), the underline means
+  "takes you to Gmail"; never a ▶ on the email link. Company navy `#1E2633`, 15px bold: the
+  words, the ▶ (the same 15px as its words) and the link's underline (owner, 2026-10-20, chose navy over gold: gold is
   branding only, and on the grey card it reads 2.2:1 against navy's 12.6:1). They pop
   like Sign out and the back arrow: 1.05 under a mouse AND on the Tab key, with no ring
   of any colour (owner, 2026-10-20: "no rings at all"), 0.97 on a press, 0.15s, anchored
