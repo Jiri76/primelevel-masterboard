@@ -13,8 +13,9 @@
 //   * the back arrow (2026-10-03): Sign out's mirror, top-LEFT, 40 / 40 (phones
 //     20 / 20), on Sign out's line (top of its letters -> baseline), as long as
 //     "Sign out", gold, 3.2px lines, the same pop, leading to the Masterboard.
-//   * the Tab key (2026-10-20): Sign out, the back arrow and the date buttons
-//     pop exactly as under the mouse, with no ring of any colour.
+//   * the Tab key (2026-10-20): Sign out, the back arrow, the date buttons,
+//     the home page's tiles and the sign-in button look exactly as under the
+//     mouse, with no ring of any colour.
 //   * the top strip (2026-10-06): a fixed strip of the page's navy behind Sign
 //     out and the arrow, as much navy below the Sign out letters as above
 //     them (40 / 40, phones 20 / 20), under Sign out.
@@ -75,7 +76,8 @@ const DRIFT = 'h1{font-size:58px!important;text-align:left!important}'
   + '.signout{text-decoration:underline!important;right:60px!important;top:60px!important}.signout:hover{transform:none!important}'
   + '.back{left:60px!important;top:60px!important;color:#ff0000!important}.back:hover{transform:none!important}.back svg{width:70px!important}'
   + '.signout:focus-visible,.back:focus-visible{transform:none!important;outline:2px solid #B29B68!important}'
-  + '.report-tile:focus-visible{transform:none!important;outline:2px solid #B29B68!important}'
+  + '.report-tile:focus-visible,.tile:focus-visible{transform:none!important;outline:2px solid #B29B68!important}'
+  + '.signin button:focus-visible{background:#ffffff!important;transform:none!important;outline:2px solid #1E2633!important}'
   + '.pl-strip{height:70px!important;background:#ff0000!important}'
   + '.add-wrapper{margin-bottom:60px!important}.add-wrapper .add-trigger{background:transparent!important}'
   + '.container::after{content:"";display:block;width:3000px;height:1px}';
@@ -209,6 +211,29 @@ function checkBox(check, where, b, side, vertical) {
 }
 
 // CHROME_PATH lets it run on a computer that has Chrome but no Playwright browser.
+// The Tab key gives each item its own mouse look, no ring of any colour
+// (owner, 2026-10-20: "no rings… consistent with the Inbox Report… do it
+// everywhere"). Presses Tab until the item has keyboard focus; the mouse is
+// parked in the bottom-left corner first, so a hover can't pass for the pop.
+// Returns "transform, ring" (+ ", fill …, words …" when colours is true).
+async function tabLook(pg, sel, colours) {
+  if (!(await pg.evaluate((s) => !!document.querySelector(s), sel))) return null;
+  const h = await pg.evaluate(() => innerHeight);
+  await pg.mouse.move(3, h - 3);
+  let reached = false;
+  for (let i = 0; i < 40 && !reached; i++) {
+    await pg.keyboard.press('Tab');
+    reached = await pg.evaluate((s) => document.activeElement === document.querySelector(s) && document.activeElement.matches(':focus-visible'), sel);
+  }
+  await pg.waitForTimeout(400);
+  if (!reached) return 'not reached by the Tab key';
+  return pg.evaluate(({ s, colours }) => {
+    const el = document.querySelector(s), c = getComputedStyle(el), svg = el.querySelector('svg');
+    const ring = [el, svg].filter(Boolean).map((e) => getComputedStyle(e)).find((x) => x.outlineStyle !== 'none' && parseFloat(x.outlineWidth) > 0);
+    return `${c.transform}, ${ring ? 'ring ' + ring.outlineWidth + ' ' + ring.outlineColor : 'no ring'}${colours ? `, fill ${c.backgroundColor}, words ${c.color}` : ''}`;
+  }, { s: sel, colours: !!colours });
+}
+
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 let totalFails = 0;
 let pagesThatFailed = 0;
@@ -226,29 +251,13 @@ for (const p of PAGES) {
   const signOutHover = p.corner && r.corner ? await desk.hover('#signOutButton').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('signOutButton')).transform)) : null;
   // The back arrow pops exactly like Sign out (owner, 2026-10-03: "everything identical").
   const backHover = p.corner && r.back ? await desk.hover('#backLink').then(() => desk.waitForTimeout(300)).then(() => desk.evaluate(() => getComputedStyle(document.getElementById('backLink')).transform)) : null;
-  // The Tab key gives the same pop, no ring of any colour (owner, 2026-10-20:
-  // "remove that gold ring… consistent with the Inbox Report"): Sign out, the
-  // back arrow and the date buttons. The mouse is parked in the bottom-left
-  // corner first, so a hover can't pass for the pop.
-  const tabTo = async (sel) => {
-    if (!(await desk.evaluate((s) => !!document.querySelector(s), sel))) return null;
-    await desk.mouse.move(3, 1077);
-    let reached = false;
-    for (let i = 0; i < 40 && !reached; i++) {
-      await desk.keyboard.press('Tab');
-      reached = await desk.evaluate((s) => document.activeElement === document.querySelector(s) && document.activeElement.matches(':focus-visible'), sel);
-    }
-    await desk.waitForTimeout(400);
-    if (!reached) return 'not reached by the Tab key';
-    return desk.evaluate((s) => {
-      const el = document.querySelector(s), c = getComputedStyle(el), svg = el.querySelector('svg');
-      const ring = [el, svg].filter(Boolean).map((e) => getComputedStyle(e)).find((x) => x.outlineStyle !== 'none' && parseFloat(x.outlineWidth) > 0);
-      return `${c.transform}, ${ring ? 'ring ' + ring.outlineWidth + ' ' + ring.outlineColor : 'no ring'}`;
-    }, sel);
-  };
+  const tabTo = (sel, colours) => tabLook(desk, sel, colours);
   const signOutTab = p.corner && r.corner ? await tabTo('#signOutButton') : null;
   const backTab = p.corner && r.back ? await tabTo('#backLink') : null;
   const tileTab = await tabTo('.report-tile');
+  // The sign-in box's button on the Tab key: its mouse look (navy fill, white
+  // words, 1.02), no ring (owner, 2026-10-20; it was a 2px navy ring).
+  const signInTab = boxDesk ? await tabTo('#signInForm button', true) : null;
   await desk.close();
   console.log(`\n${p.name}  —  "${r.text}"`);
   for (const [k, v] of Object.entries(r.gaps)) check('spacing', Math.abs(v - 100) <= TOL, `${k}: ${v.toFixed(1)}px (expected 100)`);
@@ -305,6 +314,7 @@ for (const p of PAGES) {
   if (signOutTab !== null) check('Sign out style', signOutTab === 'matrix(1.05, 0, 0, 1.05, 0, 0), no ring', `Sign out on the Tab key: ${signOutTab} (expected the 1.05 pop, no ring)`);
   if (backTab !== null) check('Back arrow style', backTab === 'matrix(1.05, 0, 0, 1.05, 0, 0), no ring', `back arrow on the Tab key: ${backTab} (expected the 1.05 pop, no ring)`);
   if (tileTab !== null) check('Date tile style', tileTab === 'matrix(1.025, 0, 0, 1.025, 0, 0), no ring', `date button on the Tab key: ${tileTab} (expected its mouse look: the 1.025 pop, no ring)`);
+  if (signInTab !== null) check('box colours', signInTab === 'matrix(1.02, 0, 0, 1.02, 0, 0), no ring, fill rgb(30, 38, 51), words rgb(249, 249, 250)', `box: the button on the Tab key: ${signInTab} (expected its mouse look: navy fill, white words, 1.02, no ring)`);
   if (p.corner) {
     const corners = [['computer', r, 40], ['phone', rPhone, 20], ['small phone', rSmall, 20]];
     for (const [where, rr, want40] of corners) {
@@ -340,6 +350,19 @@ for (const p of PAGES) {
     for (const kind of mustCatch) if (!failed.has(kind)) missedInSelftest.push(`${p.name}: ${kind}`);
   }
 }
+// The Masterboard home, signed in: its tiles on the Tab key (owner,
+// 2026-10-20): their mouse look (white edge, 1.025), no ring.
+{
+  const home = await openPage(browser, { path: '/', standIn: ownerFake({}), ready: '.tile' }, { width: 1920, height: 1080 });
+  const look = await tabLook(home, '.tile');
+  await home.close();
+  const ok = look === 'matrix(1.025, 0, 0, 1.025, 0, 0), no ring';
+  console.log(`\nMasterboard home (signed in)\n  ${ok ? 'PASS' : 'FAIL'}  a tile on the Tab key: ${look} (expected its mouse look: the 1.025 pop, no ring)`);
+  totalFails += ok ? 0 : 1;
+  if (!ok && !SELFTEST) pagesThatFailed += 1;
+  if (SELFTEST && ok) missedInSelftest.push('Masterboard home: a tile on the Tab key');
+}
+
 // ---- The "+" circle (owner, 2026-10-06: "one hundred from the top to the
 // circle, from the circle to the bottom one hundred, all the way") ----
 // Investments and Renewals: 100 by eye above the "+" circle and 100 below it

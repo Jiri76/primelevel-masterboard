@@ -17,7 +17,7 @@ Reference implementation (CSS + HTML): `docs/signin-box-reference.html`.
 | Email field and both buttons | Company white `#F9F9FA`, 1px navy border |
 | All text in the card | Company navy `#1E2633` |
 | Page title above the card | Company gold `#B29B68` (the page title standard: 50px bold; Masterboard home 60px) |
-| Focus (owner, 2026-10-02: navy, not gold) | Email field: its navy border thickens 1px → 2px while typing. Buttons reached with the keyboard: 2px navy ring, 2px offset. (Gold on the light card is only ~2.3:1 contrast, below the 3:1 a focus marker needs; navy is ~13:1.) |
+| Focus (owner, 2026-10-02: navy, not gold) | Email field: its navy border thickens 1px → 2px while typing. Buttons reached with the Tab key: their mouse look (navy fill, white words, 1.02), no ring (owner, 2026-10-20: "no rings… everywhere"; it was a 2px navy ring). (Gold on the light card is only ~2.3:1 contrast, below the 3:1 a focus marker needs; navy is ~13:1.) |
 
 No black anywhere (the body colour is set to navy). No gold on the buttons: the two sign-in
 routes are equal choices, and gold is reserved for buying.

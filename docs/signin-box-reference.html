@@ -97,14 +97,18 @@
      only ~2.3:1 contrast (below the 3:1 a focus marker needs); navy is ~13:1
      and matches the box. Typing in the field: its navy border thickens
      1px -> 2px (a 1px shadow outside the 1px border, so nothing moves).
-     Buttons, reached with the keyboard: a 2px navy ring. */
+     Buttons, reached with the Tab key: their mouse look (navy fill, white
+     words, 1.02), no ring (owner, 2026-10-20: "no rings… do it everywhere";
+     it was a 2px navy ring). A press still dips (:active comes later). */
   .signin input:focus-visible {
     outline: none;
     box-shadow: 0 0 0 1px var(--navy);
   }
   .signin button:focus-visible {
-    outline: 2px solid var(--navy);
-    outline-offset: 2px;
+    outline: none;
+    background: var(--navy);
+    color: var(--white);
+    transform: scale(1.02);
   }
   .signin button {
     width: 100%;
