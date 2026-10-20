@@ -100,7 +100,9 @@ month, no time). The same on both pages.
   (owner, 2026-10-17; the agent writes it from prompt v8, 18 Oct 2026). It is an ordinary
   heading, so the gaps above apply unchanged: 100 above it, 15 to its line, 100 below
   (70 / 15 / 70 on phones). No table, no "Email list" heading. 15px text; the Draft column
-  on one line on wider screens; stacked rows on phones (their column titles hidden, so
+  on one line on wider screens; a thin 1px company-navy line under every row, half the
+  2px navy line under the column titles (owner, 2026-10-20: no grey lines); stacked rows
+  on phones (their column titles hidden, so
   the heading is what names the list there). On phones the two badges carry their
   column's title, as the Draft line does ("Draft: Ready"): **"Urgency: High"** and
   **"Worry: Yes"** (owner, 2026-10-18: "if something appears on the computer, it should

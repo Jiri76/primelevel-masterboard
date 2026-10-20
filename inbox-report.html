@@ -265,7 +265,7 @@
   .report-body table.scan td {
     padding: 10px;
     vertical-align: top;
-    border-bottom: 1px solid #dfe3ea;
+    border-bottom: 1px solid var(--navy); /* row line: thin company navy, half the titles' 2px (owner, 2026-10-20: no grey) */
   }
   /* "No reply needed" stays on one line in the Draft column (at 15px it
      wrapped); the long "From — what it is" column wraps instead. Phones
@@ -398,7 +398,7 @@
     .report-body table.scan tr {
       display: block;
       padding: 10px 0;
-      border-bottom: 1px solid #dfe3ea;
+      border-bottom: 1px solid var(--navy); /* the same thin navy row line */
     }
     .report-body table.scan tr:first-child { padding-top: 5px; } /* the paragraph above -> the first row's badges = 30 by eye */
     .report-body table.scan td {

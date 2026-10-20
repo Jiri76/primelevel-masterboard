@@ -188,6 +188,9 @@ const measure = () => {
     // the "Probably spam" badge and its card's stripe; the card at full strength.
     ...(body.querySelector('.badge.spam') ? { 'Spam badge': hex(cs(body.querySelector('.badge.spam')).backgroundColor), 'Spam badge text': hex(cs(body.querySelector('.badge.spam')).color) } : {}),
     ...(body.querySelector('li.entry.spam') ? { 'Spam card stripe': hex(cs(body.querySelector('li.entry.spam')).borderLeftColor), 'Spam card strength': [...body.querySelectorAll('li.entry.spam')].every((li) => cs(li).opacity === '1') ? 'solid' : 'faded' } : {}),
+    // The Email list's row lines: thin company navy, no grey (owner,
+    // 2026-10-20). Computers draw them under each cell, phones under each row.
+    ...(body.querySelector('table.scan tbody tr') ? { 'Email list row lines': [...new Set([...body.querySelectorAll('table.scan tbody tr')].map((tr) => { const s = parseFloat(cs(tr).borderBottomWidth) > 0 ? cs(tr) : cs(tr.querySelector('td')); return `${parseFloat(s.borderBottomWidth)}px ${hex(s.borderBottomColor)}`; }))].join(' / ') } : {}),
     // The Who and Draft badges: ONLY company navy and company white (owner,
     // 2026-10-20). Who = navy fill + white words; Draft = white fill + navy
     // words and outline. Every such badge on the page, one value each.
@@ -277,7 +280,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid', 'Email list row lines': '1px #1E2633' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
