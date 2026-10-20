@@ -78,12 +78,13 @@ month, no time). The same on both pages.
   outline). ONE green, `#188038` (owner, 2026-10-20, "the traffic system"): the Low badge
   (company-white text), the Low card's stripe and "Worry: No" (text and outline). So the
   report's colours are TRAFFIC LIGHTS: red = High and "Worry: Yes", orange = Medium and
-  "Worry: Watch", green = Low and "Worry: No"; "Probably spam" is the only grey. Gold is
+  "Worry: Watch", green = Low and "Worry: No"; and ONE solid grey, `#616161`, for "Probably
+  spam" (badge with company-white text, and its card's stripe; the card is never faded,
+  owner 2026-10-20: "one solid colour, no fading"), the switched-off light. Gold is
   branding only (titles, the band's title and date), never a badge or stripe. The Who
   badge (Client, Supplier, Personal, Unknown) and the Draft badge ("Draft ready", "No
   reply needed") use ONLY company navy `#1E2633` and company white (owner, 2026-10-20):
-  Who = navy fill, white words; Draft = white fill, navy words and outline. The spam
-  badge keeps its greys. An email card's urgency badge says what it is, like the
+  Who = navy fill, white words; Draft = white fill, navy words and outline. An email card's urgency badge says what it is, like the
   "Worry: Yes" beside it: **"Urgency: High"** on every screen (owner, 2026-10-19: "let's
   be consistent"); the page adds the word, the agent writes only "High". "Probably spam"
   names itself.

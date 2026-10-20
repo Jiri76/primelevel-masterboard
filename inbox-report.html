@@ -45,6 +45,11 @@
        stripe and "Worry: No". Company-white text on it reads 4.8:1; the
        stripe against the grey card 4.1:1 (the old pale grey: 1.1). */
     --green-on-light: #188038;
+    /* THE grey on light backgrounds (owner, 2026-10-20: "one solid colour…
+       solid grey, no fading"): the "Probably spam" badge and its card's
+       stripe, the switched-off traffic light. Company-white text on it reads
+       5.9:1; the stripe against the grey card 5.1:1 (the faded pale grey: 1.25). */
+    --grey-on-light: #616161;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -223,7 +228,7 @@
   .badge.high { background: var(--red-on-light); color: var(--white); }
   .badge.medium { background: var(--orange-on-light); color: var(--white); }
   .badge.low { background: var(--green-on-light); color: var(--white); }
-  .badge.spam { background: #c9ced8; color: #4b5565; }
+  .badge.spam { background: var(--grey-on-light); color: var(--white); }
   .badge.worry-yes { background: var(--white); color: var(--red-on-light); border-color: var(--red-on-light); }
   .badge.worry-watch { background: var(--white); color: var(--orange-on-light); border-color: var(--orange-on-light); }
   .badge.worry-no { background: var(--white); color: var(--green-on-light); border-color: var(--green-on-light); }
@@ -278,7 +283,7 @@
     margin: 0 0 30px;
     padding: 29px 18px 22px;
     border: 1px solid #dfe3ea;
-    border-left: 6px solid #c9ced8;
+    border-left: 6px solid var(--grey-on-light); /* a card without an urgency: the solid grey */
     border-radius: 10px;
     background: #E9E9EB;
   }
@@ -286,7 +291,7 @@
   .report-body li.entry.high { border-left-color: var(--red-on-light); }
   .report-body li.entry.medium { border-left-color: var(--orange-on-light); }
   .report-body li.entry.low { border-left-color: var(--green-on-light); }
-  .report-body li.entry.spam { border-left-color: #c9ced8; opacity: 0.85; }
+  .report-body li.entry.spam { border-left-color: var(--grey-on-light); } /* solid, never faded (owner, 2026-10-20) */
   .report-body li.entry p { margin: 0 0 18px; }
   .report-body li.entry p.head { margin-bottom: 21px; } /* the badges' own 4px below + 21 = 30 by eye to the from line */
   .report-body li.entry p.from { font-size: 15px; color: #4b5565; }

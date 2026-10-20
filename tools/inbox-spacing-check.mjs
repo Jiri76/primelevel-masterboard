@@ -19,7 +19,8 @@
 //         light backgrounds #C62828 (High badge, High stripe, "Worry: Yes",
 //         red warnings), ONE orange #BC4C00 (Medium badge, Medium stripe,
 //         "Worry: Watch"; no gold in badges), ONE green #188038 (Low badge,
-//         Low stripe, "Worry: No") and ONE white #F9F9FA in every
+//         Low stripe, "Worry: No"), ONE solid grey #616161 ("Probably spam"
+//         badge + stripe, card never faded) and ONE white #F9F9FA in every
 //         badge; Who badges navy #1E2633 with white words, Draft badges
 //         white with navy words and outline; no line of text
 //         outside the column; the summary table's badges read "High" / "Yes"
@@ -183,6 +184,10 @@ const measure = () => {
     ...(body.querySelector('.badge.low') ? { 'Low badge': hex(cs(body.querySelector('.badge.low')).backgroundColor), 'Low badge text': hex(cs(body.querySelector('.badge.low')).color) } : {}),
     ...(body.querySelector('li.entry.low') ? { 'Low card stripe': hex(cs(body.querySelector('li.entry.low')).borderLeftColor) } : {}),
     ...(body.querySelector('.badge.worry-no') ? { 'Worry: No badge': [...new Set([...body.querySelectorAll('.badge.worry-no')].flatMap((bd) => [hex(cs(bd).color), hex(cs(bd).borderTopColor)]))].join(' / ') } : {}),
+    // ONE solid grey, #616161 (owner, 2026-10-20: "solid grey, no fading"):
+    // the "Probably spam" badge and its card's stripe; the card at full strength.
+    ...(body.querySelector('.badge.spam') ? { 'Spam badge': hex(cs(body.querySelector('.badge.spam')).backgroundColor), 'Spam badge text': hex(cs(body.querySelector('.badge.spam')).color) } : {}),
+    ...(body.querySelector('li.entry.spam') ? { 'Spam card stripe': hex(cs(body.querySelector('li.entry.spam')).borderLeftColor), 'Spam card strength': [...body.querySelectorAll('li.entry.spam')].every((li) => cs(li).opacity === '1') ? 'solid' : 'faded' } : {}),
     // The Who and Draft badges: ONLY company navy and company white (owner,
     // 2026-10-20). Who = navy fill + white words; Draft = white fill + navy
     // words and outline. Every such badge on the page, one value each.
@@ -272,7 +277,7 @@ const same = (label, got, want) => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}: ${got} (expected ${want})`);
   if (!ok) fails.push(`${label}: ${got}, expected ${want}`);
 };
-const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038' };
+const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '#1E2633', 'email card': '#E9E9EB', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid' };
 
 for (const phone of [false, true]) {
   const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
