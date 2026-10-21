@@ -377,6 +377,21 @@ for (const phone of [false, true]) {
   } else {
     same(`${P}no mouse on a phone, so no pop`, String(await page.evaluate(() => matchMedia('(hover: hover)').matches)), 'false');
   }
+  // "Open the email" (owner, 2026-10-21): a phone's browser gets Gmail's phone
+  // version, which only opens the email from its own conversation link; on a
+  // phone every Gmail link must be that link (same account, same thread), on a
+  // computer exactly the agent's link (which lands on the exact email there).
+  const sampleLinks = [...SAMPLE.html_content.matchAll(/href="(https:\/\/mail\.google\.com\/[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+  if (sampleLinks.length) {
+    const shownLinks = await page.evaluate(() => [...document.querySelectorAll('.report-body a[href^="https://mail.google.com/"]')].map((a) => a.getAttribute('href')));
+    const wantLinks = sampleLinks.map((orig) => {
+      const thread = (/\/([0-9a-f]{16})$/.exec(orig) || [])[1];
+      const account = (/[?&](authuser=[^&#]+)/.exec(orig) || [])[1] || 'authuser=info%40primelevel.co.uk';
+      return phone && thread ? `https://mail.google.com/mail/mu/mp/?${account}#cv/Inbox/${thread}` : orig;
+    });
+    const wrongLinks = wantLinks.filter((want, i) => shownLinks[i] !== want).length + Math.max(0, shownLinks.length - wantLinks.length);
+    same(`${P}"Open the email" links ${phone ? "are the phone Gmail's own link to that email" : "are exactly the agent's link"}`, wrongLinks ? `${wrongLinks} of ${wantLinks.length} wrong (e.g. ${shownLinks[0]})` : 'yes', 'yes');
+  }
   await page.context().close();
 }
 await browser.close();

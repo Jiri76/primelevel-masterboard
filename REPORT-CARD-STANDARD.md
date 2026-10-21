@@ -101,6 +101,14 @@ month, no time). The same on both pages.
   the ▶): each line's box is exactly its words, so the mouse beside them, or a click
   there, does nothing (owner, 2026-10-20: "Read the draft reply" first popped with the
   mouse 5-6 cm away, its box ran the whole row). Phones have no mouse, so no pop there. A link never splits across two lines (it moves whole to the next).
+  **"Open the email" on a phone** (owner, 2026-10-21): a phone's browser gets Gmail's
+  phone version, which ignores the agent's "#search/…/thread" link and shows the inbox
+  list; so on phones (told apart the way Gmail does, by the browser's own description;
+  iPads get the computer Gmail) the page rewrites every Gmail link to
+  `https://mail.google.com/mail/mu/mp/?authuser=…#cv/Inbox/<thread>` (same account,
+  same thread): tested on his iPhone, it opens the email; a deleted email shows the
+  inbox list, never a different email. Computers keep the agent's link unchanged. The
+  agent's prompt is unchanged: the page does it, for old and new reports alike.
 - **"At a glance"** (prompt v9, 2026-10-19): one paragraph of short labelled lines, one
   fact per line, no badges ("New emails: 5", "Urgency: 3 High · 1 Medium · 1 Low", …):
   24 between lines, 100 above and below (70 on phones), like any paragraph.
