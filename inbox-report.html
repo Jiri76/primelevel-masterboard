@@ -542,10 +542,44 @@
         body.append(el('p', '', report.error_text || 'No error details were recorded.'));
       } else {
         body.innerHTML = cleanReportHtml(report.html_content);
+        if (LINKTEST) addLinkTests(body);
       }
       card.append(band, body);
       contentEl.replaceChildren(card);
       alignTiles();
+    }
+
+    // TEMPORARY TEST (owner, 2026-10-21: on his iPhone "Open the email" opens
+    // Gmail's inbox list instead of the email; on the computer it lands on the
+    // email). Only with "?linktest" in the address: under each "Open the
+    // email", numbered alternative links to the SAME email, so he can tap them
+    // on the phone and say which one opens it. Remove once a winner is chosen.
+    const LINKTEST = new URLSearchParams(location.search).has('linktest');
+    function addLinkTests(body) {
+      body.querySelectorAll('a[href^="https://mail.google.com/"]').forEach((link) => {
+        const parts = /#search\/(.+)\/([0-9a-f]+)$/.exec(link.getAttribute('href'));
+        if (!parts) return;
+        const query = parts[1], thread = parts[2], account = 'authuser=info%40primelevel.co.uk';
+        const options = [
+          ["1 · today's link", link.getAttribute('href'), true],
+          ['2 · phone Gmail: the email', `https://mail.google.com/mail/mu/mp/?${account}#cv/Inbox/${thread}`, true],
+          ['3 · phone Gmail: search for it', `https://mail.google.com/mail/mu/mp/?${account}#tl/search/${query}`, true],
+          ['4 · computer Gmail on the phone', `https://mail.google.com/mail/u/0/?${account}&nomobile=1#search/${query}/${thread}`, true],
+          ['5 · inbox + the email', `https://mail.google.com/mail/u/0/?${account}#inbox/${thread}`, true],
+          ['6 · the Gmail app', `googlegmail:///cv=${thread}/accountId=1/create-new-tab`, false],
+        ];
+        const box = el('p');
+        box.style.cssText = 'margin:12px 0 0;padding:10px 14px;background:#fff3cd;border-radius:8px;line-height:2.2';
+        box.append(el('strong', '', 'TEST: tap each, come back, tell Claude which opened the email'));
+        options.forEach(([label, href, newTab]) => {
+          const option = el('a', '', label);
+          option.href = href;
+          option.style.display = 'block';
+          if (newTab) { option.target = '_blank'; option.rel = 'noopener noreferrer'; }
+          box.append(option);
+        });
+        link.closest('p').after(box);
+      });
     }
 
     // The tiles are position:fixed on wide screens, so put them on the same
