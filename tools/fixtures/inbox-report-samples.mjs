@@ -59,10 +59,15 @@ const spam = '<h3>Probably spam</h3><ul>'
 
 const notebook = '<h3>Notebook</h3><ul><li>(self) For emails from accounts@new-supplier.example: leave invoices in the inbox until the owner adds the supplier to the known list.</li><li>(self) WAITING FOR APPROVAL: for marketing newsletters from news@offers.example, mark them probably spam without reading past the first paragraph. — Waiting for your approval</li></ul>';
 
+// The full day also carries the morning's list of deleted emails (owner,
+// 2026-10-23): card 2's email was found in the Bin at 07:14 UTC on 24 Oct, so
+// the page must show "This email has been deleted (checked 24 Oct 2026, 08:14)"
+// (UK summer time) instead of its link.
 export const fullReport = {
   id: 9101, created_at: '2026-10-14T07:10:00Z', run_date: '2026-10-14', status: 'success',
   title: 'Inbox Report — 14 Oct 2026', error_text: null,
   html_content: summary + table + emails + spam + notebook,
+  deleted_emails: [{ thread_id: '1a00000000000002', state: 'bin', checked_at: '2026-10-24T07:14:00Z' }],
 };
 // The shape of the 17 Oct 2026 report: no new emails, one overdue email brought
 // back, so the table holds only one short "High" badge (that report's table

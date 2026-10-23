@@ -33,7 +33,9 @@
 // this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
 // SAMPLE=overdue (no new emails, one overdue card, only short badges in the
 // table, the shape that broke "Urgency" on 17 Oct 2026). Also: no word is
-// split in the middle.
+// split in the middle; and (full day) a card whose email the morning check
+// found deleted shows "This email has been deleted (checked …)" instead of its
+// link (owner, 2026-10-23).
 // It is measured twice, with the draft reply folded and opened.
 // Nothing is read from or written to the real database. Exits 1 on any drift.
 import { chromium, devices } from 'playwright';
@@ -381,7 +383,11 @@ for (const phone of [false, true]) {
   // version, which only opens the email from its own conversation link; on a
   // phone every Gmail link must be that link (same account, same thread), on a
   // computer exactly the agent's link (which lands on the exact email there).
-  const sampleLinks = [...SAMPLE.html_content.matchAll(/href="(https:\/\/mail\.google\.com\/[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+  // A deleted email's link is no longer a link (checked below), so it is left
+  // out of this comparison.
+  const deletedThreads = new Set((SAMPLE.deleted_emails || []).map((d) => d.thread_id));
+  const sampleLinks = [...SAMPLE.html_content.matchAll(/href="(https:\/\/mail\.google\.com\/[^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'))
+    .filter((link) => !deletedThreads.has((/\/([0-9a-f]{16})$/.exec(link) || [])[1]));
   if (sampleLinks.length) {
     const shownLinks = await page.evaluate(() => [...document.querySelectorAll('.report-body a[href^="https://mail.google.com/"]')].map((a) => a.getAttribute('href')));
     const wantLinks = sampleLinks.map((orig) => {
@@ -391,6 +397,30 @@ for (const phone of [false, true]) {
     });
     const wrongLinks = wantLinks.filter((want, i) => shownLinks[i] !== want).length + Math.max(0, shownLinks.length - wantLinks.length);
     same(`${P}"Open the email" links ${phone ? "are the phone Gmail's own link to that email" : "are exactly the agent's link"}`, wrongLinks ? `${wrongLinks} of ${wantLinks.length} wrong (e.g. ${shownLinks[0]})` : 'yes', 'yes');
+  }
+  // "This email has been deleted" (owner, 2026-10-23): on the card of every
+  // email the morning check found deleted, the link is replaced by a plain line
+  // with the check's date and time in UK time (24 Oct 07:14 UTC = 08:14 BST),
+  // in the card's normal text (navy, regular, no underline, not clickable);
+  // every other card keeps its link. Phones and computers alike.
+  if (deletedThreads.size) {
+    const cardThreads = SAMPLE.html_content.split('<li class="entry').slice(1).map((li) => (/\/([0-9a-f]{16})">Open the email<\/a>/.exec(li) || [])[1]);
+    const shownCards = await page.evaluate(() => [...document.querySelectorAll('.report-body li.entry')].map((li) => {
+      const msg = li.querySelector('span.deleted-email');
+      const c = msg && getComputedStyle(msg);
+      const rgb = c ? c.color.match(/\d+/g).slice(0, 3).map((x) => (+x).toString(16).padStart(2, '0').toUpperCase()).join('') : '';
+      return { links: li.querySelectorAll('a[href^="https://mail.google.com/"]').length, msg: msg ? msg.textContent : '', look: msg ? `weight ${c.fontWeight}, underline ${c.textDecorationLine}, #${rgb}, ${msg.closest('a') ? 'inside a link' : 'not a link'}` : '' };
+    }));
+    cardThreads.forEach((thread, i) => {
+      if (!thread) return;
+      const card = shownCards[i] || { links: 0, msg: '', look: '' };
+      if (deletedThreads.has(thread)) {
+        same(`${P}card ${i + 1} (deleted email): its link is replaced by the line`, card.links === 0 ? card.msg : `still ${card.links} link(s) · "${card.msg}"`, 'This email has been deleted (checked 24 Oct 2026, 08:14)');
+        same(`${P}card ${i + 1} (deleted email): the line looks like the card's normal text`, card.look, 'weight 400, underline none, #1E2633, not a link');
+      } else {
+        same(`${P}card ${i + 1} (not deleted): keeps "Open the email"`, card.links === 1 && !card.msg ? 'yes' : `${card.links} link(s) · "${card.msg}"`, 'yes');
+      }
+    });
   }
   await page.context().close();
 }

@@ -109,6 +109,17 @@ month, no time). The same on both pages.
   same thread): tested on his iPhone, it opens the email; a deleted email shows the
   inbox list, never a different email. Computers keep the agent's link unchanged. The
   agent's prompt is unchanged: the page does it, for old and new reports alike.
+  **A deleted email** (owner, 2026-10-23): each morning the agent saves, in that day's
+  report (`email_reports.deleted_emails`), the emails linked in recent reports that are
+  now deleted (in the Bin or gone), with when it checked. The page reads the newest
+  successful report's list and, on phones and computers alike, replaces the link to
+  each of those emails (on its card, or at the end of its "Still waiting" line) with the
+  plain line **"This email has been deleted (checked 24 Oct 2026, 08:14)"**: the date and
+  time of the check in UK time, three-letter month; the card's normal text (company
+  navy, 15px regular, no underline, not clickable, no pop), matched by the email's exact
+  thread id, before the phone rewrite. An email deleted after the morning check keeps
+  its link until the next check (then: phone = inbox list, computer = "No messages
+  matched"). Guarded: the full-day sample marks card 2 deleted.
 - **"At a glance"** (prompt v9, 2026-10-19): one paragraph of short labelled lines, one
   fact per line, no badges ("New emails: 5", "Urgency: 3 High · 1 Medium · 1 Low", …):
   24 between lines, 100 above and below (70 on phones), like any paragraph.

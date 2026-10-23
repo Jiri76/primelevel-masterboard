@@ -542,11 +542,46 @@
         body.append(el('p', '', report.error_text || 'No error details were recorded.'));
       } else {
         body.innerHTML = cleanReportHtml(report.html_content);
+        markDeletedEmails(body);
         if (ON_PHONE) usePhoneGmailLinks(body);
       }
       card.append(band, body);
       contentEl.replaceChildren(card);
       alignTiles();
+    }
+
+    // Every Gmail link the agent writes ends with the email's thread id
+    // ("#search/…/<16 hex>", or the older "#all/<16 hex>").
+    const GMAIL_THREAD = /#(?:search\/.+|all)\/([0-9a-f]{16})$/;
+
+    // "THIS EMAIL HAS BEEN DELETED" (owner, 2026-10-23): each morning the agent
+    // checks every email linked in the recent reports and saves, in that day's
+    // report, the list of those that are deleted (in the Bin, or gone for
+    // good) with when it checked. The newest successful report that carries a
+    // list is the truth (an empty list = nothing deleted; reports from before
+    // the check began carry none). A link to a deleted email becomes a plain
+    // line saying so, on phones and computers alike, matched by the email's
+    // exact thread id. Done before the phone rewrite below.
+    let deletedEmails = new Map(); // thread id -> when the agent confirmed it deleted
+    function newestDeletedList(reports) {
+      const listed = reports.find((r) => r.status === 'success' && Array.isArray(r.deleted_emails));
+      return new Map((listed ? listed.deleted_emails : [])
+        .filter((d) => d && /^[0-9a-f]{16}$/.test(d.thread_id) && !Number.isNaN(Date.parse(d.checked_at)))
+        .map((d) => [d.thread_id, d.checked_at]));
+    }
+    // "24 Oct 2026, 08:14" in UK time, whatever the device's own time zone
+    const UK_TIME = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    function formatUkDateTime(value) {
+      const part = Object.fromEntries(UK_TIME.formatToParts(new Date(value)).map((p) => [p.type, p.value]));
+      return `${+part.day} ${MONTHS[+part.month - 1]} ${part.year}, ${part.hour}:${part.minute}`;
+    }
+    function markDeletedEmails(body) {
+      if (!deletedEmails.size) return;
+      body.querySelectorAll('a[href^="https://mail.google.com/"]').forEach((link) => {
+        const thread = GMAIL_THREAD.exec(link.getAttribute('href'));
+        if (!thread || !deletedEmails.has(thread[1])) return;
+        link.replaceWith(el('span', 'deleted-email', `This email has been deleted (checked ${formatUkDateTime(deletedEmails.get(thread[1]))})`));
+      });
     }
 
     // "OPEN THE EMAIL" ON A PHONE (owner, 2026-10-21): a phone's browser gets
@@ -562,7 +597,7 @@
     function usePhoneGmailLinks(body) {
       body.querySelectorAll('a[href^="https://mail.google.com/"]').forEach((link) => {
         const href = link.getAttribute('href');
-        const thread = /#(?:search\/.+|all)\/([0-9a-f]{16})$/.exec(href);
+        const thread = GMAIL_THREAD.exec(href);
         if (!thread) return;
         const account = /[?&](authuser=[^&#]+)/.exec(href);
         link.setAttribute('href', `https://mail.google.com/mail/mu/mp/?${account ? account[1] : 'authuser=info%40primelevel.co.uk'}#cv/Inbox/${thread[1]}`);
@@ -693,7 +728,7 @@
       tilesEl.replaceChildren();
       const { data, error } = await supabase
         .from('email_reports')
-        .select('id, created_at, run_date, status, title, html_content, error_text')
+        .select('id, created_at, run_date, status, title, html_content, error_text, deleted_emails')
         .order('created_at', { ascending: false })
         .limit(30);
       if (error) {
@@ -707,6 +742,7 @@
         contentEl.append(el('div', 'empty-state', 'No reports to show yet. The first one appears after the agent’s 08:00 run.'));
       } else {
         shownReports = data;
+        deletedEmails = newestDeletedList(data);
         showClosed(); // nothing opens on arrival, as on Insider Edge
       }
     }
