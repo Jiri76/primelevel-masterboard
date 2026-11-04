@@ -3,7 +3,7 @@
 // Since 2026-10-05 the real reports are OWNER-ONLY (locked in the database),
 // and this project is PUBLIC, so the guards never read or print a real
 // report. These two samples copy the exact HTML shape a real report has
-// (prompt v5, plus the three check lines the database adds when a report is
+// (prompt v7, plus the three check lines the database adds when a report is
 // saved, then the Notebook line), with fictional companies and people:
 //   withPicks  a normal week: entries in every kind of section, two Verdicts
 //   noPicks    a week where nothing passed ("None." lines, plain Verdict),
@@ -36,9 +36,9 @@ export const withPicks = {
 <li><strong>XMPA</strong> — Sample Company A Inc. — Industrials — Market Cap $412.30M.<br>Currently profitable: net income of $6.2M in the most recent quarter, also positive on an adjusted basis. Cash $58.4M against total debt of $21.0M; free cash flow positive, so runway is not a concern.</li>
 <li><strong>XMPB</strong> — Sample Company B Corp. — Healthcare — Market Cap $188.75M.<br>Not currently profitable: net loss of $4.1M in the most recent quarter, and none of the last four quarters were profitable; company guidance targets break-even in 2027. Cash $96.0M, no debt, about 9 quarters of runway at the current burn. Note: $14M rights offering Feb 2026.</li>
 </ul>
-<h3>Watch Line — 0</h3>
+<h3>Watch Line — 1</h3>
 <ul>
-<li>None. No tickers have yet accumulated six consecutive stale weeks.</li>
+<li><strong>XMPC</strong> — Sample Company C Ltd. — Technology — Market Cap $96.40M.<br>No new cluster buying since 14 Sep 2026. CEO Pat Sample and CFO Lee Example bought on the open market on 9 Sep 2026 at $5.10-$5.25/sh, a combined $118,000. Re-checked this week: still passes every test.</li>
 </ul>
 <h3>Repeat Alerts — 0</h3>
 <ul>
@@ -48,8 +48,8 @@ export const withPicks = {
 <p><strong class="verdict-ticker">XMPA</strong> — <span class="verdict-stars">★★★</span><br>
 Three insiders including the CEO and CFO bought in the same week while an institution added to its stake, and the business is profitable with more cash than debt. This is the pattern the report exists to find; the main risk is that the buying is modest next to the company's size.</p>
 <p><strong class="verdict-ticker">XMPB</strong> — <span class="verdict-stars">★★☆</span><br>
-The Chair and the President bought together, and the balance sheet carries no debt with over two years of runway. The company is not yet profitable, so the signal rests on management's confidence in reaching break-even on schedule.</p>${checks(2)}
-<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Screened: 24 companies; 2 passed every test; 1 could not be fully checked. New lessons this run: none. Waiting for your approval: none.</em></p>
+The Chair and the President bought together, and the balance sheet carries no debt with over two years of runway. The company is not yet profitable, so the signal rests on management's confidence in reaching break-even on schedule.</p>${checks(3)}
+<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Prompt v7. Search reached back to 2 Oct 2026; this week's search had to reach 2 Oct 2026. Screened: 24 companies; 3 passed every test; 1 could not be fully checked. Closest calls, these did NOT pass: XMPD, pending lawsuit; XMPE, share-sale programme not covered by its latest report. New lessons this run: none. Waiting for your approval: none.</em></p>
 <!--insider-edge-verified-->
 `,
 };
@@ -60,7 +60,7 @@ export const noPicks = {
   created_at: '2026-10-05T05:21:00Z',
   html_content: `<h3>New Discoveries — 0</h3>
 <ul>
-<li>None. No company passed every test this week.</li>
+<li>None. No new company passed every test this week.</li>
 </ul>
 <h3>Institutional Buying — 0</h3>
 <ul>
@@ -72,15 +72,15 @@ export const noPicks = {
 </ul>
 <h3>Watch Line — 0</h3>
 <ul>
-<li>None. No tickers have yet accumulated six consecutive stale weeks.</li>
+<li>None. No earlier company still passes every test without new buying.</li>
 </ul>
 <h3>Repeat Alerts — 0</h3>
 <ul>
 <li>None. No previously tracked ticker showed new open-market buying this week.</li>
 </ul>
 <h3>Verdict</h3>
-<p>No candidates to assess this week.</p>${checks(0)}
-<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Screened: 24 companies; 0 passed every test; 2 could not be fully checked. New lessons this run: [1] (self) 2026-10-05 run: When a sample filing has to be read in full, fetch https://www.sec.gov/Archives/edgar/data/0000000000/0000000000-26-000000-index.html and open the main document from that list. Method note only. Waiting for your approval: none.</em></p>
+<p>No new candidates to assess this week.</p>${checks(0)}
+<p><em>Notebook: 14 lessons in use, 0 waiting for your approval. Prompt v7. Search reached back to 25 Sep 2026; this week's search had to reach 25 Sep 2026. Screened: 24 companies; 0 passed every test; 2 could not be fully checked. Closest calls, these did NOT pass: none. New lessons this run: [1] (self) 2026-10-05 run: When a sample filing has to be read in full, fetch https://www.sec.gov/Archives/edgar/data/0000000000/0000000000-26-000000-index.html and open the main document from that list. Method note only. Waiting for your approval: none.</em></p>
 <!--insider-edge-verified-->
 `,
 };
