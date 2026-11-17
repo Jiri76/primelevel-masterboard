@@ -1,7 +1,8 @@
 // MADE-UP Inbox Report samples for tools/inbox-spacing-check.mjs. The real
 // reports hold real email content and are owner-only; this project is public,
 // so the guard measures these instead. They copy the EXACT HTML shapes the
-// daily inbox agent writes (prompt v10, Stage D): the "At a glance" summary as
+// daily inbox agent writes (prompt v13, Stage D, and the Monday "Weekly recap"
+// as the agent first wrote it on 16 Nov 2026): the "At a glance" summary as
 // labelled lines, the one-row-per-email table under its "Email list" heading
 // (a day with no table has no such heading), Overdue / Emails / Probably spam
 // cards (badges, from line, "What it is", "How urgent? / Should you worry?", status
@@ -84,6 +85,31 @@ export const overdueReport = {
       why: '<strong>How urgent?</strong> High — a call back is asked for by 19 Oct 2026, 4 days from today.<br><strong>Should you worry?</strong> Yes — worry: an unhappy client who may leave.',
       quote: "Hello,<br><br>I'm writing to make a formal complaint. … (open the email to read the rest)",
       link: LINK('1a00000000000001', 'alex%40sample-client.example', 1792000000) })
+    + '</ul>',
+};
+// A Monday (shape of the real 16 Nov 2026 report): one email, an extra fact on
+// its own line at the end of "At a glance", and the WEEKLY RECAP section the
+// prompt adds on Mondays (a heading and a list of labelled lines, the last one
+// long enough to wrap on every screen).
+export const mondayReport = {
+  id: 9103, created_at: '2026-11-16T08:10:00Z', run_date: '2026-11-16', status: 'success',
+  title: 'Inbox Report — 16 Nov 2026', error_text: null,
+  html_content: glance({ n: 1, h: 0, m: 1, l: 0, spam: 0, drafts: 0, filed: 0, left: 0, inUse: 5, waiting: 0, extra: '<br><strong>Late run:</strong> this report was saved at 21:47 instead of about 08:10.' })
+    + '<h3>Email list</h3><table class="scan"><thead><tr><th>Urgency</th><th>Worry</th><th>From — what it is</th><th>Draft</th></tr></thead><tbody><tr><td><span class="badge medium">Medium</span></td><td><span class="badge worry-watch">Watch</span></td><td><strong>Sample Notifications</strong> — automatic alert that a scheduled job needs a look</td><td>No reply needed</td></tr></tbody></table>'
+    + '<h3>Emails</h3><ul>'
+    + card({ cls: 'medium', urgency: 'Medium', worry: 'Watch', worryCls: 'worry-watch', cat: 'Unknown', draft: 'No reply needed',
+      from: '<strong>Sample Notifications</strong> (alerts@notifications.example) · received 16 Nov 2026, 07:40 · [sample-project] Scheduled job needs a look (Issue #7)',
+      gist: 'An automatic alert from a monitoring service: a scheduled job did not finish overnight. Nothing is lost; the job can be run again.',
+      why: '<strong>How urgent?</strong> Medium — worth a look this week, no deadline.<br><strong>Should you worry?</strong> Keep an eye on it — if it keeps happening, reports will be missed.',
+      quote: 'A scheduled job did not finish.<br><br>Checked 2026-11-16T07:40:00.000Z. Last success: 2026-11-15T08:06:00.000Z. … (open the email to read the rest)',
+      link: LINK('1a00000000000005', 'alerts%40notifications.example', 1794814800) })
+    + '</ul>'
+    + '<h3>Weekly recap</h3><ul>'
+    + '<li><strong>Emails received (9–16 Nov 2026):</strong> 1</li>'
+    + '<li><strong>Busiest sender:</strong> Sample Notifications (1)</li>'
+    + '<li><strong>By category:</strong> Client 0 · Supplier 0 · Personal 0 · Unknown 1</li>'
+    + '<li><strong>Drafts created:</strong> 0</li>'
+    + '<li><strong>Worth your attention:</strong> a very quiet week (no client or supplier email at all since 9 Nov 2026), and one scheduled job did not finish; check its run history.</li>'
     + '</ul>',
 };
 export const quietReport = {

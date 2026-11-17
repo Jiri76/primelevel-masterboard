@@ -7,11 +7,13 @@
 // Edge -- from the baseline of the letters above to the top of the tallest
 // letters below, or to the edge of a box (an email card, a badge, the band)
 // or of a heading's line, exactly as the reader sees it.
-//   COMPUTER (1920): 100 around the band and above / below every heading,
+// SIX WIDTHS (owner's rule 9; all six since 17 Nov 2026): 320, 375 (phones,
+// iPhone), 768, 1024, 1440, 1920 (computers and tablets); WIDTHS=… to change.
+//   COMPUTER (above 720): 100 around the band and above / below every heading,
 //                    30 between items, 15 from a heading's letters to its line
-//   PHONE (iPhone, 375): the same with 70 instead of 100 inside the card
+//   PHONE (720 and under, iPhone): the same with 70 instead of 100 inside the card
 //   both: text 15px, headings 25px, badges 13px, band title 35 / 26px, date
-//         15px, page title 50 / 44px; 24px lines; the band's date written
+//         15px, page title 50 / 44px (38px under 360); 24px lines; the band's date written
 //         "14 Oct 2026"; the Insider Edge colours, and every email card in
 //         the sign-in box's white #E9E9EB, with the original email and the
 //         draft reply on company white #F9F9FA inside it, with no line around
@@ -30,9 +32,13 @@
 //         email card's first badges read "Urgency: High" + "Worry: Yes".
 // The report is a MADE-UP sample with the real report's exact shape
 // (tools/fixtures/inbox-report-samples.mjs; the real reports are owner-only and
-// this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails) or
+// this project is public): SAMPLE=full (default), SAMPLE=quiet (no emails),
 // SAMPLE=overdue (no new emails, one overdue card, only short badges in the
-// table, the shape that broke "Urgency" on 17 Oct 2026). Also: no word is
+// table, the shape that broke "Urgency" on 17 Oct 2026) or SAMPLE=monday (one
+// email + the Monday "Weekly recap" section). LOCAL ONLY, never in this public
+// repo or its logs: HTML_FILE=<a real report's html_content saved from the
+// database> (+ ROW_ID, CREATED_AT, RUN_DATE, TITLE) measures a REAL report
+// the same way (the audit skill's step). Also: no word is
 // split in the middle; and (full day) a card whose email the morning check
 // found deleted shows "This email has been deleted (checked …)" instead of its
 // link (owner, 2026-10-23).
@@ -40,12 +46,15 @@
 // Nothing is read from or written to the real database. Exits 1 on any drift.
 import { chromium, devices } from 'playwright';
 import { ownerFake, useStandIn } from './guard-supabase.mjs';
-import { fullReport, quietReport, overdueReport } from './fixtures/inbox-report-samples.mjs';
+import { readFileSync } from 'fs';
+import { fullReport, quietReport, overdueReport, mondayReport } from './fixtures/inbox-report-samples.mjs';
 
 const URL = process.env.SPACING_URL || 'http://localhost:8091/inbox-report.html';
-const SAMPLES = { full: [fullReport, 'a full day'], quiet: [quietReport, 'a day with no emails'], overdue: [overdueReport, 'no new emails, one overdue email (short badges only)'] };
-const [SAMPLE, SAMPLE_NAME] = SAMPLES[process.env.SAMPLE] || SAMPLES.full;
-console.log(`Sample report: ${SAMPLE_NAME} (made up, not a real report)`);
+const WIDTHS = (process.env.WIDTHS || '320,375,768,1024,1440,1920').split(',').map(Number);
+const SAMPLES = { full: [fullReport, 'a full day'], quiet: [quietReport, 'a day with no emails'], overdue: [overdueReport, 'no new emails, one overdue email (short badges only)'], monday: [mondayReport, 'a Monday: one email + the weekly recap'] };
+const REAL = process.env.HTML_FILE ? { id: Number(process.env.ROW_ID || 1), created_at: process.env.CREATED_AT || new Date().toISOString(), run_date: process.env.RUN_DATE || '', status: 'success', title: process.env.TITLE || 'Inbox Report', error_text: null, deleted_emails: [], html_content: readFileSync(process.env.HTML_FILE, 'utf8') } : null;
+const [SAMPLE, SAMPLE_NAME] = REAL ? [REAL, `REAL report "${REAL.title}" (local only)`] : (SAMPLES[process.env.SAMPLE] || SAMPLES.full);
+console.log(REAL ? SAMPLE_NAME : `Sample report: ${SAMPLE_NAME} (made up, not a real report)`);
 const TOL_BIG = 1;   // px, for every 100 (70 on phones) gap
 const TOL_30 = 1.5;  // px, for every 30 and 15 gap (line boxes round to whole px)
 
@@ -267,8 +276,8 @@ const measure = () => {
 };
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
-async function open(phone) {
-  const ctx = await browser.newContext(phone ? { ...devices['iPhone 13'], viewport: { width: 375, height: 900 } } : { viewport: { width: 1920, height: 1080 } });
+async function open(w) {
+  const ctx = await browser.newContext(w <= 720 ? { ...devices['iPhone 13'], viewport: { width: w, height: 900 } } : { viewport: { width: w, height: 1080 } });
   const page = await ctx.newPage();
   await useStandIn(page, ownerFake({ email_reports: [SAMPLE] }));
   await page.route(/supabase\.co/, (route) => route.abort()); // the stand-in answers everything; nothing reaches the real database
@@ -294,10 +303,11 @@ const same = (label, got, want) => {
 };
 const WANT_COLOURS = { 'report paper': '#F9F9FA', 'dark band': '#2A3441', 'band title': '#B29B68', 'date line': '#B29B68', 'report text': '#1E2633', heading: '#1E2633', 'heading line': '2px #1E2633', 'email card': '#E9E9EB', 'email card outline': 'none', 'Read the draft reply': '#1E2633', 'Open the email': '#1E2633', 'email and draft boxes': '#F9F9FA', 'email and draft boxes: line on the left': 'none', 'High badge': '#C62828', 'High badge text': '#F9F9FA', 'High card stripe': '#C62828', 'Worry: Yes badge': '#C62828', 'red warnings': '#C62828', 'badge whites': '#F9F9FA', 'Medium badge': '#BC4C00', 'Medium badge text': '#F9F9FA', 'Medium card stripe': '#BC4C00', 'Worry: Watch badge': '#BC4C00', 'Who badge': '#1E2633', 'Who badge words': '#F9F9FA', 'Draft badge words and outline': '#1E2633', 'Low badge': '#188038', 'Low badge text': '#F9F9FA', 'Low card stripe': '#188038', 'Worry: No badge': '#188038', 'Spam badge': '#616161', 'Spam badge text': '#F9F9FA', 'Spam card stripe': '#616161', 'Spam card strength': 'solid', 'Email list row lines': '1px #1E2633' };
 
-for (const phone of [false, true]) {
-  const BIG = phone ? 70 : 100, P = phone ? 'phone: ' : '';
-  console.log(phone ? '\nPHONE (iPhone, 375 wide): 70 inside the card' : 'COMPUTER (1920 wide): 100 inside the card');
-  const page = await open(phone);
+for (const w of WIDTHS) {
+  const phone = w <= 720;
+  const BIG = phone ? 70 : 100, P = `${w}: `;
+  console.log(`\n${phone ? 'PHONE' : 'COMPUTER'} (${w} wide): ${BIG} inside the card`);
+  const page = await open(w);
   for (const opened of [false, true]) {
     if (opened) {
       const n = await page.evaluate(() => { const d = [...document.querySelectorAll('.report-body details')]; d.forEach((x) => { x.open = true; }); return d.length; });
@@ -310,7 +320,7 @@ for (const phone of [false, true]) {
       m.big.forEach(([k, v]) => row(P + k, v, BIG, TOL_BIG));
       m.g15.forEach(([k, v]) => row(P + k, v, 15, TOL_30));
       m.g30.forEach(([k, v]) => row(P + k, v, 30, TOL_30));
-      Object.entries(phone ? { 'page title "Inbox Report"': '44px', 'title inside the dark band': '26px', 'date line under the title': '15px' } : { 'page title "Inbox Report"': '50px', 'title inside the dark band': '35px', 'date line under the title': '15px' })
+      Object.entries(phone ? { 'page title "Inbox Report"': w < 360 ? '38px' : '44px', 'title inside the dark band': '26px', 'date line under the title': '15px' } : { 'page title "Inbox Report"': '50px', 'title inside the dark band': '35px', 'date line under the title': '15px' })
         .forEach(([k, px]) => same(`${P}font ${k}`, m.pageFonts[k], px));
       Object.entries({ heading: '25px', text: '15px', badge: '13px' }).forEach(([k, px]) => { if (m.fonts[k]) same(`${P}font ${k}`, m.fonts[k].join(', '), px); });
       same(`${P}line pitch inside paragraphs (24, or 48 across an empty line in a quote)`, m.pitches.every((x) => x === 24 || x === 48) ? 'yes' : m.pitches.join(', '), 'yes');
@@ -339,8 +349,9 @@ for (const phone of [false, true]) {
   // The card's clickable lines pop like Sign out and the back arrow (owner,
   // 2026-10-20): 1.05 under a mouse and on the Tab key, no ring of any colour.
   // Phones have no mouse, so no pop there. Checked last, after every gap is
-  // measured (a popped line is 5% bigger).
-  if (!phone) {
+  // measured (a popped line is 5% bigger). On computers, at the widest width
+  // measured (the mouse and Tab key behave the same at every computer width).
+  if (!phone && w === Math.max(...WIDTHS)) {
     const LINES = [['Read the draft reply', '.report-body li.entry summary'], ['Open the email', '.report-body li.entry p > a']];
     const POP = 'matrix(1.05, 0, 0, 1.05, 0, 0)';
     for (const [name, sel] of LINES) {
@@ -376,7 +387,7 @@ for (const phone of [false, true]) {
       const tab = await page.evaluate((s) => { const c = getComputedStyle(document.querySelector(s)); return `${c.transform}, ${c.outlineStyle === 'none' || parseFloat(c.outlineWidth) === 0 ? 'no ring' : 'ring ' + c.outlineWidth + ' ' + c.outlineColor}`; }, sel);
       same(`${P}"${name}" pops on the Tab key, no ring`, reached ? tab : 'not reached by the Tab key', `${POP}, no ring`);
     }
-  } else {
+  } else if (phone) {
     same(`${P}no mouse on a phone, so no pop`, String(await page.evaluate(() => matchMedia('(hover: hover)').matches)), 'false');
   }
   // "Open the email" (owner, 2026-10-21): a phone's browser gets Gmail's phone

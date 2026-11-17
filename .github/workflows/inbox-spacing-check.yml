@@ -3,7 +3,8 @@ name: Inbox Report layout guard
 # Fails loudly if the Inbox Report's card ever drifts from the report card
 # standard it shares with Insider Edge (REPORT-CARD-STANDARD.md): gaps by eye,
 # font sizes, colours, the band's date line, every line inside the text
-# column, on a computer AND a phone. Runs on every change to the page or to
+# column, no word split, at all six widths (320, 375, 768, 1024, 1440, 1920).
+# Runs on every change to the page or to
 # this check, every Monday, and on demand. It measures MADE-UP sample reports
 # (tools/fixtures/inbox-report-samples.mjs): the real reports are owner-only,
 # and this project's logs are public.
@@ -49,3 +50,7 @@ jobs:
         run: node tools/inbox-spacing-check.mjs
         env:
           SAMPLE: overdue
+      - name: 'Measure spacing, font sizes and colours (sample: a Monday with the weekly recap)'
+        run: node tools/inbox-spacing-check.mjs
+        env:
+          SAMPLE: monday
