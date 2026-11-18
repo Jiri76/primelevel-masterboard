@@ -730,7 +730,7 @@
         .from('email_reports')
         .select('id, created_at, run_date, status, title, html_content, error_text, deleted_emails')
         .order('created_at', { ascending: false })
-        .limit(30);
+        .limit(14); // the 14 newest: exactly what the database keeps (owner, 2026-11-18: "14 days shown, 14 days saved")
       if (error) {
         // A clean, plain-English message for the reader -- the real
         // technical detail (table/column names, the raw Postgres error) is

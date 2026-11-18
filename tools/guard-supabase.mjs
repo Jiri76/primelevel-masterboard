@@ -34,8 +34,10 @@ export const ownerFake = (rows = {}) => `
 const rows = ${JSON.stringify(rows)};
 const session = ${OWNER};
 const chain = (t) => {
-  const answer = () => rows[t] === 'error' ? { data: null, error: { message: 'guard stand-in' } } : { data: rows[t] || [], error: null };
-  const q = { select: () => q, eq: () => q, order: () => q, limit: () => q, abortSignal: () => q, single: async () => answer(),
+  // limit(n) is honoured (18 Nov 2026), so a page that shows only the newest N is tested for real.
+  let lim = null;
+  const answer = () => rows[t] === 'error' ? { data: null, error: { message: 'guard stand-in' } } : { data: lim === null ? (rows[t] || []) : (rows[t] || []).slice(0, lim), error: null };
+  const q = { select: () => q, eq: () => q, order: () => q, limit: (n) => { lim = n; return q; }, abortSignal: () => q, single: async () => answer(),
     then: (ok, bad) => Promise.resolve(answer()).then(ok, bad) };
   return q;
 };
